@@ -86,6 +86,10 @@ import dev.cluvex.strata.feature.explorer.dnd.dragHost
 import dev.cluvex.strata.feature.apk.SignApkDialog
 import dev.cluvex.strata.feature.explorer.components.BatchRenameDialog
 import dev.cluvex.strata.feature.explorer.components.BookmarkActions
+import dev.cluvex.strata.feature.explorer.components.BookmarkChipsBar
+import dev.cluvex.strata.feature.explorer.components.BookmarkEditDialog
+import dev.cluvex.strata.core.bookmarks.Bookmark
+import dev.cluvex.strata.core.bookmarks.Bookmarks
 import dev.cluvex.strata.feature.explorer.components.BookmarksSheet
 import dev.cluvex.strata.feature.explorer.components.BottomBarActions
 import dev.cluvex.strata.feature.explorer.components.ChecksumDialog
@@ -161,6 +165,7 @@ fun ExplorerScreen(
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var dialog by remember { mutableStateOf<Dialog>(Dialog.None) }
+    var editingBookmark by remember { mutableStateOf<Bookmark?>(null) }
     var overflow by remember { mutableStateOf(false) }
     var lastBackPress by remember { mutableLongStateOf(0L) }
     val rootPath = vm.rootPath
@@ -295,6 +300,7 @@ fun ExplorerScreen(
                         Box {
                             IconButton(onClick = { overflow = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.explorer_options)) }
                             DropdownMenu(expanded = overflow, onDismissRequest = { overflow = false }) {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.explorer_add_to_bookmarks)) }, onClick = { overflow = false; vm.addBookmarks(listOf(ui.activePane.path)) })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.explorer_refresh_both)) }, onClick = { overflow = false; vm.refreshAll() })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.explorer_jump_to_path_more)) }, onClick = { overflow = false; dialog = Dialog.JumpTo(ui.active) })
                                 DropdownMenuItem(
@@ -394,13 +400,26 @@ fun ExplorerScreen(
             )
         },
     ) { padding ->
-        Row(
+        Column(
             Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                .padding(padding),
         ) {
+            if (!dual) {
+                BookmarkChipsBar(
+                    bookmarks = ui.bookmarks,
+                    currentPath = ui.activePane.path,
+                    onOpen = { vm.openBookmark(ui.active, it) },
+                    onLongPress = { editingBookmark = it },
+                )
+            }
+            Row(
+                Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
             val panes = if (dual) listOf(Pane.LEFT, Pane.RIGHT) else listOf(ui.active)
             for (pane in panes) {
                 val state = ui.pane(pane)
@@ -424,9 +443,19 @@ fun ExplorerScreen(
                 )
             }
         }
+        }
     }
     }
     DragLayer(drag) { host[0]?.positionInRoot() ?: Offset.Zero }
+    }
+
+    editingBookmark?.let { b ->
+        BookmarkEditDialog(
+            bookmark = b,
+            groups = Bookmarks.groups(ui.bookmarks),
+            onSave = { edited -> vm.updateBookmark(b.path, edited); editingBookmark = null },
+            onDismiss = { editingBookmark = null },
+        )
     }
 
     when (val d = dialog) {

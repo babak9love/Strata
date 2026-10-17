@@ -212,6 +212,7 @@
         <item quantity="other">\u200F%d تداخل</item>
     </plurals>
     <string name="explorer_add_current_folder">افزودن پوشه فعلی</string>
+    <string name="explorer_add_to_bookmarks">اضافه کردن به بوکمارک</string>
     <string name="explorer_no_bookmarks">هنوز نشانکی ندارید</string>
     <string name="explorer_no_bookmarks_body">پوشه فعلی را از اینجا نشانک‌گذاری کنید، یا فایل‌ها و پوشه‌ها را از منوی خودشان.</string>
     <string name="explorer_delete_bookmark">حذف نشانک</string>

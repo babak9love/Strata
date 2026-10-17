@@ -212,6 +212,7 @@
         <item quantity="other">%d conflicts</item>
     </plurals>
     <string name="explorer_add_current_folder">Add current folder</string>
+    <string name="explorer_add_to_bookmarks">Add to bookmarks</string>
     <string name="explorer_no_bookmarks">No bookmarks yet</string>
     <string name="explorer_no_bookmarks_body">Bookmark the current folder here, or files and folders from their menus.</string>
     <string name="explorer_delete_bookmark">Delete bookmark</string>
