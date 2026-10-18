@@ -811,6 +811,34 @@ class ExplorerViewModel(
         }
     }
 
+    fun createArchiveIn(items: List<FileItem>, name: String, options: ArchiveOptions, independent: Boolean) {
+        if (items.isEmpty()) return
+        if (items.any { RemoteUri.isRemote(it.path) }) {
+            notOnStorage()
+            return
+        }
+        val dir = items.first().parentPath ?: return
+        val fileName = options.format.fileName(name)
+        if (!independent) {
+            FileOperations.validateName(fileName)?.let {
+                postMessage(it)
+                return
+            }
+        }
+        runTask(tr(R.string.explorer_task_compressing), {
+            val from = access(dir, write = false, viaRoot = false)
+            val to = access(dir, write = true, viaRoot = false)
+            if (independent) {
+                ArchiveCreator.createEach(items, dir, options, from, to)
+            } else {
+                val dest = FsUtil.uniqueSibling(to.child(to.file(dir), fileName), isDirectory = false, access = to)
+                ArchiveCreator.create(items, dest.absolutePath, options, from, to)
+            }
+        }, onFinally = { options.password?.fill('\u0000') }, sound = UiSound.SUCCESS) { done ->
+            refreshAllRevealing(dir, done.created)
+        }
+    }
+
     fun signApk(item: FileItem, request: dev.cluvex.strata.feature.apk.SignRequest) {
         if (RemoteUri.isRemote(item.path)) return notOnStorage()
         val dir = item.parentPath ?: return

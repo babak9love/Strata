@@ -67,36 +67,36 @@ import dev.cluvex.strata.ui.expressive.MenuEntry
 import dev.cluvex.strata.ui.icon
 
 class BottomBarActions(
-    val onBack: () -> Unit,
-    val onForward: () -> Unit,
-    val onUp: () -> Unit,
-    val onHome: () -> Unit,
-    val onSwap: () -> Unit,
-    val onNewFolder: () -> Unit,
-    val onNewFile: () -> Unit,
-    val onRefresh: () -> Unit,
-    val onPaste: () -> Unit,
-    val onCancelClipboard: () -> Unit,
-    val onSelectAll: () -> Unit,
-    val onClearSelection: () -> Unit,
-    val onCopyToOther: () -> Unit,
-    val onMoveToOther: () -> Unit,
-    val onCopyToClipboard: () -> Unit,
-    val onCutToClipboard: () -> Unit,
-    val onDelete: () -> Unit,
-    val onRename: () -> Unit,
-    val onCompress: () -> Unit,
-    val onShare: () -> Unit,
-    val onProperties: () -> Unit,
-    val onCopyPath: () -> Unit,
-    val onInvert: () -> Unit,
-    val onBookmarks: () -> Unit,
-    val onBookmarkFolder: () -> Unit,
-    val onBookmarkSelection: () -> Unit,
-    val onBatchRename: () -> Unit,
-    val onCreateLinks: () -> Unit,
-    val onMerge: () -> Unit,
-    val onCompare: () -> Unit,
+    val onBack: () -> Unit = {},
+    val onForward: () -> Unit = {},
+    val onUp: () -> Unit = {},
+    val onHome: () -> Unit = {},
+    val onSwap: () -> Unit = {},
+    val onNewFolder: () -> Unit = {},
+    val onNewFile: () -> Unit = {},
+    val onRefresh: () -> Unit = {},
+    val onPaste: () -> Unit = {},
+    val onCancelClipboard: () -> Unit = {},
+    val onSelectAll: () -> Unit = {},
+    val onClearSelection: () -> Unit = {},
+    val onCopyToOther: () -> Unit = {},
+    val onMoveToOther: () -> Unit = {},
+    val onCopyToClipboard: () -> Unit = {},
+    val onCutToClipboard: () -> Unit = {},
+    val onDelete: () -> Unit = {},
+    val onRename: () -> Unit = {},
+    val onCompress: () -> Unit = {},
+    val onShare: () -> Unit = {},
+    val onProperties: () -> Unit = {},
+    val onCopyPath: () -> Unit = {},
+    val onInvert: () -> Unit = {},
+    val onBookmarks: () -> Unit = {},
+    val onBookmarkFolder: () -> Unit = {},
+    val onBookmarkSelection: () -> Unit = {},
+    val onBatchRename: () -> Unit = {},
+    val onCreateLinks: () -> Unit = {},
+    val onMerge: () -> Unit = {},
+    val onCompare: () -> Unit = {},
     val onNewProject: () -> Unit = {},
     val onOpenTerminal: () -> Unit = {},
     val onRunProject: () -> Unit = {},
@@ -136,6 +136,7 @@ fun ExplorerBottomBar(
     browse: Zoned<BrowseAction> = dev.cluvex.strata.core.model.ActionLayout.DEFAULT_BROWSE,
     selection: Zoned<SelectionAction> = dev.cluvex.strata.core.model.ActionLayout.DEFAULT_SELECTION,
     showHidden: Boolean = false,
+    hiddenSelection: Set<SelectionAction> = emptySet(),
 ) {
     val motion = MaterialTheme.motionScheme
     val threshold = with(LocalDensity.current) { 48.dp.toPx() }
@@ -165,7 +166,7 @@ fun ExplorerBottomBar(
         ) { selecting ->
             if (selecting) {
                 val context = SelectionContext(selectionCount, selectedFiles, dual, remote, smaliFolder, jarFile, vault, archiveFile)
-                SelectionActions(selectionCount, context, activeIsLeft, selection, actions)
+                SelectionActions(selectionCount, context, activeIsLeft, selection, actions, hiddenSelection)
             } else {
                 val context = BrowseContext(clipboard = clipboardCount > 0, termux = !remote, project = projectLabel != null)
                 BrowseActions(canBack, canForward, canUp, clipboardCount, clipboardIsMove, context, projectLabel, browse, showHidden, actions)
@@ -347,6 +348,7 @@ private fun SelectionActions(
     activeIsLeft: Boolean,
     selection: Zoned<SelectionAction>,
     a: BottomBarActions,
+    hidden: Set<SelectionAction> = emptySet(),
 ) {
     var more by remember { mutableStateOf(false) }
     val dual = context.dual
@@ -354,7 +356,7 @@ private fun SelectionActions(
         BarButton(Icons.Rounded.Close, stringResource(R.string.common_clear_selection), onClick = a.onClearSelection)
         Text(Formatters.number(count.toLong()), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 2.dp))
         for (action in selection.zones[0]) {
-            if (!action.available(context)) continue
+            if (!action.available(context) || action in hidden) continue
             if (dual && (action == SelectionAction.COPY || action == SelectionAction.MOVE)) {
                 DirectionalAction(action.icon, toRight = activeIsLeft, description = action.text(true, activeIsLeft)) { action.run(a, true) }
             } else {
@@ -363,7 +365,7 @@ private fun SelectionActions(
         }
         Box {
             BarButton(Icons.Rounded.MoreVert, stringResource(R.string.explorer_more_actions)) { more = true }
-            val entries = selection.zones[1].filter { it.available(context) }.map { action ->
+            val entries = selection.zones[1].filter { it.available(context) && it !in hidden }.map { action ->
                 MenuEntry(action.text(dual, activeIsLeft), action.icon) { more = false; action.run(a, dual) }
             }
             val tools = listOf(MenuEntry(stringResource(R.string.explorer_customize_bar), Icons.Rounded.DashboardCustomize) { more = false; a.onCustomize(ToolbarTab.SELECTION) })

@@ -4,23 +4,25 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.ContentCut
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.DriveFileRenameOutline
 import androidx.compose.material.icons.rounded.FolderOpen
-import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
+import dev.cluvex.strata.core.archive.ArchiveFormat
+import dev.cluvex.strata.core.model.SelectionAction
+import dev.cluvex.strata.core.model.Zoned
+import dev.cluvex.strata.core.util.IntentUtils
+import dev.cluvex.strata.feature.explorer.components.BottomBarActions
+import dev.cluvex.strata.feature.explorer.components.CreateArchiveDialog
+import dev.cluvex.strata.feature.explorer.components.ExplorerBottomBar
+import dev.cluvex.strata.feature.props.PropertiesSheet
+import dev.cluvex.strata.feature.settings.ToolbarTab
+import dev.cluvex.strata.ui.rememberTextClipboard
 import dev.cluvex.strata.core.props.DirStats
 import dev.cluvex.strata.feature.explorer.ExplorerViewModel
 import dev.cluvex.strata.feature.explorer.components.DeleteDialog
@@ -89,6 +91,11 @@ fun SearchScreen(
     onBack: () -> Unit,
     onOpenItem: (FileItem) -> Unit,
     onShowInFolder: (FileItem) -> Unit,
+    selectionLayout: Zoned<SelectionAction> = dev.cluvex.strata.core.model.ActionLayout.DEFAULT_SELECTION,
+    rootAccess: Boolean = false,
+    onOpenWith: (FileItem) -> Unit = {},
+    onCompare: (FileItem, FileItem) -> Unit = { _, _ -> },
+    onCustomize: (ToolbarTab) -> Unit = {},
     vm: SearchViewModel = viewModel(),
 ) {
     LaunchedEffect(root) { vm.initRoot(root) }
@@ -97,22 +104,12 @@ fun SearchScreen(
     val chosen = remember(ui.results, ui.selected) { ui.results.map { it.item }.filter { it.path in ui.selected } }
     var dialog by remember { mutableStateOf<SearchDialog>(SearchDialog.None) }
     BackHandler(enabled = selecting) { vm.clearSelection() }
+    val context = LocalContext.current
+    val textClipboard = rememberTextClipboard()
 
     Scaffold(
         topBar = {
-            if (selecting) TopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = vm::clearSelection) {
-                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_clear_selection))
-                    }
-                },
-                title = { Text(pluralStringResource(R.plurals.archive_selected, chosen.size, chosen.size)) },
-                actions = {
-                    IconButton(onClick = vm::selectAll) {
-                        Icon(Icons.Rounded.SelectAll, contentDescription = stringResource(R.string.common_select_all))
-                    }
-                },
-            ) else TopAppBar(
+            TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back))
@@ -133,29 +130,42 @@ fun SearchScreen(
             )
         },
         bottomBar = {
-            if (selecting) Surface(tonalElevation = 3.dp) {
-                Row(
-                    Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 4.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    val single = chosen.size == 1
-                    IconButton(onClick = { explorer.copyItemsToClipboard(chosen, move = false); vm.clearSelection(); onBack() }) {
-                        Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.common_copy))
-                    }
-                    IconButton(onClick = { explorer.copyItemsToClipboard(chosen, move = true); vm.clearSelection(); onBack() }) {
-                        Icon(Icons.Rounded.ContentCut, contentDescription = stringResource(R.string.explorer_cut))
-                    }
-                    IconButton(onClick = { chosen.firstOrNull()?.let { dialog = SearchDialog.Rename(it) } }, enabled = single && !ui.running) {
-                        Icon(Icons.Rounded.DriveFileRenameOutline, contentDescription = stringResource(R.string.common_rename))
-                    }
-                    IconButton(onClick = { chosen.firstOrNull()?.let(onShowInFolder) }, enabled = single) {
-                        Icon(Icons.Rounded.FolderOpen, contentDescription = stringResource(R.string.search_show_in_folder))
-                    }
-                    IconButton(onClick = { dialog = SearchDialog.Delete(chosen) }, enabled = !ui.running) {
-                        Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.common_delete))
-                    }
-                }
-            }
+            if (selecting) ExplorerBottomBar(
+                selectionCount = chosen.size,
+                canBack = false,
+                canForward = false,
+                canUp = false,
+                activeIsLeft = true,
+                dual = false,
+                clipboardCount = 0,
+                clipboardIsMove = false,
+                selectedFiles = chosen.count { !it.isDirectory },
+                selection = selectionLayout,
+                hiddenSelection = SearchHiddenActions,
+                actions = BottomBarActions(
+                    onClearSelection = vm::clearSelection,
+                    onSelectAll = vm::selectAll,
+                    onInvert = vm::invertSelection,
+                    onCopyToClipboard = { explorer.copyItemsToClipboard(chosen, move = false); vm.clearSelection(); onBack() },
+                    onCutToClipboard = { explorer.copyItemsToClipboard(chosen, move = true); vm.clearSelection(); onBack() },
+                    onDelete = { if (!ui.running) dialog = SearchDialog.Delete(chosen) },
+                    onRename = { if (!ui.running) chosen.singleOrNull()?.let { dialog = SearchDialog.Rename(it) } },
+                    onCompress = { dialog = SearchDialog.Compress(chosen) },
+                    onShare = { IntentUtils.share(context, chosen) },
+                    onProperties = { dialog = SearchDialog.Properties(chosen) },
+                    onCopyPath = {
+                        textClipboard.setText(chosen.joinToString("\n") { it.path })
+                        explorer.notifyPathsCopied(chosen.size)
+                    },
+                    onBookmarkSelection = { explorer.addBookmarks(chosen.map { it.path }); vm.clearSelection() },
+                    onOpenWith = { chosen.singleOrNull()?.takeIf { !it.isDirectory }?.let(onOpenWith) },
+                    onCompare = {
+                        val two = chosen.filterNot { it.isDirectory }
+                        if (two.size == 2) onCompare(two[0], two[1])
+                    },
+                    onCustomize = onCustomize,
+                ),
+            )
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
@@ -189,6 +199,23 @@ fun SearchScreen(
             },
             onDismiss = { dialog = SearchDialog.None },
         )
+        is SearchDialog.Compress -> CreateArchiveDialog(
+            items = d.items,
+            defaultName = d.items.singleOrNull()?.let { ArchiveFormat.ZIP.defaultName(it).removeSuffix(ArchiveFormat.ZIP.extension) }
+                ?: java.io.File(d.items.firstOrNull()?.parentPath ?: "").name.ifEmpty { "archive" },
+            onConfirm = { name, options, independent ->
+                explorer.createArchiveIn(d.items, name, options, independent)
+                vm.clearSelection()
+                dialog = SearchDialog.None
+            },
+            onDismiss = { dialog = SearchDialog.None },
+        )
+        is SearchDialog.Properties -> PropertiesSheet(
+            items = d.items,
+            rootEnabled = rootAccess,
+            onDismiss = { dialog = SearchDialog.None },
+            onChanged = { explorer.refreshAll() },
+        )
         is SearchDialog.Delete -> {
             var stats by remember { mutableStateOf<DirStats?>(null) }
             var counting by remember { mutableStateOf(true) }
@@ -217,7 +244,17 @@ private sealed interface SearchDialog {
     data object None : SearchDialog
     data class Rename(val item: FileItem) : SearchDialog
     data class Delete(val items: List<FileItem>) : SearchDialog
+    data class Compress(val items: List<FileItem>) : SearchDialog
+    data class Properties(val items: List<FileItem>) : SearchDialog
 }
+
+// These need a single destination folder of the explorer pane, which search results don't have.
+private val SearchHiddenActions = setOf(
+    SelectionAction.BATCH_RENAME,
+    SelectionAction.MERGE,
+    SelectionAction.LINKS,
+    SelectionAction.VAULT,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

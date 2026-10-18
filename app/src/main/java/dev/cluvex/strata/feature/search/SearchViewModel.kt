@@ -99,6 +99,10 @@ class SearchViewModel : ViewModel() {
 
     fun selectAll() = _state.update { it.copy(selected = it.results.map { r -> r.item.path }.toSet()) }
 
+    fun invertSelection() = _state.update {
+        it.copy(selected = it.results.map { r -> r.item.path }.filterNot { p -> p in it.selected }.toSet())
+    }
+
     fun clearSelection() = _state.update { it.copy(selected = emptySet()) }
 
     fun removeResults(paths: Set<String>) = _state.update {

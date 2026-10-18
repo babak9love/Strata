@@ -650,6 +650,11 @@ private fun Screen(
                 if (item.isDirectory) actions.locate(item.path, null) else actions.openFile(item)
             },
             onShowInFolder = { item -> actions.locate(item.parentPath ?: item.path, item.path) },
+            selectionLayout = settings.actions.selection,
+            rootAccess = settings.rootAccess,
+            onOpenWith = actions.openWith,
+            onCompare = { a, b -> actions.push(Route.Compare(a.path, b.path)) },
+            onCustomize = { tab -> actions.push(Route.Customize(tab)) },
         )
     }
 }

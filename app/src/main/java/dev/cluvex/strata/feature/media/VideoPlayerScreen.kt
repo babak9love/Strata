@@ -11,6 +11,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.media3.ui.compose.material3.buttons.NextButton
@@ -212,14 +214,14 @@ fun VideoPlayerScreen(
                         AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
                             Row(
                                 Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                PreviousButton(p, Modifier.size(56.dp))
-                                SeekBackButton(p, Modifier.size(56.dp))
-                                PlayPauseButton(p, Modifier.size(70.dp))
-                                SeekForwardButton(p, Modifier.size(56.dp))
-                                NextButton(p, Modifier.size(56.dp))
+                                ControlSlot(48.dp, 2f) { PreviousButton(p, it) }
+                                ControlSlot(48.dp, 2f) { SeekBackButton(p, it) }
+                                ControlSlot(96.dp, 4f) { PlayPauseButton(p, it) }
+                                ControlSlot(48.dp, 2f) { SeekForwardButton(p, it) }
+                                ControlSlot(48.dp, 2f) { NextButton(p, it) }
                             }
                         }
                         PlayerDefaults.BottomControls(p, visible)
@@ -227,6 +229,14 @@ fun VideoPlayerScreen(
                 },
             )
         }
+    }
+}
+
+// The media3 buttons draw a 24dp icon; scale it up inside a tight slot so the row stays compact.
+@Composable
+private fun ControlSlot(slot: Dp, scale: Float, button: @Composable (Modifier) -> Unit) {
+    Box(Modifier.size(slot), contentAlignment = Alignment.Center) {
+        button(Modifier.size(24.dp).scale(scale))
     }
 }
 
