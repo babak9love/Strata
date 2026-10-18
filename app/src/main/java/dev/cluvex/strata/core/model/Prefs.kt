@@ -50,6 +50,8 @@ data class BehaviorPrefs(
     val iconTapSelects: Boolean = true,
     val keepScreenOnTasks: Boolean = false,
     val videoAutoHide: Boolean = true,
+    /** Seek back/forward step in seconds (5..30). */
+    val videoSeekSeconds: Int = 10,
 )
 
 enum class ConflictChoice(@StringRes val label: Int) {

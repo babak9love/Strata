@@ -139,6 +139,7 @@ class SettingsRepository(private val context: Context) {
         val GRID_COLUMNS = intPreferencesKey("grid_columns")
         val SHOW_PARENT_ENTRY = booleanPreferencesKey("show_parent_entry")
         val VIDEO_AUTO_HIDE = booleanPreferencesKey("video_auto_hide")
+        val VIDEO_SEEK_SECONDS = intPreferencesKey("video_seek_seconds")
         val SHOW_EXTENSIONS = booleanPreferencesKey("show_extensions")
         val START_FOLDER = stringPreferencesKey("start_folder")
         val START_PATH = stringPreferencesKey("start_path")
@@ -201,7 +202,7 @@ class SettingsRepository(private val context: Context) {
             EDITOR_CURSOR_ANIMATION, EDITOR_KEEP_SCREEN_ON, READER_KEEP_SCREEN, APP_LOCK, PERSIAN_CALENDAR,
             SHOW_PARENT_ENTRY, VIDEO_AUTO_HIDE,
         )
-        val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS)
+        val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, VIDEO_SEEK_SECONDS)
         val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE)
         val STRINGS = listOf(
             SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
@@ -472,6 +473,7 @@ class SettingsRepository(private val context: Context) {
             iconTapSelects = p[Keys.ICON_SELECTS] ?: true,
             keepScreenOnTasks = p[Keys.KEEP_SCREEN_TASKS] ?: false,
             videoAutoHide = p[Keys.VIDEO_AUTO_HIDE] ?: true,
+            videoSeekSeconds = (p[Keys.VIDEO_SEEK_SECONDS] ?: 10).coerceIn(5, 30),
         )
 
         private fun writeBehavior(p: MutablePreferences, b: BehaviorPrefs) {
@@ -481,6 +483,7 @@ class SettingsRepository(private val context: Context) {
             p[Keys.ICON_SELECTS] = b.iconTapSelects
             p[Keys.KEEP_SCREEN_TASKS] = b.keepScreenOnTasks
             p[Keys.VIDEO_AUTO_HIDE] = b.videoAutoHide
+            p[Keys.VIDEO_SEEK_SECONDS] = b.videoSeekSeconds.coerceIn(5, 30)
         }
 
         internal fun readOperations(p: Preferences) = OperationPrefs(

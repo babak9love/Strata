@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AspectRatio
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Crop
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -145,6 +146,8 @@ fun VideoPlayerScreen(
     onBack: () -> Unit,
     autoHide: Boolean = true,
     onAutoHideChange: (Boolean) -> Unit = {},
+    seekSeconds: Int = 10,
+    onSeekSecondsChange: (Int) -> Unit = {},
     vm: VideoPlayerViewModel = viewModel(),
 ) {
     LaunchedEffect(path) { vm.open(path, showHidden) }
@@ -154,6 +157,12 @@ fun VideoPlayerScreen(
     var menu by remember { mutableStateOf(false) }
     val player = vm.player
     BackHandler(onBack = onBack)
+
+    val seekMs = seekSeconds.coerceIn(5, 30) * 1000L
+    LaunchedEffect(player, seekMs) {
+        player?.setSeekBackIncrementMs(seekMs)
+        player?.setSeekForwardIncrementMs(seekMs)
+    }
 
     if (player != null) AutoHideControls(player, controls && autoHide && !menu) { controls = false }
     ImmersiveWhile(!controls)
@@ -210,6 +219,20 @@ fun VideoPlayerScreen(
                                             trailingIcon = { Switch(checked = autoHide, onCheckedChange = null) },
                                             onClick = { onAutoHideChange(!autoHide) },
                                         )
+                                        listOf(5, 10, 15, 20, 25, 30).forEach { sec ->
+                                            DropdownMenuItem(
+                                                text = { Text(stringResource(R.string.media_seek_seconds, sec)) },
+                                                trailingIcon = {
+                                                    if (sec == seekSeconds.coerceIn(5, 30)) {
+                                                        Icon(Icons.Rounded.Check, contentDescription = null)
+                                                    }
+                                                },
+                                                onClick = {
+                                                    onSeekSecondsChange(sec)
+                                                    menu = false
+                                                },
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -222,17 +245,17 @@ fun VideoPlayerScreen(
                         AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
                             Row(
                                 Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                CrispButton(40.dp, { p?.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
-                                CrispButton(40.dp, { p?.seekBack() }) { SeekIcon(p?.seekBackIncrement ?: 0L, mirrored = false) }
+                                CrispButton(36.dp, { p?.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(28.dp)) }
+                                CrispButton(36.dp, { p?.seekBack() }) { SeekIcon(p?.seekBackIncrement ?: 0L, mirrored = false) }
                                 val play = rememberPlayPauseButtonState(p)
-                                CrispButton(80.dp, { play.onClick() }) {
-                                    Icon(if (play.showPlay) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, null, Modifier.size(80.dp))
+                                CrispButton(64.dp, { play.onClick() }) {
+                                    Icon(if (play.showPlay) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, null, Modifier.size(48.dp))
                                 }
-                                CrispButton(40.dp, { p?.seekForward() }) { SeekIcon(p?.seekForwardIncrement ?: 0L, mirrored = true) }
-                                CrispButton(40.dp, { p?.seekToNext() }) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
+                                CrispButton(36.dp, { p?.seekForward() }) { SeekIcon(p?.seekForwardIncrement ?: 0L, mirrored = true) }
+                                CrispButton(36.dp, { p?.seekToNext() }) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(28.dp)) }
                             }
                         }
                         PlayerDefaults.BottomControls(p, visible)
@@ -251,13 +274,21 @@ private fun CrispButton(slot: Dp, onClick: () -> Unit, content: @Composable () -
 
 @Composable
 private fun SeekIcon(ms: Long, mirrored: Boolean) {
-    Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
         Icon(
             Icons.Rounded.Replay,
             contentDescription = null,
-            modifier = Modifier.size(40.dp).graphicsLayer { scaleX = if (mirrored) -1f else 1f },
+            modifier = Modifier
+                .size(28.dp)
+                .graphicsLayer { scaleX = if (mirrored) -1f else 1f },
         )
-        Text((ms / 1000).toString(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LocalContentColor.current)
+        Text(
+            (ms / 1000).toString(),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = LocalContentColor.current,
+            modifier = Modifier.padding(top = 1.dp),
+        )
     }
 }
 
