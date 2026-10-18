@@ -317,7 +317,7 @@ private fun SheetPreview(sheet: Zoned<SheetAction>) {
                 Column(Modifier.padding(start = 12.dp)) {
                     Text(stringResource(R.string.settings_toolbar_sample_file), style = MaterialTheme.typography.titleSmall)
                     Text(
-                        stringResource(R.string.unit_kb, Formatters.number(12)) + separator() + stringResource(R.string.settings_toolbar_today),
+                        stringResource(R.string.unit_kib, Formatters.number(12)) + separator() + stringResource(R.string.settings_toolbar_today),
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.onSurfaceVariant,
                     )

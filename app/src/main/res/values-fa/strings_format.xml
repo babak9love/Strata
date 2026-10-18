@@ -6,6 +6,11 @@
     <string name="unit_mb">\u200F\u2068%1$s\u2069 مگابایت</string>
     <string name="unit_gb">\u200F\u2068%1$s\u2069 گیگابایت</string>
     <string name="unit_tb">\u200F\u2068%1$s\u2069 ترابایت</string>
+    <string name="unit_kib">\u200F\u2068%1$s\u2069 کیلوبایت</string>
+    <string name="unit_mib">\u200F\u2068%1$s\u2069 مگابایت</string>
+    <string name="unit_gib">\u200F\u2068%1$s\u2069 گیگابایت</string>
+    <string name="unit_tib">\u200F\u2068%1$s\u2069 ترابایت</string>
+    <string name="unit_pib">\u200F\u2068%1$s\u2069 پتابایت</string>
     <string name="unit_pb">\u200F\u2068%1$s\u2069 پتابایت</string>
     <string name="date_just_now">همین حالا</string>
     <string name="date_minutes_ago">\u200F\u2068%1$s\u2069 دقیقه پیش</string>

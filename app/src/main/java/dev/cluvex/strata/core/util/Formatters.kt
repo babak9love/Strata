@@ -21,7 +21,7 @@ object Formatters {
     @Volatile
     var solarHijri: Boolean = false
 
-    private val binaryUnits = intArrayOf(R.string.unit_b, R.string.unit_kb, R.string.unit_mb, R.string.unit_gb, R.string.unit_tb, R.string.unit_pb)
+    private val binaryUnits = intArrayOf(R.string.unit_b, R.string.unit_kib, R.string.unit_mib, R.string.unit_gib, R.string.unit_tib, R.string.unit_pib)
     private val decimalUnits = intArrayOf(R.string.unit_b, R.string.unit_kb_decimal, R.string.unit_mb, R.string.unit_gb, R.string.unit_tb, R.string.unit_pb)
 
     private val jalaliMonths = intArrayOf(

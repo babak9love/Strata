@@ -190,7 +190,7 @@
     <string name="settings_date_relative_detail">Recent files say how long ago</string>
     <string name="settings_24_hour">%1$d-hour clock</string>
     <string name="settings_size_units">Size units</string>
-    <string name="settings_units_binary">%1$d KB = %2$d B</string>
+    <string name="settings_units_binary">%1$d KiB = %2$d B</string>
     <string name="settings_units_decimal">%1$d kB = %2$d B</string>
     <string name="settings_behavior_subtitle">Starting, going back and selecting</string>
     <string name="settings_group_starting">Starting</string>
