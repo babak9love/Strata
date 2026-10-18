@@ -49,6 +49,7 @@ data class BehaviorPrefs(
     val doubleBackToExit: Boolean = true,
     val iconTapSelects: Boolean = true,
     val keepScreenOnTasks: Boolean = false,
+    val videoAutoHide: Boolean = true,
 )
 
 enum class ConflictChoice(@StringRes val label: Int) {

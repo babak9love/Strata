@@ -148,4 +148,5 @@
     <string name="files_kind_encrypted">Encrypted file</string>
     <string name="files_kind_apk" translatable="false">APK</string>
     <string name="files_kind_pdf" translatable="false">PDF</string>
+    <string name="search_show_in_folder">Show in folder</string>
 </resources>

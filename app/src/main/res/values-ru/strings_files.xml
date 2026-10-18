@@ -148,4 +148,5 @@
     <string name="files_kind_font">Шрифт</string>
     <string name="files_kind_document">Документ</string>
     <string name="files_kind_encrypted">Зашифрованный файл</string>
+    <string name="search_show_in_folder">Показать в папке</string>
 </resources>

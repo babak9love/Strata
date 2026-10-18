@@ -146,4 +146,5 @@
     <string name="files_kind_font">فونت</string>
     <string name="files_kind_document">سند</string>
     <string name="files_kind_encrypted">فایل رمزگذاری‌شده</string>
+    <string name="search_show_in_folder">نمایش در پوشه</string>
 </resources>

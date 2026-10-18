@@ -29,6 +29,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Crop
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Switch
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -125,15 +129,23 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
 
 @androidx.annotation.OptIn(ExperimentalApi::class, androidx.media3.common.util.UnstableApi::class)
 @Composable
-fun VideoPlayerScreen(path: String, showHidden: Boolean, onBack: () -> Unit, vm: VideoPlayerViewModel = viewModel()) {
+fun VideoPlayerScreen(
+    path: String,
+    showHidden: Boolean,
+    onBack: () -> Unit,
+    autoHide: Boolean = true,
+    onAutoHideChange: (Boolean) -> Unit = {},
+    vm: VideoPlayerViewModel = viewModel(),
+) {
     LaunchedEffect(path) { vm.open(path, showHidden) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.player?.pause() }
     var controls by remember { mutableStateOf(true) }
     var fill by remember { mutableStateOf(false) }
+    var menu by remember { mutableStateOf(false) }
     val player = vm.player
     BackHandler(onBack = onBack)
 
-    if (player != null) AutoHideControls(player, controls) { controls = false }
+    if (player != null) AutoHideControls(player, controls && autoHide && !menu) { controls = false }
     ImmersiveWhile(!controls)
     LightSystemBarIcons()
 
@@ -178,6 +190,18 @@ fun VideoPlayerScreen(path: String, showHidden: Boolean, onBack: () -> Unit, vm:
                                         tint = Color.White,
                                     )
                                 }
+                                Box {
+                                    IconButton(onClick = { menu = true }) {
+                                        Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more), tint = Color.White)
+                                    }
+                                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.media_auto_hide_controls)) },
+                                            trailingIcon = { Switch(checked = autoHide, onCheckedChange = null) },
+                                            onClick = { onAutoHideChange(!autoHide) },
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -191,11 +215,11 @@ fun VideoPlayerScreen(path: String, showHidden: Boolean, onBack: () -> Unit, vm:
                                 horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                PreviousButton(p, Modifier.size(48.dp))
-                                SeekBackButton(p, Modifier.size(48.dp))
-                                PlayPauseButton(p, Modifier.size(64.dp))
-                                SeekForwardButton(p, Modifier.size(48.dp))
-                                NextButton(p, Modifier.size(48.dp))
+                                PreviousButton(p, Modifier.size(56.dp))
+                                SeekBackButton(p, Modifier.size(56.dp))
+                                PlayPauseButton(p, Modifier.size(70.dp))
+                                SeekForwardButton(p, Modifier.size(56.dp))
+                                NextButton(p, Modifier.size(56.dp))
                             }
                         }
                         PlayerDefaults.BottomControls(p, visible)

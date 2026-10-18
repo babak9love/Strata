@@ -2,6 +2,7 @@ package dev.cluvex.strata.feature.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.cluvex.strata.core.model.FileItem
 import dev.cluvex.strata.core.search.NameMatchMode
 import dev.cluvex.strata.core.search.SearchEngine
 import dev.cluvex.strata.core.search.SearchEvent
@@ -31,6 +32,7 @@ data class SearchUiState(
     val results: List<SearchResult> = emptyList(),
     val finished: Boolean = false,
     val stoppedEarly: Boolean = false,
+    val selected: Set<String> = emptySet(),
 )
 
 class SearchViewModel : ViewModel() {
@@ -69,7 +71,7 @@ class SearchViewModel : ViewModel() {
             content = s.content,
             contentRegex = s.contentRegex,
         )
-        _state.update { it.copy(running = true, results = emptyList(), scanned = 0, finished = false, stoppedEarly = false) }
+        _state.update { it.copy(running = true, results = emptyList(), scanned = 0, finished = false, stoppedEarly = false, selected = emptySet()) }
         job = viewModelScope.launch {
             val acc = ArrayList<SearchResult>()
             SearchEngine.search(query).collect { event ->
@@ -87,6 +89,27 @@ class SearchViewModel : ViewModel() {
                 }
             }
         }
+    }
+
+    fun toggleSelect(path: String) = _state.update {
+        val next = it.selected.toMutableSet()
+        if (!next.add(path)) next.remove(path)
+        it.copy(selected = next)
+    }
+
+    fun selectAll() = _state.update { it.copy(selected = it.results.map { r -> r.item.path }.toSet()) }
+
+    fun clearSelection() = _state.update { it.copy(selected = emptySet()) }
+
+    fun removeResults(paths: Set<String>) = _state.update {
+        it.copy(results = it.results.filterNot { r -> r.item.path in paths }, selected = it.selected - paths)
+    }
+
+    fun renameResult(oldPath: String, renamed: FileItem) = _state.update {
+        it.copy(
+            results = it.results.map { r -> if (r.item.path == oldPath) r.copy(item = renamed) else r },
+            selected = emptySet(),
+        )
     }
 
     fun stop() {

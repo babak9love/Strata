@@ -571,7 +571,16 @@ private fun Screen(
             onBack = actions.pop,
             onOpenWith = actions.openWith,
         )
-        is Route.Video -> VideoPlayerScreen(path = r.path, showHidden = settings.showHidden, onBack = actions.pop)
+        is Route.Video -> {
+            val videoScope = rememberCoroutineScope()
+            VideoPlayerScreen(
+                path = r.path,
+                showHidden = settings.showHidden,
+                onBack = actions.pop,
+                autoHide = settings.behavior.videoAutoHide,
+                onAutoHideChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(videoAutoHide = v) } } },
+            )
+        }
         is Route.Font -> FontViewerScreen(path = r.path, onBack = actions.pop)
         is Route.Pdf -> PdfReaderScreen(
             source = ReaderSource(r.path, r.uri),
@@ -633,10 +642,13 @@ private fun Screen(
         }
         is Route.Search -> SearchScreen(
             root = r.root,
+            explorer = vm,
+            recycleByDefault = settings.trashByDefault,
             onBack = actions.pop,
             onOpenItem = { item ->
                 if (item.isDirectory) actions.locate(item.path, null) else actions.openFile(item)
             },
+            onShowInFolder = { item -> actions.locate(item.parentPath ?: item.path, item.path) },
         )
     }
 }

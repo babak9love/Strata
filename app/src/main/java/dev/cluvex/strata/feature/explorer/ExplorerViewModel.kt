@@ -542,6 +542,53 @@ class ExplorerViewModel(
         }
     }
 
+    fun canRecycleItems(items: List<FileItem>): Boolean {
+        if (items.isEmpty() || items.any { RemoteUri.isRemote(it.path) }) return false
+        return items.all { !RootPaths.needsRoot(File(it.parentPath ?: "/"), rootPath, write = true) }
+    }
+
+    fun deleteStatsFor(items: List<FileItem>): kotlinx.coroutines.flow.Flow<dev.cluvex.strata.core.props.DirStats> =
+        kotlinx.coroutines.flow.flow {
+            val dir = items.firstOrNull()?.parentPath ?: rootPath
+            val fa = access(dir, write = true, viaRoot = false)
+            emitAll(dev.cluvex.strata.core.props.DirectoryStats.stream(items.map { it.path }, fa, countRoots = true))
+        }
+
+    fun deleteItems(items: List<FileItem>, toRecycleBin: Boolean, onDone: () -> Unit = {}) {
+        if (items.isEmpty()) return
+        val dir = items.first().parentPath ?: rootPath
+        val useBin = toRecycleBin && canRecycleItems(items)
+        runTask(tr(if (useBin) R.string.explorer_task_to_bin else R.string.explorer_task_deleting), {
+            if (useBin) recycleBin.moveToTrash(items) else FileOperations.delete(items, access(dir, write = true, viaRoot = false))
+        }, sound = UiSound.TRASH) {
+            refreshAll()
+            onDone()
+        }
+    }
+
+    fun copyItemsToClipboard(items: List<FileItem>, move: Boolean) {
+        if (items.isEmpty()) return
+        val dir = items.first().parentPath ?: rootPath
+        _state.update { it.copy(clipboard = ClipboardState(items, move, sourceDir = dir, viaRoot = false)) }
+        UiSounds.play(UiSound.POP)
+        postMessage(trPlural(if (move) R.plurals.explorer_clip_cut else R.plurals.explorer_clip_copied, items.size, items.size))
+    }
+
+    fun renameItem(item: FileItem, newName: String, onDone: (FileItem) -> Unit) = viewModelScope.launch {
+        val dir = item.parentPath ?: return@launch
+        val result = try {
+            FileOperations.rename(item, newName, access(dir, write = true, viaRoot = false))
+        } catch (e: IOException) {
+            Result.failure(e)
+        }
+        result
+            .onSuccess { renamed ->
+                refreshAllRevealing(dir, listOf(renamed.path))
+                onDone(renamed)
+            }
+            .onFailure { postMessage(it.message) }
+    }
+
     fun copySelectionToClipboard(pane: Pane, move: Boolean) {
         val items = selectedItems(pane)
         if (items.isEmpty()) return

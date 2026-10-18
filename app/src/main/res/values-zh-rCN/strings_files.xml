@@ -145,4 +145,5 @@
     <string name="files_kind_font">字体</string>
     <string name="files_kind_document">文档</string>
     <string name="files_kind_encrypted">加密文件</string>
+    <string name="search_show_in_folder">在文件夹中显示</string>
 </resources>
