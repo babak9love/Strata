@@ -437,7 +437,7 @@ private fun FolderGrid(
     }
     PullToRefreshBox(isRefreshing = refreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
-            columns = LocalSettings.current.list.gridColumns.let { if (it == 4 || it == 6) GridCells.Fixed(it) else GridCells.Adaptive(minSize = 92.dp) },
+            columns = LocalSettings.current.list.gridColumns.let { if (it == 4) GridCells.Fixed(4) else GridCells.Adaptive(minSize = 92.dp) },
             state = gridState,
             modifier = Modifier
                 .fillMaxSize()
@@ -483,7 +483,7 @@ private fun ParentTile(onClick: () -> Unit, look: DropLook = DropLook.NONE) {
     val anim = rememberDropAnimation(look)
     val list = LocalSettings.current.list
     val framed = list.tileFrame
-    val iconSize = when (list.gridColumns) { 6 -> 36.dp; 4 -> 48.dp; else -> 56.dp }
+    val iconSize = if (list.gridColumns == 4) 48.dp else 56.dp
     Column(
         Modifier
             .then(look.spot)

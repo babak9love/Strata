@@ -129,7 +129,7 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
             if (!settings.dualPanePreferred) choice(tr(R.string.settings_view_as), ViewMode.entries, l.viewMode, { tr(it.label) }, { v -> act.list { it.copy(viewMode = v) } }, icon = Icons.Rounded.GridView)
             if (!settings.dualPanePreferred && l.viewMode == ViewMode.GRID) {
                 choice(
-                    tr(R.string.settings_grid_columns), listOf(0, 4, 6), l.gridColumns,
+                    tr(R.string.settings_grid_columns), listOf(0, 4), l.gridColumns,
                     { if (it == 0) tr(R.string.settings_grid_columns_auto) else it.toString() },
                     { v -> act.list { it.copy(gridColumns = v) } },
                     icon = Icons.Rounded.ViewColumn,
@@ -165,7 +165,7 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
             switch(tr(R.string.settings_apk_icons), l.apkIcons, { v -> act.list { it.copy(apkIcons = v) } }, summary = tr(R.string.settings_apk_icons_summary), icon = Icons.Rounded.Android)
         }
         SettingsGroup(stringResource(R.string.common_details)) {
-            switch(tr(R.string.settings_show_date), l.showDate, { v -> act.list { it.copy(showDate = v) } }, icon = Icons.Rounded.CalendarMonth)
+            if (!(l.viewMode == ViewMode.GRID && !settings.dualPanePreferred && l.tileFrame)) switch(tr(R.string.settings_show_date), l.showDate, { v -> act.list { it.copy(showDate = v) } }, icon = Icons.Rounded.CalendarMonth)
             switch(tr(R.string.settings_show_size), l.showSize, { v -> act.list { it.copy(showSize = v) } }, icon = Icons.Rounded.Straighten)
             pick(
                 tr(R.string.settings_date_format),

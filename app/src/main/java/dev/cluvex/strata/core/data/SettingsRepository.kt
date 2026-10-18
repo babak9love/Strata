@@ -441,7 +441,7 @@ class SettingsRepository(private val context: Context) {
             showExtensions = p[Keys.SHOW_EXTENSIONS] ?: true,
             persianCalendar = p[Keys.PERSIAN_CALENDAR] ?: true,
             tileFrame = p[Keys.TILE_FRAME] ?: true,
-            gridColumns = (p[Keys.GRID_COLUMNS] ?: 0).let { if (it == 4 || it == 6) it else 0 },
+            gridColumns = (p[Keys.GRID_COLUMNS] ?: 0).let { if (it == 4) 4 else 0 },
         )
 
         private fun writeList(p: MutablePreferences, l: ListPrefs) {

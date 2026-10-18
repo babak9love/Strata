@@ -221,7 +221,7 @@ fun FileTile(
     val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)
     val apk = showThumbnail && list.apkIcons && kind == FileKind.APK
     val compact = !list.tileFrame && !picture
-    val iconSize = when (list.gridColumns) { 6 -> 36.dp; 4 -> 48.dp; else -> 56.dp }
+    val iconSize = if (list.gridColumns == 4) 48.dp else 56.dp
     Column(
         modifier
             .then(drop.spot)
@@ -285,7 +285,7 @@ fun FileTile(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = if (compact) 2.dp else 6.dp),
         )
-        val info = trailingInfo(item, list) ?: if (list.showDate) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
+        val info = trailingInfo(item, list) ?: if (list.showDate && !list.tileFrame) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
         if (info != null) {
             Text(info, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
