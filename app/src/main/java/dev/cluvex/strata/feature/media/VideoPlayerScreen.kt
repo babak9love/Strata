@@ -225,14 +225,14 @@ fun VideoPlayerScreen(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                CrispButton(40.dp, { p.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
-                                CrispButton(40.dp, { p.seekBack() }) { SeekIcon(p.seekBackIncrement, mirrored = false) }
+                                CrispButton(40.dp, { p?.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
+                                CrispButton(40.dp, { p?.seekBack() }) { SeekIcon(p?.seekBackIncrement ?: 0L, mirrored = false) }
                                 val play = rememberPlayPauseButtonState(p)
                                 CrispButton(80.dp, { play.onClick() }) {
                                     Icon(if (play.showPlay) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, null, Modifier.size(80.dp))
                                 }
-                                CrispButton(40.dp, { p.seekForward() }) { SeekIcon(p.seekForwardIncrement, mirrored = true) }
-                                CrispButton(40.dp, { p.seekToNext() }) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
+                                CrispButton(40.dp, { p?.seekForward() }) { SeekIcon(p?.seekForwardIncrement ?: 0L, mirrored = true) }
+                                CrispButton(40.dp, { p?.seekToNext() }) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
                             }
                         }
                         PlayerDefaults.BottomControls(p, visible)

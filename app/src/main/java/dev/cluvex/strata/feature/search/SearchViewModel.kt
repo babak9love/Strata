@@ -20,7 +20,7 @@ enum class TypeFilter { ALL, FILES, DIRS }
 data class SearchUiState(
     val root: String = "",
     val namePattern: String = "",
-    val nameMode: NameMatchMode = NameMatchMode.GLOB,
+    val nameMode: NameMatchMode = NameMatchMode.REGEX,
     val content: String = "",
     val contentRegex: Boolean = false,
     val caseSensitive: Boolean = false,
