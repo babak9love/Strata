@@ -49,7 +49,7 @@ object Formatters {
         if (bytes < base) return tr(names[0], number(bytes, locale))
         val exp = (ln(bytes.toDouble()) / ln(base)).toInt().coerceAtMost(names.size - 1)
         val value = bytes / base.pow(exp)
-        return tr(names[exp], String.format(locale, "%.1f", value))
+        return tr(names[exp], String.format(locale, "%.2f", value))
     }
 
     fun date(

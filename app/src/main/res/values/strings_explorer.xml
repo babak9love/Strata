@@ -128,6 +128,16 @@
         <item quantity="one">Delete %d item?</item>
         <item quantity="other">Delete %d items?</item>
     </plurals>
+    <plurals name="explorer_delete_folders">
+        <item quantity="one">%d folder</item>
+        <item quantity="other">%d folders</item>
+    </plurals>
+    <plurals name="explorer_delete_files">
+        <item quantity="one">%d file</item>
+        <item quantity="other">%d files</item>
+    </plurals>
+    <string name="explorer_delete_stats">%1$s (%2$s)</string>
+    <string name="explorer_delete_stats_sep">, </string>
     <string name="explorer_move_to_bin_option">Move to recycle bin</string>
     <string name="explorer_delete_warning">Once deleted, the files cannot be recovered.</string>
     <string name="explorer_move_to_bin">Move to bin</string>

@@ -546,13 +546,23 @@ fun ExplorerScreen(
             onDismiss = { dialog = Dialog.None },
         )
         is Dialog.Transfer -> Unit
-        Dialog.Delete -> DeleteDialog(
+        Dialog.Delete -> {
+        var delStats by remember { mutableStateOf<dev.cluvex.strata.core.props.DirStats?>(null) }
+        var delCounting by remember { mutableStateOf(true) }
+        LaunchedEffect(Unit) {
+            runCatching { vm.deleteStats(ui.active, selection).collect { delStats = it } }
+            delCounting = false
+        }
+        DeleteDialog(
             count = ui.activePane.selected.size,
+            stats = delStats,
+            counting = delCounting,
             recycleByDefault = ui.settings.trashByDefault,
             allowRecycle = remember(ui.active, ui.activePane.path, ui.activePane.viaRoot) { vm.canRecycle(ui.active) },
             onConfirm = { toBin -> vm.deleteSelection(ui.active, toBin); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
+        }
         Dialog.Sort -> {
             val folder = ui.activePane.path
             var own by remember(folder) { mutableStateOf(ui.settings.folderSorts.containsKey(FolderSorts.key(folder))) }

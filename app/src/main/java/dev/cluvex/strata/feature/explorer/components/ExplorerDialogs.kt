@@ -132,6 +132,8 @@ fun ConfirmDialog(
 @Composable
 fun DeleteDialog(
     count: Int,
+    stats: dev.cluvex.strata.core.props.DirStats?,
+    counting: Boolean,
     recycleByDefault: Boolean,
     onConfirm: (toRecycleBin: Boolean) -> Unit,
     onDismiss: () -> Unit,
@@ -149,6 +151,24 @@ fun DeleteDialog(
         text = {
             Column {
                 Text(pluralStringResource(R.plurals.explorer_delete_confirm, count, count))
+                if (stats != null) {
+                    val parts = buildList {
+                        if (stats.folders > 0) add(pluralStringResource(R.plurals.explorer_delete_folders, stats.folders, stats.folders))
+                        if (stats.files > 0) add(pluralStringResource(R.plurals.explorer_delete_files, stats.files, stats.files))
+                    }
+                    if (parts.isNotEmpty()) {
+                        val summary = stringResource(
+                            R.string.explorer_delete_stats,
+                            parts.joinToString(stringResource(R.string.explorer_delete_stats_sep)),
+                            dev.cluvex.strata.core.util.Formatters.size(stats.bytes),
+                        ) + if (counting) "…" else ""
+                        Text(
+                            summary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                }
                 if (allowRecycle) {
                     Row(
                         Modifier

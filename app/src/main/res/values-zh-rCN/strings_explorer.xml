@@ -121,6 +121,14 @@
     <plurals name="explorer_delete_confirm">
         <item quantity="other">要删除 %d 项吗？</item>
     </plurals>
+    <plurals name="explorer_delete_folders">
+        <item quantity="other">%d 个文件夹</item>
+    </plurals>
+    <plurals name="explorer_delete_files">
+        <item quantity="other">%d 个文件</item>
+    </plurals>
+    <string name="explorer_delete_stats">%1$s（%2$s）</string>
+    <string name="explorer_delete_stats_sep">，</string>
     <string name="explorer_move_to_bin_option">移至回收站</string>
     <string name="explorer_delete_warning">删除后，文件将无法恢复。</string>
     <string name="explorer_move_to_bin">移至回收站</string>

@@ -142,6 +142,20 @@
         <item quantity="many">Удалить %d элементов?</item>
         <item quantity="other">Удалить %d элемента?</item>
     </plurals>
+    <plurals name="explorer_delete_folders">
+        <item quantity="one">%d папка</item>
+        <item quantity="few">%d папки</item>
+        <item quantity="many">%d папок</item>
+        <item quantity="other">%d папки</item>
+    </plurals>
+    <plurals name="explorer_delete_files">
+        <item quantity="one">%d файл</item>
+        <item quantity="few">%d файла</item>
+        <item quantity="many">%d файлов</item>
+        <item quantity="other">%d файла</item>
+    </plurals>
+    <string name="explorer_delete_stats">%1$s (%2$s)</string>
+    <string name="explorer_delete_stats_sep">, </string>
     <string name="explorer_move_to_bin_option">Переместить в корзину</string>
     <string name="explorer_delete_warning">После удаления файлы нельзя будет восстановить.</string>
     <string name="explorer_move_to_bin">В корзину</string>

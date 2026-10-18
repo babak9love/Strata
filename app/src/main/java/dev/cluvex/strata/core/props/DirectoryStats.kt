@@ -17,15 +17,15 @@ object DirectoryStats {
 
     private const val EMIT_EVERY = 256
 
-    suspend fun compute(paths: List<String>, access: FileAccess = LocalFileAccess): DirStats =
-        withContext(Dispatchers.IO) { walk(paths, access) { } }
+    suspend fun compute(paths: List<String>, access: FileAccess = LocalFileAccess, countRoots: Boolean = false): DirStats =
+        withContext(Dispatchers.IO) { walk(paths, access, countRoots) { } }
 
-    fun stream(paths: List<String>, access: FileAccess = LocalFileAccess): Flow<DirStats> = flow {
-        val total = walk(paths, access) { snapshot -> emit(snapshot) }
+    fun stream(paths: List<String>, access: FileAccess = LocalFileAccess, countRoots: Boolean = false): Flow<DirStats> = flow {
+        val total = walk(paths, access, countRoots) { snapshot -> emit(snapshot) }
         emit(total)
     }.flowOn(Dispatchers.IO)
 
-    private suspend fun walk(paths: List<String>, access: FileAccess, tick: suspend (DirStats) -> Unit): DirStats {
+    private suspend fun walk(paths: List<String>, access: FileAccess, countRoots: Boolean, tick: suspend (DirStats) -> Unit): DirStats {
         var bytes = 0L
         var files = 0
         var folders = 0
@@ -39,6 +39,7 @@ object DirectoryStats {
                     bytes += root.length()
                 }
                 else -> {
+                    if (countRoots) folders++
                     val stack = ArrayDeque<File>()
                     stack.addLast(root)
                     while (stack.isNotEmpty()) {

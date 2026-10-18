@@ -128,6 +128,16 @@
         <item quantity="one">\u200F%d مورد حذف شود؟</item>
         <item quantity="other">\u200F%d مورد حذف شود؟</item>
     </plurals>
+    <plurals name="explorer_delete_folders">
+        <item quantity="one">\u200F%d پوشه</item>
+        <item quantity="other">\u200F%d پوشه</item>
+    </plurals>
+    <plurals name="explorer_delete_files">
+        <item quantity="one">\u200F%d فایل</item>
+        <item quantity="other">\u200F%d فایل</item>
+    </plurals>
+    <string name="explorer_delete_stats">%1$s (%2$s)</string>
+    <string name="explorer_delete_stats_sep">، </string>
     <string name="explorer_move_to_bin_option">انتقال به سطل بازیافت</string>
     <string name="explorer_delete_warning">پس از حذف، فایل‌ها قابل بازیابی نیستند.</string>
     <string name="explorer_move_to_bin">انتقال به سطل</string>

@@ -222,6 +222,7 @@ fun PaneColumn(
                 onToggleSelect = onToggleSelect,
                 onItemMenu = onItemMenu,
                 pane = pane,
+                storageRoot = rootPath,
                 drag = drag,
             )
         }
@@ -246,6 +247,11 @@ fun PaneColumn(
 
 private const val PARENT_KEY = ".."
 
+private fun isStorageRoot(path: String, storageRoot: String): Boolean {
+    val p = path.trimEnd('/')
+    return p == storageRoot.trimEnd('/') || p == "/sdcard"
+}
+
 private data class Flash(val paths: Set<String>, val seq: Int, val pulses: Int) {
     companion object {
         val NONE = Flash(emptySet(), 0, 0)
@@ -265,14 +271,15 @@ private fun FolderList(
     onToggleSelect: (FileItem) -> Unit,
     onItemMenu: (FileItem) -> Unit,
     pane: Pane,
+    storageRoot: String,
     drag: FileDragState?,
 ) {
     if (LocalSettings.current.list.viewMode == ViewMode.GRID) {
-        FolderGrid(folder, selected, scrollMemory, refreshing, onRefresh, onUp, onOpen, onToggleSelect, onItemMenu, pane, drag)
+        FolderGrid(folder, selected, scrollMemory, refreshing, onRefresh, onUp, onOpen, onToggleSelect, onItemMenu, pane, storageRoot, drag)
         return
     }
     val motion = MaterialTheme.motionScheme
-    val hasParent = folder.path != "/"
+    val hasParent = folder.path != "/" && !isStorageRoot(folder.path, storageRoot)
     val offset = if (hasParent) 1 else 0
     val saved = scrollMemory[folder.path]
     val cameFromIndex = folder.cameFrom?.let { from -> folder.items.indexOfFirst { it.path == from } } ?: -1
@@ -379,10 +386,11 @@ private fun FolderGrid(
     onToggleSelect: (FileItem) -> Unit,
     onItemMenu: (FileItem) -> Unit,
     pane: Pane,
+    storageRoot: String,
     drag: FileDragState?,
 ) {
     val motion = MaterialTheme.motionScheme
-    val hasParent = folder.path != "/"
+    val hasParent = folder.path != "/" && !isStorageRoot(folder.path, storageRoot)
     val offset = if (hasParent) 1 else 0
     val saved = scrollMemory[folder.path]
     val cameFromIndex = folder.cameFrom?.let { from -> folder.items.indexOfFirst { it.path == from } } ?: -1

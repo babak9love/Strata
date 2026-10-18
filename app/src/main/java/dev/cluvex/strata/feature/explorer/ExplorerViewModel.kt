@@ -88,6 +88,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -473,6 +474,24 @@ class ExplorerViewModel(
         if (_state.value.isRemote(pane)) return false
         val ps = _state.value.pane(pane)
         return !ps.viaRoot && !RootPaths.needsRoot(File(ps.path), rootPath, write = true)
+    }
+
+    fun deleteStats(pane: Pane, items: List<FileItem>): kotlinx.coroutines.flow.Flow<dev.cluvex.strata.core.props.DirStats> {
+        val ps = _state.value.pane(pane)
+        if (RemoteUri.isRemote(ps.path)) {
+            return kotlinx.coroutines.flow.flowOf(
+                dev.cluvex.strata.core.props.DirStats(
+                    bytes = items.filter { !it.isDirectory }.sumOf { it.size },
+                    files = items.count { !it.isDirectory },
+                    folders = items.count { it.isDirectory },
+                ),
+            )
+        }
+        val paths = items.map { it.path }
+        return kotlinx.coroutines.flow.flow {
+            val fa = access(ps.path, write = true, viaRoot = ps.viaRoot)
+            emitAll(dev.cluvex.strata.core.props.DirectoryStats.stream(paths, fa, countRoots = true))
+        }
     }
 
     fun deleteSelection(pane: Pane, toRecycleBin: Boolean) {
