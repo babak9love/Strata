@@ -27,6 +27,7 @@ import dev.cluvex.strata.core.props.DirStats
 import dev.cluvex.strata.feature.explorer.ExplorerViewModel
 import dev.cluvex.strata.feature.explorer.components.DeleteDialog
 import dev.cluvex.strata.feature.explorer.components.InputDialog
+import dev.cluvex.strata.feature.explorer.components.RenameDialog
 import dev.cluvex.strata.feature.explorer.components.InputSelection
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -188,11 +189,8 @@ fun SearchScreen(
     }
     when (val d = dialog) {
         SearchDialog.None -> Unit
-        is SearchDialog.Rename -> InputDialog(
-            title = stringResource(R.string.common_rename),
-            label = stringResource(R.string.explorer_new_name),
-            initial = d.item.name,
-            select = if (d.item.isDirectory) InputSelection.ALL else InputSelection.BASE_NAME,
+        is SearchDialog.Rename -> RenameDialog(
+            name = d.item.name, isDirectory = d.item.isDirectory,
             onConfirm = { name ->
                 explorer.renameItem(d.item, name) { renamed -> vm.renameResult(d.item.path, renamed) }
                 dialog = SearchDialog.None

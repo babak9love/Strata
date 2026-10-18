@@ -86,6 +86,7 @@ import dev.cluvex.strata.feature.explorer.dnd.LocalFileDrag
 import dev.cluvex.strata.feature.explorer.dnd.dragHost
 import dev.cluvex.strata.feature.apk.SignApkDialog
 import dev.cluvex.strata.feature.explorer.components.BatchRenameDialog
+import dev.cluvex.strata.feature.explorer.components.RenameDialog
 import dev.cluvex.strata.feature.explorer.components.BookmarkActions
 import dev.cluvex.strata.feature.explorer.components.BookmarkChipsBar
 import dev.cluvex.strata.feature.explorer.components.isStorageRoot
@@ -551,9 +552,8 @@ fun ExplorerScreen(
             onConfirm = { vm.openPath(d.pane, it.trim()); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
-        is Dialog.Rename -> InputDialog(
-            title = stringResource(R.string.common_rename), label = stringResource(R.string.explorer_new_name), initial = d.item.name,
-            select = if (d.item.isDirectory) InputSelection.ALL else InputSelection.BASE_NAME,
+        is Dialog.Rename -> RenameDialog(
+            name = d.item.name, isDirectory = d.item.isDirectory,
             onConfirm = { vm.rename(d.pane, d.item, it); vm.clearSelection(d.pane); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )

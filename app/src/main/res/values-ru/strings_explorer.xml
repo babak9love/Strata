@@ -282,4 +282,8 @@
     <string name="explorer_incoming_hidden">Strata не видит, где хранится %1$s</string>
     <string name="explorer_incoming_save">Сохранить в Download</string>
     <string name="explorer_incoming_unreadable">Другое приложение не дало прочитать этот файл</string>
+    <string name="rename_mode_name">Имя</string>
+    <string name="rename_mode_full">Полное имя</string>
+    <string name="rename_mode_extension">Расширение</string>
+    <string name="rename_extension">Расширение</string>
 </resources>

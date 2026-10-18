@@ -255,4 +255,8 @@
     <string name="explorer_incoming_hidden">Strata can\'t see where %1$s is stored</string>
     <string name="explorer_incoming_save">Save to Download</string>
     <string name="explorer_incoming_unreadable">The other app didn\'t let Strata read this file</string>
+    <string name="rename_mode_name">Name</string>
+    <string name="rename_mode_full">Full name</string>
+    <string name="rename_mode_extension">Extension</string>
+    <string name="rename_extension">Extension</string>
 </resources>
