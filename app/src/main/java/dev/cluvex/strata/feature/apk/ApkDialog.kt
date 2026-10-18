@@ -11,6 +11,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -387,13 +388,13 @@ private fun ButtonRow(
     var menu by remember { mutableStateOf(false) }
     val busy = s.install is InstallPhase.Installing || s.install is InstallPhase.Verifying
     Row(
-        Modifier.fillMaxWidth().padding(start = 12.dp, end = 24.dp, top = 8.dp),
+        Modifier.fillMaxWidth().padding(start = 12.dp, end = 16.dp, top = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Box {
-            TextButton(onClick = { menu = true }, shapes = ButtonDefaults.shapes(), enabled = !s.loading) {
-                Text(stringResource(R.string.apk_function))
+            TextButton(onClick = { menu = true }, shapes = ButtonDefaults.shapes(), enabled = !s.loading, contentPadding = PaddingValues(start = 8.dp, end = 4.dp)) {
+                Text(stringResource(R.string.apk_function), maxLines = 1, softWrap = false)
                 Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
             }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -420,14 +421,14 @@ private fun ButtonRow(
             }
         }
         Spacer(Modifier.weight(1f))
-        TextButton(onClick = { onDismiss(); actions.onView() }, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.common_view)) }
+        TextButton(onClick = { onDismiss(); actions.onView() }, shapes = ButtonDefaults.shapes(), contentPadding = PaddingValues(horizontal = 8.dp)) { Text(stringResource(R.string.common_view), maxLines = 1, softWrap = false) }
         if (s.manifest != null) {
             val label = when (s.relation) {
                 VersionRelation.UPGRADE -> stringResource(R.string.apk_update)
                 VersionRelation.SAME -> stringResource(R.string.apk_reinstall)
                 else -> stringResource(R.string.common_install)
             }
-            Button(onClick = { vm.install(policy) }, shapes = ButtonDefaults.shapes(), enabled = !busy) { Text(label) }
+            Button(onClick = { vm.install(policy) }, shapes = ButtonDefaults.shapes(), enabled = !busy, contentPadding = PaddingValues(horizontal = 16.dp)) { Text(label, maxLines = 1, softWrap = false) }
         }
     }
 }

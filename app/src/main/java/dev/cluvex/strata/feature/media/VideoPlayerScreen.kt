@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
@@ -257,7 +258,15 @@ private fun SeekIcon(ms: Long, mirrored: Boolean) {
             contentDescription = null,
             modifier = Modifier.size(40.dp).graphicsLayer { scaleX = if (mirrored) -1f else 1f },
         )
-        Text((ms / 1000).toString(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LocalContentColor.current)
+        // The Replay glyph's arrow sits at the top (on the open side of the circle), so nudge the number
+        // down and away from the arrowhead, and keep it a bit smaller so it doesn't touch the ring.
+        Text(
+            (ms / 1000).toString(),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = LocalContentColor.current,
+            modifier = Modifier.offset(x = if (mirrored) (-0.5).dp else 0.5.dp, y = 2.5.dp),
+        )
     }
 }
 

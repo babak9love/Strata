@@ -18,6 +18,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
+import kotlinx.coroutines.delay
 
 private enum class RenameMode { NAME, FULL, EXTENSION }
 
@@ -70,7 +72,15 @@ fun RenameDialog(
         RenameMode.FULL -> f
         RenameMode.EXTENSION -> splitName(f).second
     }
-    var value by remember { mutableStateOf(TextFieldValue(slice(mode, name), selection = TextRange(0, slice(mode, name).length))) }
+    // Start with the cursor at the END so long names are scrolled to their tail (like Mi Explorer);
+    // the select-all highlight is applied right after (see LaunchedEffect below) without moving the scroll.
+    var value by remember { mutableStateOf(TextFieldValue(slice(mode, name), selection = TextRange(slice(mode, name).length))) }
+    var selectTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(selectTick) {
+        val text = value.text
+        delay(80)
+        if (value.text == text) value = value.copy(selection = TextRange(0, text.length))
+    }
 
     val focus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -90,7 +100,8 @@ fun RenameDialog(
         full = merged(mode, value.text, full)
         mode = newMode
         val s = slice(newMode, full)
-        value = TextFieldValue(s, selection = TextRange(0, s.length))
+        value = TextFieldValue(s, selection = TextRange(s.length))
+        selectTick++
     }
 
     val result = merged(mode, value.text, full).trim()
