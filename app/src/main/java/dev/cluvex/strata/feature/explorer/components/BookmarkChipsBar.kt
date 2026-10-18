@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.onSizeChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -60,12 +61,19 @@ fun BookmarkChipsBar(
     val scroll = rememberScrollState()
     var viewport by remember { mutableIntStateOf(0) }
     val bounds = remember { mutableStateMapOf<String, Pair<Int, Int>>() }
+    val firstScroll = remember { booleanArrayOf(true) }
+    val edgePadding = with(LocalDensity.current) { 12.dp.roundToPx() }
     val hasSelected = bookmarks.any { Bookmarks.normalize(it.path) == normalizedCurrent }
     LaunchedEffect(normalizedCurrent, viewport, hasSelected) {
         if (!hasSelected || viewport == 0) return@LaunchedEffect
         val (x, w) = snapshotFlow { bounds[normalizedCurrent] }.filterNotNull().first()
-        val target = (x + w / 2 - viewport / 2).coerceIn(0, scroll.maxValue)
-        scroll.animateScrollTo(target)
+        if (firstScroll[0]) {
+            // On entering the app, show the selected chip at the left edge; the chips before it are a scroll to the left.
+            firstScroll[0] = false
+            scroll.scrollTo((x - edgePadding).coerceIn(0, scroll.maxValue))
+        } else {
+            scroll.animateScrollTo((x + w / 2 - viewport / 2).coerceIn(0, scroll.maxValue))
+        }
     }
     Row(
         modifier = modifier

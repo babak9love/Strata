@@ -414,7 +414,7 @@ fun ExplorerScreen(
         ) {
             if (!dual) {
                 BookmarkChipsBar(
-                    bookmarks = ui.bookmarks.sortedBy { if (isStorageRoot(it.path, rootPath)) 0 else 1 },
+                    bookmarks = ui.bookmarks,
                     currentPath = ui.activePane.path,
                     onOpen = { vm.openBookmark(ui.active, it) },
                     onLongPress = { editingBookmark = it },

@@ -287,7 +287,15 @@ fun FileTile(
         )
         val info = trailingInfo(item, list) ?: if (list.showDate && list.tileFrame) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
         if (info != null) {
-            Text(info, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                info,
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.onSurfaceVariant,
+                // Narrow 4-column tiles: wrap the date and time onto two lines instead of cutting it off.
+                maxLines = if (list.gridColumns == 4) 2 else 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
