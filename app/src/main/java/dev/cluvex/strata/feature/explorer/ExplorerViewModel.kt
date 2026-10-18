@@ -479,13 +479,41 @@ class ExplorerViewModel(
     fun deleteStats(pane: Pane, items: List<FileItem>): kotlinx.coroutines.flow.Flow<dev.cluvex.strata.core.props.DirStats> {
         val ps = _state.value.pane(pane)
         if (RemoteUri.isRemote(ps.path)) {
-            return kotlinx.coroutines.flow.flowOf(
-                dev.cluvex.strata.core.props.DirStats(
-                    bytes = items.filter { !it.isDirectory }.sumOf { it.size },
-                    files = items.count { !it.isDirectory },
-                    folders = items.count { it.isDirectory },
-                ),
-            )
+            return kotlinx.coroutines.flow.flow {
+                var bytes = 0L
+                var files = 0
+                var folders = 0
+                var seen = 0
+                for (item in items) {
+                    val location = RemoteUri.parse(item.path)
+                    if (location == null || !item.isDirectory) {
+                        files++
+                        bytes += item.size.coerceAtLeast(0)
+                        continue
+                    }
+                    folders++
+                    sessions.use(location.first) { fs ->
+                        val stack = ArrayDeque<String>()
+                        stack.addLast(location.second)
+                        while (stack.isNotEmpty()) {
+                            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                            val dir = stack.removeLast()
+                            val children = try { fs.list(dir) } catch (e: java.io.IOException) { emptyList() }
+                            for (e in children) {
+                                if (e.isDirectory && !e.isSymlink) {
+                                    folders++
+                                    stack.addLast(e.path)
+                                } else {
+                                    files++
+                                    bytes += e.size.coerceAtLeast(0)
+                                }
+                                if (++seen % 64 == 0) emit(dev.cluvex.strata.core.props.DirStats(bytes, files, folders))
+                            }
+                        }
+                    }
+                }
+                emit(dev.cluvex.strata.core.props.DirStats(bytes, files, folders))
+            }.flowOn(kotlinx.coroutines.Dispatchers.IO)
         }
         val paths = items.map { it.path }
         return kotlinx.coroutines.flow.flow {
