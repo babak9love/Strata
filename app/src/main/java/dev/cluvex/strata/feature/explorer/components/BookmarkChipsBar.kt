@@ -16,18 +16,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.layout.onSizeChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +38,9 @@ import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.bookmarks.Bookmarks
+
+private val CHIP_ROW_PADDING = 12.dp
+private val CHIP_SPACING = 8.dp
 
 /**
  * Horizontal bookmark chips (Material Files style).
@@ -59,29 +60,29 @@ fun BookmarkChipsBar(
     val normalizedCurrent = Bookmarks.normalize(currentPath)
     val shape = RoundedCornerShape(20.dp)
     val scroll = rememberScrollState()
-    var viewport by remember { mutableIntStateOf(0) }
-    val bounds = remember { mutableStateMapOf<String, Pair<Int, Int>>() }
-    val firstScroll = remember { booleanArrayOf(true) }
-    val edgePadding = with(LocalDensity.current) { 12.dp.roundToPx() }
+    val bounds = remember { mutableStateMapOf<String, Int>() }
+    val density = LocalDensity.current
+    val edgePaddingPx = with(density) { CHIP_ROW_PADDING.roundToPx() }
+    val chipSpacingPx = with(density) { CHIP_SPACING.roundToPx() }
     val hasSelected = bookmarks.any { Bookmarks.normalize(it.path) == normalizedCurrent }
-    LaunchedEffect(normalizedCurrent, viewport, hasSelected) {
-        if (!hasSelected || viewport == 0) return@LaunchedEffect
-        val (x, w) = snapshotFlow { bounds[normalizedCurrent] }.filterNotNull().first()
-        if (firstScroll[0]) {
-            // On entering the app, show the selected chip at the left edge; the chips before it are a scroll to the left.
-            firstScroll[0] = false
-            scroll.scrollTo((x - edgePadding).coerceIn(0, scroll.maxValue))
-        } else {
-            scroll.animateScrollTo((x + w / 2 - viewport / 2).coerceIn(0, scroll.maxValue))
-        }
+    // Whenever the selected bookmark changes (including on entering the app), put its chip at the start
+    // of the row, with the gap before it ending exactly at the edge so the previous chip does not peek in.
+    LaunchedEffect(normalizedCurrent, hasSelected, bookmarks) {
+        if (!hasSelected) return@LaunchedEffect
+        // Let the row finish measuring/positioning so the chip's position and the scroll range are current.
+        withFrameNanos { }
+        withFrameNanos { }
+        val x = snapshotFlow { bounds[normalizedCurrent] }.filterNotNull().first()
+        withTimeoutOrNull(300) { snapshotFlow { scroll.maxValue }.first { it > 0 } }
+        val target = if (x <= edgePaddingPx) 0 else x - chipSpacingPx
+        scroll.animateScrollTo(target.coerceIn(0, scroll.maxValue))
     }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .onSizeChanged { viewport = it.width }
             .horizontalScroll(scroll)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = CHIP_ROW_PADDING, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(CHIP_SPACING),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         bookmarks.forEach { bookmark ->
@@ -106,7 +107,7 @@ fun BookmarkChipsBar(
                         if (selected) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, shape)
                         else Modifier
                     )
-                    .onGloballyPositioned { bounds[Bookmarks.normalize(bookmark.path)] = it.positionInParent().x.toInt() to it.size.width }
+                    .onGloballyPositioned { bounds[Bookmarks.normalize(bookmark.path)] = it.positionInParent().x.toInt() }
                     .semantics { contentDescription = cd }
                     .combinedClickable(
                         onClick = { onOpen(bookmark) },
