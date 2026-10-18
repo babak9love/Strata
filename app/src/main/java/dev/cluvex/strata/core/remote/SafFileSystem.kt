@@ -126,9 +126,24 @@ class SafFileSystem(private val c: RemoteConnection, context: Context) : RemoteF
 
     override fun delete(path: String, recursive: Boolean) {
         val n = RemotePaths.normalize(path)
-        val id = need(n)
-        if (!recursive && stat(n)?.isDirectory == true && list(n).isNotEmpty()) throw IOException(tr(R.string.remote_folder_not_empty))
-        if (!DocumentsContract.deleteDocument(resolver, docUri(id))) throw IOException(tr(R.string.remote_provider_refused_delete, path))
+        need(n) // ensure path resolves before we walk children
+        val isDir = stat(n)?.isDirectory == true
+        if (isDir) {
+            val children = list(n)
+            if (!recursive && children.isNotEmpty()) {
+                throw IOException(tr(R.string.remote_folder_not_empty))
+            }
+            // Termux (and some other SAF providers) refuse a single deleteDocument on a
+            // non-empty folder. Remove children first, depth-first, then the folder.
+            if (recursive) {
+                for (child in children) {
+                    delete(child.path, recursive = true)
+                }
+            }
+        }
+        if (!DocumentsContract.deleteDocument(resolver, docUri(need(n)))) {
+            throw IOException(tr(R.string.remote_provider_refused_delete, path))
+        }
         forget(n)
     }
 
