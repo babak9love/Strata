@@ -18,6 +18,7 @@ class SafFileSystem(private val c: RemoteConnection, context: Context) : RemoteF
     private val resolver = context.applicationContext.contentResolver
     private val tree: Uri = Uri.parse(c.host)
     private val rootId: String = DocumentsContract.getTreeDocumentId(tree)
+    private val isTermux = tree.authority == TERMUX_AUTHORITY
     private val ids = HashMap<String, String>()
     private var connected = false
 
@@ -155,16 +156,47 @@ class SafFileSystem(private val c: RemoteConnection, context: Context) : RemoteF
         var uri = docUri(id)
         val srcParent = RemotePaths.parent(src)
         val dstParent = RemotePaths.parent(dst)
+        var current = src
         if (srcParent != dstParent) {
-            uri = DocumentsContract.moveDocument(resolver, uri, docUri(need(srcParent)), docUri(need(dstParent)))
-                ?: throw IOException(tr(R.string.remote_provider_cant_move))
+            // Termux's provider doesn't implement move/rename; only there, fall back to copy + delete.
+            uri = if (isTermux) {
+                runCatching { DocumentsContract.moveDocument(resolver, uri, docUri(need(srcParent)), docUri(need(dstParent))) }.getOrNull()
+                    ?: return renameByCopy(src, dst)
+            } else {
+                DocumentsContract.moveDocument(resolver, uri, docUri(need(srcParent)), docUri(need(dstParent)))
+                    ?: throw IOException(tr(R.string.remote_provider_cant_move))
+            }
+            current = RemotePaths.normalize("${dstParent.trimEnd('/')}/${RemotePaths.name(src)}")
+            forget(src)
+            ids[current] = DocumentsContract.getDocumentId(uri)
         }
-        if (RemotePaths.name(src) != RemotePaths.name(dst)) {
-            uri = DocumentsContract.renameDocument(resolver, uri, RemotePaths.name(dst)) ?: uri
+        if (RemotePaths.name(current) != RemotePaths.name(dst)) {
+            uri = if (isTermux) {
+                runCatching { DocumentsContract.renameDocument(resolver, uri, RemotePaths.name(dst)) }.getOrNull()
+                    ?: return renameByCopy(current, dst)
+            } else {
+                DocumentsContract.renameDocument(resolver, uri, RemotePaths.name(dst)) ?: uri
+            }
         }
-        forget(src)
+        forget(current)
         forget(dst)
         ids[dst] = DocumentsContract.getDocumentId(uri)
+    }
+
+    /** Termux only: its provider has no rename/move, so copy to the new name, then delete the original. */
+    private fun renameByCopy(src: String, dst: String) {
+        val entry = stat(src) ?: throw FileNotFoundException(tr(R.string.remote_no_such_path, src))
+        if (idOf(dst) != null) throw IOException(tr(R.string.remote_already_exists))
+        if (entry.isDirectory) {
+            mkdir(dst)
+            for (child in list(src)) {
+                renameByCopy(child.path, RemotePaths.normalize("${dst.trimEnd('/')}/${RemotePaths.name(child.path)}"))
+            }
+            delete(src, recursive = false)
+        } else {
+            openInput(src).use { upload(it, dst) }
+            delete(src, recursive = false)
+        }
     }
 
     override fun close() {

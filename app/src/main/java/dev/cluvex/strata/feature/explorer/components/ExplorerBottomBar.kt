@@ -117,6 +117,7 @@ fun ExplorerBottomBar(
     selectionCount: Int,
     canBack: Boolean,
     canForward: Boolean,
+    canUp: Boolean,
     activeIsLeft: Boolean,
     dual: Boolean,
     clipboardCount: Int,
@@ -163,7 +164,7 @@ fun ExplorerBottomBar(
                 SelectionActions(selectionCount, context, activeIsLeft, selection, actions)
             } else {
                 val context = BrowseContext(clipboard = clipboardCount > 0, termux = !remote, project = projectLabel != null)
-                BrowseActions(canBack, canForward, clipboardCount, clipboardIsMove, context, projectLabel, browse, showHidden, actions)
+                BrowseActions(canBack, canForward, canUp, clipboardCount, clipboardIsMove, context, projectLabel, browse, showHidden, actions)
             }
         }
     }
@@ -212,6 +213,7 @@ private fun BrowseAction.run(a: BottomBarActions) = when (this) {
 private fun BrowseActions(
     canBack: Boolean,
     canForward: Boolean,
+    canUp: Boolean,
     clipboardCount: Int,
     clipboardIsMove: Boolean,
     context: BrowseContext,
@@ -226,6 +228,7 @@ private fun BrowseActions(
     fun enabled(action: BrowseAction) = when (action) {
         BrowseAction.BACK -> canBack
         BrowseAction.FORWARD -> canForward
+        BrowseAction.UP -> canUp
         else -> true
     }
     val newEntries = buildList {

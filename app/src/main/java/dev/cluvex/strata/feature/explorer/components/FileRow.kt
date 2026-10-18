@@ -285,7 +285,7 @@ fun FileTile(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = if (compact) 2.dp else 6.dp),
         )
-        val info = trailingInfo(item, list) ?: if (list.showDate && !list.tileFrame) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
+        val info = trailingInfo(item, list) ?: if (list.showDate && list.tileFrame) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
         if (info != null) {
             Text(info, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }

@@ -87,6 +87,7 @@ import dev.cluvex.strata.feature.apk.SignApkDialog
 import dev.cluvex.strata.feature.explorer.components.BatchRenameDialog
 import dev.cluvex.strata.feature.explorer.components.BookmarkActions
 import dev.cluvex.strata.feature.explorer.components.BookmarkChipsBar
+import dev.cluvex.strata.feature.explorer.components.isStorageRoot
 import dev.cluvex.strata.feature.explorer.components.BookmarkEditDialog
 import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.bookmarks.Bookmarks
@@ -331,6 +332,7 @@ fun ExplorerScreen(
                 selectionCount = ui.activePane.selected.size,
                 canBack = ui.activePane.history.canBack,
                 canForward = ui.activePane.history.canForward,
+                canUp = !isStorageRoot(ui.activePane.path, rootPath),
                 activeIsLeft = ui.active == Pane.LEFT,
                 dual = dual,
                 clipboardCount = ui.clipboard?.items?.size ?: 0,
@@ -407,7 +409,7 @@ fun ExplorerScreen(
         ) {
             if (!dual) {
                 BookmarkChipsBar(
-                    bookmarks = ui.bookmarks,
+                    bookmarks = ui.bookmarks.sortedBy { if (isStorageRoot(it.path, rootPath)) 0 else 1 },
                     currentPath = ui.activePane.path,
                     onOpen = { vm.openBookmark(ui.active, it) },
                     onLongPress = { editingBookmark = it },

@@ -165,9 +165,10 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
             switch(tr(R.string.settings_apk_icons), l.apkIcons, { v -> act.list { it.copy(apkIcons = v) } }, summary = tr(R.string.settings_apk_icons_summary), icon = Icons.Rounded.Android)
         }
         SettingsGroup(stringResource(R.string.common_details)) {
-            if (!(l.viewMode == ViewMode.GRID && !settings.dualPanePreferred && l.tileFrame)) switch(tr(R.string.settings_show_date), l.showDate, { v -> act.list { it.copy(showDate = v) } }, icon = Icons.Rounded.CalendarMonth)
+            val frameless = l.viewMode == ViewMode.GRID && !settings.dualPanePreferred && !l.tileFrame
+            if (!frameless) switch(tr(R.string.settings_show_date), l.showDate, { v -> act.list { it.copy(showDate = v) } }, icon = Icons.Rounded.CalendarMonth)
             switch(tr(R.string.settings_show_size), l.showSize, { v -> act.list { it.copy(showSize = v) } }, icon = Icons.Rounded.Straighten)
-            pick(
+            if (!frameless) pick(
                 tr(R.string.settings_date_format),
                 DateStyle.entries,
                 l.dateStyle,
@@ -176,7 +177,7 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
                 icon = Icons.Rounded.Schedule,
                 detail = { if (it == DateStyle.RELATIVE) tr(R.string.settings_date_relative_detail) else null },
             )
-            switch(tr(R.string.settings_24_hour, 24), l.use24Hour, { v -> act.list { it.copy(use24Hour = v) } })
+            if (!frameless) switch(tr(R.string.settings_24_hour, 24), l.use24Hour, { v -> act.list { it.copy(use24Hour = v) } })
             choice(
                 tr(R.string.settings_size_units),
                 SizeUnits.entries,

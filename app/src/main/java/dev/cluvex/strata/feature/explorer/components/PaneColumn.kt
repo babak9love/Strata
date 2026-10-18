@@ -248,7 +248,7 @@ fun PaneColumn(
 
 private const val PARENT_KEY = ".."
 
-private fun isStorageRoot(path: String, storageRoot: String): Boolean {
+internal fun isStorageRoot(path: String, storageRoot: String): Boolean {
     val p = path.trimEnd('/')
     return p == storageRoot.trimEnd('/') || p == "/sdcard"
 }

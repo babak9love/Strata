@@ -15,6 +15,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.onSizeChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,10 +57,21 @@ fun BookmarkChipsBar(
     if (bookmarks.isEmpty()) return
     val normalizedCurrent = Bookmarks.normalize(currentPath)
     val shape = RoundedCornerShape(20.dp)
+    val scroll = rememberScrollState()
+    var viewport by remember { mutableIntStateOf(0) }
+    val bounds = remember { mutableStateMapOf<String, Pair<Int, Int>>() }
+    val hasSelected = bookmarks.any { Bookmarks.normalize(it.path) == normalizedCurrent }
+    LaunchedEffect(normalizedCurrent, viewport, hasSelected) {
+        if (!hasSelected || viewport == 0) return@LaunchedEffect
+        val (x, w) = snapshotFlow { bounds[normalizedCurrent] }.filterNotNull().first()
+        val target = (x + w / 2 - viewport / 2).coerceIn(0, scroll.maxValue)
+        scroll.animateScrollTo(target)
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
+            .onSizeChanged { viewport = it.width }
+            .horizontalScroll(scroll)
             .padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -75,6 +98,7 @@ fun BookmarkChipsBar(
                         if (selected) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, shape)
                         else Modifier
                     )
+                    .onGloballyPositioned { bounds[Bookmarks.normalize(bookmark.path)] = it.positionInParent().x.toInt() to it.size.width }
                     .semantics { contentDescription = cd }
                     .combinedClickable(
                         onClick = { onOpen(bookmark) },
