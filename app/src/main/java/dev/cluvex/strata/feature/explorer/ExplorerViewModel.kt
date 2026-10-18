@@ -998,9 +998,25 @@ class ExplorerViewModel(
         }
     }
 
+    // Internal storage is called "Sdcard" and a storage's own root takes the storage's name, instead of the
+    // last path segment ("0" for /storage/emulated/0, the connection id for a storage root).
+    private fun bookmarkName(path: String): String {
+        val p = Bookmarks.normalize(path)
+        if (RemoteUri.isRemote(p)) {
+            val (id, inner) = RemoteUri.parse(p) ?: return Bookmarks.defaultName(p)
+            if (inner == "/") {
+                _state.value.storages.firstOrNull { it.id == id }?.let { s -> return s.name.ifBlank { s.host }.ifBlank { Bookmarks.defaultName(p) } }
+            } else {
+                return RemoteUri.name(p).ifEmpty { Bookmarks.defaultName(p) }
+            }
+        }
+        if (p == rootPath.trimEnd('/') || p == "/sdcard") return "Sdcard"
+        return Bookmarks.defaultName(p)
+    }
+
     fun addBookmarks(paths: List<String>) = viewModelScope.launch {
         var added = 0
-        bookmarkRepo.edit { list -> Bookmarks.add(list, paths).also { added = it.second }.first }
+        bookmarkRepo.edit { list -> Bookmarks.add(list, paths, nameOf = ::bookmarkName).also { added = it.second }.first }
         postMessage(
             when (added) {
                 0 -> tr(R.string.explorer_bookmark_exists)

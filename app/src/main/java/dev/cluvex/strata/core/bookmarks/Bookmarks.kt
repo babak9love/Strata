@@ -32,9 +32,14 @@ object Bookmarks {
         return list.any { it.path == p }
     }
 
-    fun add(list: List<Bookmark>, paths: List<String>, group: String = DEFAULT_GROUP): Pair<List<Bookmark>, Int> {
+    fun add(
+        list: List<Bookmark>,
+        paths: List<String>,
+        group: String = DEFAULT_GROUP,
+        nameOf: (String) -> String = ::defaultName,
+    ): Pair<List<Bookmark>, Int> {
         val known = list.mapTo(HashSet()) { it.path }
-        val added = paths.map(::normalize).filter { known.add(it) }.map { Bookmark(defaultName(it), it, group.trim()) }
+        val added = paths.map(::normalize).filter { known.add(it) }.map { Bookmark(nameOf(it).ifBlank { defaultName(it) }, it, group.trim()) }
         return (list + added) to added.size
     }
 

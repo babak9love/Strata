@@ -1,6 +1,12 @@
 package dev.cluvex.strata.feature.explorer.components
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +16,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.BookmarkAdd
@@ -32,12 +36,25 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -71,6 +88,34 @@ fun BookmarksSheet(bookmarks: List<Bookmark>, actions: BookmarkActions, onDismis
     var deletingGroup by remember { mutableStateOf<String?>(null) }
     val groups = Bookmarks.groups(bookmarks).filter { g -> g == Bookmarks.DEFAULT_GROUP || bookmarks.any { it.group == g } }
     val showHeaders = groups.size > 1
+    val haptics = LocalHapticFeedback.current
+    val density = LocalDensity.current
+    val scrollState = rememberScrollState()
+    // Layout position (inside the scrolled content) and height of every row, so a drop can be resolved from where it was released.
+    val tops = remember { HashMap<String, Float>() }
+    val heights = remember { HashMap<String, Float>() }
+    var viewportHeight by remember { mutableFloatStateOf(0f) }
+    var dragPath by remember { mutableStateOf<String?>(null) }
+    var dragDy by remember { mutableFloatStateOf(0f) }
+    var fingerY by remember { mutableFloatStateOf(0f) }
+
+    // While a row is held near the top or bottom edge, the list scrolls and the row keeps following the finger.
+    LaunchedEffect(dragPath) {
+        if (dragPath == null) return@LaunchedEffect
+        val edge = with(density) { 56.dp.toPx() }
+        val maxStep = with(density) { 14.dp.toPx() }
+        while (true) {
+            val h = viewportHeight
+            val step = when {
+                h <= 0f -> 0f
+                fingerY < edge -> -maxStep * ((edge - fingerY) / edge).coerceIn(0f, 1f)
+                fingerY > h - edge -> maxStep * ((fingerY - (h - edge)) / edge).coerceIn(0f, 1f)
+                else -> 0f
+            }
+            if (step != 0f) dragDy += scrollState.scrollBy(step)
+            withFrameNanos { }
+        }
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Row(
@@ -93,23 +138,58 @@ fun BookmarksSheet(bookmarks: List<Bookmark>, actions: BookmarkActions, onDismis
                 maxHero = 104.dp,
             )
         }
-        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 560.dp).padding(bottom = 16.dp)) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = 560.dp)
+                .onSizeChanged { viewportHeight = it.height.toFloat() }
+                .verticalScroll(scrollState)
+                .padding(bottom = 16.dp),
+        ) {
             for (group in groups) {
                 val members = Bookmarks.inGroup(bookmarks, group)
                 if (showHeaders) {
-                    item(key = "group:$group") {
-                        GroupHeader(
-                            name = group,
-                            onRename = { renamingGroup = group },
-                            onDelete = { deletingGroup = group },
-                        )
-                    }
+                    GroupHeader(
+                        name = group,
+                        onRename = { renamingGroup = group },
+                        onDelete = { deletingGroup = group },
+                    )
                 }
-                items(members, key = { "b:${it.path}" }) { b ->
+                members.forEach { b ->
                     BookmarkRow(
                         bookmark = b,
                         isFirst = b == members.first(),
                         isLast = b == members.last(),
+                        dragging = dragPath == b.path,
+                        dragOffset = { dragDy },
+                        onDragStart = { localY ->
+                            dragPath = b.path
+                            dragDy = 0f
+                            fingerY = (tops[b.path] ?: 0f) - scrollState.value + localY
+                            haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                        },
+                        onDrag = { dy, localY ->
+                            dragDy += dy
+                            fingerY = (tops[b.path] ?: 0f) - scrollState.value + dragDy + localY
+                        },
+                        onDragEnd = {
+                            // The row lands after every other row of its group whose middle is above the middle of the dragged row.
+                            val center = (tops[b.path] ?: 0f) + (heights[b.path] ?: 0f) / 2 + dragDy
+                            val target = members.count { it.path != b.path && (tops[it.path] ?: 0f) + (heights[it.path] ?: 0f) / 2 < center }
+                            val delta = target - members.indexOfFirst { it.path == b.path }
+                            dragPath = null
+                            dragDy = 0f
+                            haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                            if (delta != 0) actions.onMove(b.path, delta)
+                        },
+                        onDragCancel = {
+                            dragPath = null
+                            dragDy = 0f
+                        },
+                        modifier = Modifier.onGloballyPositioned {
+                            tops[b.path] = it.positionInParent().y
+                            heights[b.path] = it.size.height.toFloat()
+                        },
                         onOpen = { actions.onOpen(b) },
                         onEdit = { editing = b },
                         onMove = { offset -> actions.onMove(b.path, offset) },
@@ -180,17 +260,29 @@ private fun GroupHeader(name: String, onRename: () -> Unit, onDelete: () -> Unit
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BookmarkRow(
     bookmark: Bookmark,
     isFirst: Boolean,
     isLast: Boolean,
+    dragging: Boolean,
+    dragOffset: () -> Float,
+    onDragStart: (localY: Float) -> Unit,
+    onDrag: (dy: Float, localY: Float) -> Unit,
+    onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
     onOpen: () -> Unit,
     onEdit: () -> Unit,
     onMove: (Int) -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var menu by remember { mutableStateOf(false) }
+    val dragStart by rememberUpdatedState(onDragStart)
+    val drag by rememberUpdatedState(onDrag)
+    val dragEnd by rememberUpdatedState(onDragEnd)
+    val dragCancel by rememberUpdatedState(onDragCancel)
     val description = stringResource(R.string.explorer_bookmark_cd, bookmark.name)
     ListItem(
         content = { Text(bookmark.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -209,9 +301,25 @@ private fun BookmarkRow(
                 }
             }
         },
-        modifier = Modifier
+        modifier = modifier
+            .zIndex(if (dragging) 1f else 0f)
+            .graphicsLayer {
+                if (dragging) {
+                    translationY = dragOffset()
+                    shadowElevation = 12.dp.toPx()
+                    shape = RoundedCornerShape(16.dp)
+                }
+            }
+            .pointerInput(bookmark.path) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = { offset -> dragStart(offset.y) },
+                    onDrag = { change, amount -> change.consume(); drag(amount.y, change.position.y) },
+                    onDragEnd = { dragEnd() },
+                    onDragCancel = { dragCancel() },
+                )
+            }
             .semantics { contentDescription = description }
-            .clickable(onClick = onOpen),
+            .combinedClickable(onClick = onOpen, onLongClick = {}),
     )
 }
 
