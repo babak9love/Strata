@@ -152,33 +152,23 @@ class SafFileSystem(private val c: RemoteConnection, context: Context) : RemoteF
     override fun rename(from: String, to: String) {
         val src = RemotePaths.normalize(from)
         val dst = RemotePaths.normalize(to)
+        // Termux's provider never supports rename/move ("Rename not supported"), so go straight to copy + delete.
+        if (isTermux) {
+            if (src != dst) renameByCopy(src, dst)
+            return
+        }
         val id = need(src)
         var uri = docUri(id)
         val srcParent = RemotePaths.parent(src)
         val dstParent = RemotePaths.parent(dst)
-        var current = src
         if (srcParent != dstParent) {
-            // Termux's provider doesn't implement move/rename; only there, fall back to copy + delete.
-            uri = if (isTermux) {
-                runCatching { DocumentsContract.moveDocument(resolver, uri, docUri(need(srcParent)), docUri(need(dstParent))) }.getOrNull()
-                    ?: return renameByCopy(src, dst)
-            } else {
-                DocumentsContract.moveDocument(resolver, uri, docUri(need(srcParent)), docUri(need(dstParent)))
-                    ?: throw IOException(tr(R.string.remote_provider_cant_move))
-            }
-            current = RemotePaths.normalize("${dstParent.trimEnd('/')}/${RemotePaths.name(src)}")
-            forget(src)
-            ids[current] = DocumentsContract.getDocumentId(uri)
+            uri = DocumentsContract.moveDocument(resolver, uri, docUri(need(srcParent)), docUri(need(dstParent)))
+                ?: throw IOException(tr(R.string.remote_provider_cant_move))
         }
-        if (RemotePaths.name(current) != RemotePaths.name(dst)) {
-            uri = if (isTermux) {
-                runCatching { DocumentsContract.renameDocument(resolver, uri, RemotePaths.name(dst)) }.getOrNull()
-                    ?: return renameByCopy(current, dst)
-            } else {
-                DocumentsContract.renameDocument(resolver, uri, RemotePaths.name(dst)) ?: uri
-            }
+        if (RemotePaths.name(src) != RemotePaths.name(dst)) {
+            uri = DocumentsContract.renameDocument(resolver, uri, RemotePaths.name(dst)) ?: uri
         }
-        forget(current)
+        forget(src)
         forget(dst)
         ids[dst] = DocumentsContract.getDocumentId(uri)
     }
