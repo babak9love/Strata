@@ -7,6 +7,17 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
+import androidx.media3.ui.compose.material3.buttons.NextButton
+import androidx.media3.ui.compose.material3.buttons.PlayPauseButton
+import androidx.media3.ui.compose.material3.buttons.PreviousButton
+import androidx.media3.ui.compose.material3.buttons.SeekBackButton
+import androidx.media3.ui.compose.material3.buttons.SeekForwardButton
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -171,8 +182,24 @@ fun VideoPlayerScreen(path: String, showHidden: Boolean, onBack: () -> Unit, vm:
                         }
                     }
                 },
+                centerControls = { _, _ -> },
                 bottomControls = { p, visible ->
-                    PlayerDefaults.BottomControls(p, visible, Modifier.navigationBarsPadding())
+                    Column(Modifier.navigationBarsPadding()) {
+                        AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                PreviousButton(p, Modifier.size(48.dp))
+                                SeekBackButton(p, Modifier.size(48.dp))
+                                PlayPauseButton(p, Modifier.size(64.dp))
+                                SeekForwardButton(p, Modifier.size(48.dp))
+                                NextButton(p, Modifier.size(48.dp))
+                            }
+                        }
+                        PlayerDefaults.BottomControls(p, visible)
+                    }
                 },
             )
         }

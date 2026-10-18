@@ -430,4 +430,6 @@
     <string name="settings_support_copy">复制 %1$s 地址</string>
     <string name="settings_support_copied">地址已复制</string>
     <string name="settings_kw_support">捐助 捐赠 支持 赞助 打赏 加密货币 钱包 usdt trx tron bnb ton</string>
+    <string name="settings_show_parent_entry">显示上级文件夹项</string>
+    <string name="settings_show_parent_entry_summary">在文件列表顶部显示“..”项，用于返回上一级</string>
 </resources>

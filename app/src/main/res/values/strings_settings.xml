@@ -440,4 +440,6 @@
     <string name="settings_support_copy">Copy the %1$s address</string>
     <string name="settings_support_copied">Address copied</string>
     <string name="settings_kw_support">donate donation support sponsor tip crypto wallet usdt trx tron bnb ton gram</string>
+    <string name="settings_show_parent_entry">Show parent folder item</string>
+    <string name="settings_show_parent_entry_summary">Show the ".." item at the top of the file list to go up one level</string>
 </resources>

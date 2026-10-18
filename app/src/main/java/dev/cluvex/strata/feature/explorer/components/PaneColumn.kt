@@ -281,7 +281,7 @@ private fun FolderList(
         return
     }
     val motion = MaterialTheme.motionScheme
-    val hasParent = folder.path != "/" && !isStorageRoot(folder.path, storageRoot)
+    val hasParent = LocalSettings.current.list.showParentEntry && folder.path != "/" && !isStorageRoot(folder.path, storageRoot)
     val offset = if (hasParent) 1 else 0
     val saved = scrollMemory[folder.path]
     val cameFromIndex = folder.cameFrom?.let { from -> folder.items.indexOfFirst { it.path == from } } ?: -1
@@ -392,7 +392,7 @@ private fun FolderGrid(
     drag: FileDragState?,
 ) {
     val motion = MaterialTheme.motionScheme
-    val hasParent = folder.path != "/" && !isStorageRoot(folder.path, storageRoot)
+    val hasParent = LocalSettings.current.list.showParentEntry && folder.path != "/" && !isStorageRoot(folder.path, storageRoot)
     val offset = if (hasParent) 1 else 0
     val saved = scrollMemory[folder.path]
     val cameFromIndex = folder.cameFrom?.let { from -> folder.items.indexOfFirst { it.path == from } } ?: -1

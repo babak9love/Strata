@@ -137,6 +137,7 @@ class SettingsRepository(private val context: Context) {
         val WRAP_NAMES = booleanPreferencesKey("wrap_names")
         val TILE_FRAME = booleanPreferencesKey("tile_frame")
         val GRID_COLUMNS = intPreferencesKey("grid_columns")
+        val SHOW_PARENT_ENTRY = booleanPreferencesKey("show_parent_entry")
         val SHOW_EXTENSIONS = booleanPreferencesKey("show_extensions")
         val START_FOLDER = stringPreferencesKey("start_folder")
         val START_PATH = stringPreferencesKey("start_path")
@@ -442,6 +443,7 @@ class SettingsRepository(private val context: Context) {
             persianCalendar = p[Keys.PERSIAN_CALENDAR] ?: true,
             tileFrame = p[Keys.TILE_FRAME] ?: true,
             gridColumns = (p[Keys.GRID_COLUMNS] ?: 0).let { if (it == 4) 4 else 0 },
+            showParentEntry = p[Keys.SHOW_PARENT_ENTRY] ?: true,
         )
 
         private fun writeList(p: MutablePreferences, l: ListPrefs) {
@@ -458,6 +460,7 @@ class SettingsRepository(private val context: Context) {
             p[Keys.SHOW_EXTENSIONS] = l.showExtensions
             p[Keys.TILE_FRAME] = l.tileFrame
             p[Keys.GRID_COLUMNS] = l.gridColumns
+            p[Keys.SHOW_PARENT_ENTRY] = l.showParentEntry
         }
 
         internal fun readBehavior(p: Preferences) = BehaviorPrefs(

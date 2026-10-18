@@ -457,4 +457,6 @@
     <string name="settings_support_copy">Скопировать адрес %1$s</string>
     <string name="settings_support_copied">Адрес скопирован</string>
     <string name="settings_kw_support">пожертвование поддержка донат спонсор криптовалюта кошелёк usdt trx tron bnb ton</string>
+    <string name="settings_show_parent_entry">Показывать элемент «родительская папка»</string>
+    <string name="settings_show_parent_entry_summary">Показывать элемент «..» в начале списка для перехода на уровень выше</string>
 </resources>

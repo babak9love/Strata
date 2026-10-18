@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.automirrored.rounded.ExitToApp
@@ -141,6 +142,7 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
                 switch(tr(R.string.settings_tile_frame), l.tileFrame, { v -> act.list { it.copy(tileFrame = v) } }, summary = tr(R.string.settings_tile_frame_summary), icon = Icons.Rounded.GridView)
             }
             choice(tr(R.string.settings_density), UiDensity.entries, settings.uiDensity, { tr(it.label) }, { d -> act.run { setUiDensity(d) } }, icon = Icons.Rounded.ViewColumn)
+            switch(tr(R.string.settings_show_parent_entry), l.showParentEntry, { v -> act.list { it.copy(showParentEntry = v) } }, summary = tr(R.string.settings_show_parent_entry_summary), icon = Icons.Rounded.ArrowUpward)
             switch(tr(R.string.settings_wrap_names), l.wrapNames, { v -> act.list { it.copy(wrapNames = v) } }, summary = tr(R.string.settings_wrap_names_summary), icon = Icons.AutoMirrored.Rounded.WrapText)
         }
         SettingsGroup(stringResource(R.string.settings_group_files)) {
