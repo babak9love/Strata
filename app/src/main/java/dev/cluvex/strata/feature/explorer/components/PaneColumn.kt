@@ -274,7 +274,8 @@ private fun FolderList(
     storageRoot: String,
     drag: FileDragState?,
 ) {
-    if (LocalSettings.current.list.viewMode == ViewMode.GRID) {
+    val paneSettings = LocalSettings.current
+    if (paneSettings.list.viewMode == ViewMode.GRID && !paneSettings.dualPanePreferred) {
         FolderGrid(folder, selected, scrollMemory, refreshing, onRefresh, onUp, onOpen, onToggleSelect, onItemMenu, pane, storageRoot, drag)
         return
     }

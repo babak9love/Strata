@@ -333,7 +333,8 @@ private fun SettingsHome(settings: StrataSettings, rootState: RootState, onOpen:
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("settings-search"),
         )
         if (query.isNotBlank()) {
-            val results = SettingsIndex.search(query, english)
+            val dualOn = dev.cluvex.strata.ui.LocalSettings.current.dualPanePreferred
+            val results = SettingsIndex.search(query, english).filter { !(dualOn && it.title == R.string.settings_entry_view_mode) }
             if (results.isEmpty()) {
                 SettingNote(stringResource(R.string.settings_search_none, query))
             } else {

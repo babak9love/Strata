@@ -126,7 +126,7 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
     SettingsPageScaffold(stringResource(R.string.settings_page_file_list), onBack, subtitle = stringResource(R.string.settings_file_list_subtitle)) {
         ThemePreview(settings)
         SettingsGroup(stringResource(R.string.settings_group_layout)) {
-            choice(tr(R.string.settings_view_as), ViewMode.entries, l.viewMode, { tr(it.label) }, { v -> act.list { it.copy(viewMode = v) } }, icon = Icons.Rounded.GridView)
+            if (!settings.dualPanePreferred) choice(tr(R.string.settings_view_as), ViewMode.entries, l.viewMode, { tr(it.label) }, { v -> act.list { it.copy(viewMode = v) } }, icon = Icons.Rounded.GridView)
             choice(tr(R.string.settings_density), UiDensity.entries, settings.uiDensity, { tr(it.label) }, { d -> act.run { setUiDensity(d) } }, icon = Icons.Rounded.ViewColumn)
             switch(tr(R.string.settings_wrap_names), l.wrapNames, { v -> act.list { it.copy(wrapNames = v) } }, summary = tr(R.string.settings_wrap_names_summary), icon = Icons.AutoMirrored.Rounded.WrapText)
         }
@@ -197,7 +197,7 @@ fun BehaviorPage(settings: StrataSettings, act: SettingsActions, activeFolder: S
             if (b.startFolder == StartFolder.CUSTOM) {
                 link(tr(R.string.settings_start_folder), summary = b.startPath.ifBlank { tr(R.string.settings_not_set) }, icon = Icons.Rounded.CreateNewFolder) { editPath = true }
             }
-            switch(tr(R.string.settings_two_panes), settings.dualPanePreferred, { v -> act.run { setDualPanePreferred(v) } }, summary = tr(R.string.settings_two_panes_summary), icon = Icons.Rounded.ViewColumn)
+            switch(tr(R.string.settings_two_panes), settings.dualPanePreferred, { v -> act.run { setDualPanePreferred(v) }; if (v) act.list { it.copy(viewMode = ViewMode.LIST) } }, summary = tr(R.string.settings_two_panes_summary), icon = Icons.Rounded.ViewColumn)
         }
         SettingsGroup(stringResource(R.string.settings_group_gestures)) {
             switch(tr(R.string.settings_double_back), b.doubleBackToExit, { v -> act.behavior { it.copy(doubleBackToExit = v) } }, summary = tr(R.string.settings_double_back_summary), icon = Icons.AutoMirrored.Rounded.ExitToApp)
