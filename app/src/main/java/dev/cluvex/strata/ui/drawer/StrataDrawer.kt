@@ -305,31 +305,31 @@ private fun StrataMark(reduced: Boolean, modifier: Modifier) {
     }
 }
 
-/** Internal storage only: round the data-partition size up to the next standard capacity (8, 16, 32, 64 ... GiB). */
-private fun nominalCapacity(total: Long, path: String): Long {
+/**
+ * Free / total bytes for [path]. For the primary internal storage on API 26+ this asks the system
+ * (StorageStatsManager), the same source Android Settings and Samsung My Files use, so the total is the
+ * device capacity rather than just the user-data partition. Everything else falls back to StatFs.
+ */
+private fun storageUsage(context: android.content.Context, path: String): Pair<Long, Long> {
+    val st = StatFs(path)
     val internal = runCatching { android.os.Environment.getExternalStorageDirectory().path }.getOrNull()
-    if (total <= 0 || internal == null || !path.startsWith(internal)) return total
-    val gib = total / (1024.0 * 1024.0 * 1024.0)
-    var cap = 8L
-    while (cap < gib && cap < 8192L) cap *= 2
-    return cap * 1024L * 1024L * 1024L
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O && internal != null && path.startsWith(internal)) {
+        runCatching {
+            val stats = context.getSystemService(android.app.usage.StorageStatsManager::class.java)
+            val total = stats.getTotalBytes(android.os.storage.StorageManager.UUID_DEFAULT)
+            val free = stats.getFreeBytes(android.os.storage.StorageManager.UUID_DEFAULT)
+            if (total > 0) return free.coerceAtMost(total) to total
+        }
+    }
+    return st.availableBytes to st.totalBytes
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun StorageStrata(path: String, open: Boolean, reduced: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    // StatFs only reports the user-data partition (e.g. 46 GiB on a "64 GB" phone). Like the system
-    // Settings / Samsung My Files, show the device's nominal capacity (rounded up to the next
-    // standard size, in GiB) and treat everything that isn't free as used (system + apps + data).
-    val usage = remember(path) {
-        runCatching {
-            val st = StatFs(path)
-            val free = st.availableBytes
-            val total = nominalCapacity(st.totalBytes, path)
-            free to total
-        }.getOrNull()
-    }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val usage = remember(path) { runCatching { storageUsage(context, path) }.getOrNull() }
     val used = usage?.let { (free, total) -> if (total > 0) (1f - free.toFloat() / total).coerceIn(0f, 1f) else 0f } ?: 0f
     val fill by animateFloatAsState(if (open || reduced) used else 0f, if (reduced) snap() else spring(dampingRatio = 0.62f, stiffness = 90f))
     Surface(
