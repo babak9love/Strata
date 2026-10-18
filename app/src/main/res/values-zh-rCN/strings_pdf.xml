@@ -127,5 +127,4 @@
     <string name="media_font_ttc">TrueType 字体集</string>
     <string name="media_font_otc">OpenType 字体集（CFF）</string>
     <string name="media_auto_hide_controls">自动隐藏按钮和进度条</string>
-    <string name="media_seek_seconds">快进/快退 ±%1$d 秒</string>
 </resources>

@@ -131,5 +131,4 @@
     <string name="media_font_ttc">مجموعه TrueType</string>
     <string name="media_font_otc">مجموعه OpenType (CFF)</string>
     <string name="media_auto_hide_controls">پنهان شدن خودکار دکمه‌ها و سیک‌بار</string>
-    <string name="media_seek_seconds">جابه‌جایی ±%1$d ثانیه</string>
 </resources>

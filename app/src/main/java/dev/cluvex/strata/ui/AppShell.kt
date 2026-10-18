@@ -580,8 +580,6 @@ private fun Screen(
                 onBack = actions.pop,
                 autoHide = settings.behavior.videoAutoHide,
                 onAutoHideChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(videoAutoHide = v) } } },
-                seekSeconds = settings.behavior.videoSeekSeconds,
-                onSeekSecondsChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(videoSeekSeconds = v) } } },
             )
         }
         is Route.Font -> FontViewerScreen(path = r.path, onBack = actions.pop)
