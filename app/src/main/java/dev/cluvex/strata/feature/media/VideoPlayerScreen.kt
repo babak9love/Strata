@@ -11,6 +11,14 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.layout.Column
@@ -217,11 +225,14 @@ fun VideoPlayerScreen(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                ControlSlot(48.dp, 2f) { PreviousButton(p, it) }
-                                ControlSlot(48.dp, 2f) { SeekBackButton(p, it) }
-                                ControlSlot(96.dp, 4f) { PlayPauseButton(p, it) }
-                                ControlSlot(48.dp, 2f) { SeekForwardButton(p, it) }
-                                ControlSlot(48.dp, 2f) { NextButton(p, it) }
+                                CrispButton(40.dp, { p.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
+                                CrispButton(40.dp, { p.seekBack() }) { SeekIcon(p.seekBackIncrement, mirrored = false) }
+                                val play = rememberPlayPauseButtonState(p)
+                                CrispButton(80.dp, { play.onClick() }) {
+                                    Icon(if (play.showPlay) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, null, Modifier.size(80.dp))
+                                }
+                                CrispButton(40.dp, { p.seekForward() }) { SeekIcon(p.seekForwardIncrement, mirrored = true) }
+                                CrispButton(40.dp, { p.seekToNext() }) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
                             }
                         }
                         PlayerDefaults.BottomControls(p, visible)
@@ -232,11 +243,21 @@ fun VideoPlayerScreen(
     }
 }
 
-// The media3 buttons draw a 24dp icon; scale it up inside a tight slot so the row stays compact.
+// Real-size vector icons (no scaling), so they stay sharp.
 @Composable
-private fun ControlSlot(slot: Dp, scale: Float, button: @Composable (Modifier) -> Unit) {
-    Box(Modifier.size(slot), contentAlignment = Alignment.Center) {
-        button(Modifier.size(24.dp).scale(scale))
+private fun CrispButton(slot: Dp, onClick: () -> Unit, content: @Composable () -> Unit) {
+    IconButton(onClick = onClick, modifier = Modifier.size(slot)) { content() }
+}
+
+@Composable
+private fun SeekIcon(ms: Long, mirrored: Boolean) {
+    Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+        Icon(
+            Icons.Rounded.Replay,
+            contentDescription = null,
+            modifier = Modifier.size(40.dp).graphicsLayer { scaleX = if (mirrored) -1f else 1f },
+        )
+        Text((ms / 1000).toString(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LocalContentColor.current)
     }
 }
 
