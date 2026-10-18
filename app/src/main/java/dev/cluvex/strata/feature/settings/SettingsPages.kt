@@ -84,10 +84,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import dev.cluvex.strata.BuildConfig
 import dev.cluvex.strata.R
+import dev.cluvex.strata.core.bookmarks.BookmarkRepository
 import dev.cluvex.strata.core.data.BackupLocations
 import dev.cluvex.strata.core.data.EditorPrefs
 import dev.cluvex.strata.core.data.SettingsBackup
 import dev.cluvex.strata.core.data.StrataSettings
+import dev.cluvex.strata.core.remote.RemoteConnectionRepository
+import dev.cluvex.strata.core.remote.RemoteConnections
 import dev.cluvex.strata.core.fs.LocalFileAccess
 import dev.cluvex.strata.core.i18n.tr
 import dev.cluvex.strata.core.i18n.trPlural
@@ -106,6 +109,7 @@ import dev.cluvex.strata.core.shizuku.ShizukuManager
 import dev.cluvex.strata.core.text.GrammarCatalog
 import dev.cluvex.strata.core.util.Formatters
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -485,6 +489,8 @@ fun BackupPage(act: SettingsActions, activeFolder: String, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val bookmarkRepo = remember { BookmarkRepository(context.applicationContext) }
+    val remoteRepo = remember { RemoteConnectionRepository(context.applicationContext) }
     val downloads = remember { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) }
     val target = remember(activeFolder) { BackupLocations.exportFolder(activeFolder, downloads) }
     var refresh by remember { mutableIntStateOf(0) }
@@ -497,7 +503,19 @@ fun BackupPage(act: SettingsActions, activeFolder: String, onBack: () -> Unit) {
 
     fun importText(read: suspend () -> String) {
         scope.launch {
-            val message = runCatching { act.repo.importBackup(read()) }
+            val message = runCatching {
+                val text = read()
+                val applied = act.repo.importBackup(text)
+                val extras = SettingsBackup.extras(text)
+                extras.bookmarks?.let { saved ->
+                    val paths = saved.mapTo(HashSet()) { it.path }
+                    bookmarkRepo.edit { current -> current.filter { it.path !in paths } + saved }
+                }
+                extras.connections?.let { saved ->
+                    remoteRepo.edit { current -> saved.fold(current) { acc, c -> RemoteConnections.upsert(acc, c) } }
+                }
+                applied
+            }
                 .fold({ n -> trPlural(R.plurals.settings_restored, n, n) }, { e -> e.message ?: tr(R.string.settings_backup_read_failed) })
             snackbar.showSnackbar(message)
         }
@@ -523,7 +541,7 @@ fun BackupPage(act: SettingsActions, activeFolder: String, onBack: () -> Unit) {
             link(tr(R.string.settings_export), summary = tr(R.string.settings_export_summary, target.path), icon = Icons.Rounded.Upload, tint = Tint.PRIMARY) {
                 scope.launch {
                     val result = runCatching {
-                        val text = act.repo.exportBackup()
+                        val text = SettingsBackup.attach(act.repo.exportBackup(), bookmarkRepo.bookmarks.first(), remoteRepo.connections.first())
                         withContext(Dispatchers.IO) {
                             target.mkdirs()
                             val file = LocalFileAccess.file(File(target, SettingsBackup.fileName(System.currentTimeMillis())).path)

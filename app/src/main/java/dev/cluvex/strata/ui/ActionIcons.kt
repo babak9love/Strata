@@ -78,6 +78,8 @@ val BrowseAction.icon: ImageVector
 
 val SelectionAction.icon: ImageVector
     get() = when (this) {
+        SelectionAction.OPEN_WITH -> Icons.AutoMirrored.Rounded.OpenInNew
+        SelectionAction.EXTRACT -> Icons.Rounded.Unarchive
         SelectionAction.COPY -> Icons.Rounded.ContentCopy
         SelectionAction.MOVE -> Icons.AutoMirrored.Rounded.DriveFileMove
         SelectionAction.DELETE -> Icons.Rounded.Delete

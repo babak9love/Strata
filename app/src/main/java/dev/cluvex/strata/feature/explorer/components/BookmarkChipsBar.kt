@@ -74,7 +74,9 @@ fun BookmarkChipsBar(
         withFrameNanos { }
         val x = snapshotFlow { bounds[normalizedCurrent] }.filterNotNull().first()
         withTimeoutOrNull(300) { snapshotFlow { scroll.maxValue }.first { it > 0 } }
-        val target = if (x <= edgePaddingPx) 0 else x - chipSpacingPx
+        // x is measured inside the row's padding, so the chip lands at (padding + x - target) on screen.
+        // Put it exactly one gap from the edge: the previous chip then ends at the edge and cannot peek in.
+        val target = if (x <= edgePaddingPx) 0 else x + edgePaddingPx - chipSpacingPx
         scroll.animateScrollTo(target.coerceIn(0, scroll.maxValue))
     }
     Row(

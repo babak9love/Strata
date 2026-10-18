@@ -298,7 +298,7 @@
     <string name="settings_backup_open_failed">无法打开文件</string>
     <string name="settings_backup_subtitle">保存或迁移您的设置</string>
     <string name="settings_group_export">导出</string>
-    <string name="settings_export_footer">插件信任记录和上次所在的文件夹永远不会被导出。</string>
+    <string name="settings_export_footer">书签和存储连接（包括已保存的密码）会以明文导出，请妥善保管该文件。插件信任记录和上次所在的文件夹永远不会被导出。</string>
     <string name="settings_export">导出设置</string>
     <string name="settings_export_summary">将设置文件保存到 %1$s</string>
     <string name="settings_saved">已保存 %1$s</string>

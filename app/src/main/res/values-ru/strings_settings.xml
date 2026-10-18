@@ -298,7 +298,7 @@
     <string name="settings_backup_open_failed">Не удалось открыть файл</string>
     <string name="settings_backup_subtitle">Сохраните или перенесите настройки</string>
     <string name="settings_group_export">Экспорт</string>
-    <string name="settings_export_footer">Доверие к плагинам и последние открытые папки никогда не экспортируются.</string>
+    <string name="settings_export_footer">Закладки и подключения к хранилищам, включая сохранённые пароли, экспортируются открытым текстом, поэтому храните файл в тайне. Доверие к плагинам и последние открытые папки никогда не экспортируются.</string>
     <string name="settings_export">Экспорт настроек</string>
     <string name="settings_export_summary">Сохраняет файл настроек в %1$s</string>
     <string name="settings_saved">Сохранено: %1$s</string>

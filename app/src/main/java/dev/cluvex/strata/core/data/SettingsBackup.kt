@@ -3,13 +3,18 @@ package dev.cluvex.strata.core.data
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import dev.cluvex.strata.R
+import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.i18n.tr
+import dev.cluvex.strata.core.remote.RemoteConnection
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.longOrNull
@@ -42,6 +47,35 @@ object SettingsBackup {
         )
         return pretty.encodeToString(JsonObject.serializer(), root)
     }
+
+    private val lenient = Json { ignoreUnknownKeys = true }
+
+    const val BOOKMARKS_KEY = "bookmarks"
+    const val CONNECTIONS_KEY = "connections"
+
+    class Extras(val bookmarks: List<Bookmark>?, val connections: List<RemoteConnection>?)
+
+    fun attach(text: String, bookmarks: List<Bookmark>, connections: List<RemoteConnection>): String {
+        val root = Json.parseToJsonElement(text).jsonObject
+        val extended = JsonObject(
+            root + mapOf(
+                BOOKMARKS_KEY to lenient.encodeToJsonElement(bookmarks),
+                CONNECTIONS_KEY to lenient.encodeToJsonElement(connections),
+            ),
+        )
+        return pretty.encodeToString(JsonObject.serializer(), extended)
+    }
+
+    fun extras(text: String): Extras {
+        val root = runCatching { Json.parseToJsonElement(text).jsonObject }.getOrNull() ?: return Extras(null, null)
+        return Extras(
+            bookmarks = root.list<Bookmark>(BOOKMARKS_KEY),
+            connections = root.list<RemoteConnection>(CONNECTIONS_KEY),
+        )
+    }
+
+    private inline fun <reified T> JsonObject.list(key: String): List<T>? =
+        (this[key] as? JsonArray)?.let { runCatching { lenient.decodeFromJsonElement<List<T>>(it) }.getOrNull() }
 
     fun decode(text: String): Map<String, JsonElement> {
         val root = runCatching { Json.parseToJsonElement(text).jsonObject }.getOrNull()

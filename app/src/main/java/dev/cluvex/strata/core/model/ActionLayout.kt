@@ -25,6 +25,8 @@ enum class BrowseAction(@StringRes val label: Int) {
 }
 
 enum class SelectionAction(@StringRes val label: Int, val asks: Boolean = false) {
+    OPEN_WITH(R.string.model_sheet_open_with),
+    EXTRACT(R.string.model_sheet_extract),
     COPY(R.string.model_selection_copy),
     MOVE(R.string.model_selection_move),
     DELETE(R.string.model_selection_delete),
@@ -89,6 +91,7 @@ data class SelectionContext(
     val smaliFolder: Boolean,
     val jarFile: Boolean,
     val vault: Boolean = false,
+    val archive: Boolean = false,
 )
 
 data class SheetContext(
@@ -117,6 +120,8 @@ val BrowseAction.hint: Int?
 val SelectionAction.hint: Int?
     get() = when (this) {
         SelectionAction.RENAME -> R.string.model_hint_one_item
+        SelectionAction.OPEN_WITH -> R.string.model_hint_files
+        SelectionAction.EXTRACT -> R.string.model_hint_local_archives
         SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD -> R.string.model_hint_two_panes
         SelectionAction.MERGE -> R.string.model_hint_two_files
         SelectionAction.COMPARE -> R.string.model_hint_exactly_two
@@ -160,6 +165,8 @@ fun SelectionAction.available(c: SelectionContext): Boolean = when (this) {
     SelectionAction.COPY, SelectionAction.MOVE, SelectionAction.DELETE, SelectionAction.BOOKMARK,
     SelectionAction.SELECT_ALL, SelectionAction.INVERT -> true
     SelectionAction.RENAME -> c.count == 1
+    SelectionAction.OPEN_WITH -> c.count == 1 && c.files == 1
+    SelectionAction.EXTRACT -> !c.remote && c.count == 1 && c.archive
     SelectionAction.BATCH_RENAME, SelectionAction.COMPRESS, SelectionAction.LINKS, SelectionAction.SHARE,
     SelectionAction.PROPERTIES, SelectionAction.COPY_PATH -> !c.remote
     SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD -> c.dual
@@ -293,7 +300,7 @@ data class ActionLayout(
             listOf(
                 listOf(SelectionAction.COPY, SelectionAction.MOVE, SelectionAction.DELETE, SelectionAction.RESTORE),
                 listOf(
-                    SelectionAction.RENAME, SelectionAction.BATCH_RENAME, SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD,
+                    SelectionAction.OPEN_WITH, SelectionAction.EXTRACT, SelectionAction.RENAME, SelectionAction.BATCH_RENAME, SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD,
                     SelectionAction.COMPRESS, SelectionAction.MERGE, SelectionAction.COMPARE, SelectionAction.SMALI_TO_DEX,
                     SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARK, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
                     SelectionAction.COPY_PATH, SelectionAction.PROPERTIES, SelectionAction.SELECT_ALL, SelectionAction.INVERT,

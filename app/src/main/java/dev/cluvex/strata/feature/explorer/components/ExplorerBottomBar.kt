@@ -110,6 +110,8 @@ class BottomBarActions(
     val onCustomize: (ToolbarTab) -> Unit = {},
     val onMoveToVault: () -> Unit = {},
     val onRestore: () -> Unit = {},
+    val onOpenWith: () -> Unit = {},
+    val onExtract: () -> Unit = {},
 )
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -129,6 +131,7 @@ fun ExplorerBottomBar(
     projectLabel: String? = null,
     smaliFolder: Boolean = false,
     jarFile: Boolean = false,
+    archiveFile: Boolean = false,
     vault: Boolean = false,
     browse: Zoned<BrowseAction> = dev.cluvex.strata.core.model.ActionLayout.DEFAULT_BROWSE,
     selection: Zoned<SelectionAction> = dev.cluvex.strata.core.model.ActionLayout.DEFAULT_SELECTION,
@@ -161,7 +164,7 @@ fun ExplorerBottomBar(
             modifier = Modifier.fillMaxWidth(),
         ) { selecting ->
             if (selecting) {
-                val context = SelectionContext(selectionCount, selectedFiles, dual, remote, smaliFolder, jarFile, vault)
+                val context = SelectionContext(selectionCount, selectedFiles, dual, remote, smaliFolder, jarFile, vault, archiveFile)
                 SelectionActions(selectionCount, context, activeIsLeft, selection, actions)
             } else {
                 val context = BrowseContext(clipboard = clipboardCount > 0, termux = !remote, project = projectLabel != null)
@@ -311,6 +314,8 @@ private fun SelectionAction.text(dual: Boolean, activeIsLeft: Boolean): String =
 }
 
 private fun SelectionAction.run(a: BottomBarActions, dual: Boolean) = when (this) {
+    SelectionAction.OPEN_WITH -> a.onOpenWith()
+    SelectionAction.EXTRACT -> a.onExtract()
     SelectionAction.COPY -> if (dual) a.onCopyToOther() else a.onCopyToClipboard()
     SelectionAction.MOVE -> if (dual) a.onMoveToOther() else a.onCutToClipboard()
     SelectionAction.DELETE -> a.onDelete()

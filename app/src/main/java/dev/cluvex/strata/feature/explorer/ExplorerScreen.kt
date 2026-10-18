@@ -69,6 +69,7 @@ import dev.cluvex.strata.core.fs.Mounts
 import dev.cluvex.strata.core.data.sortFor
 import dev.cluvex.strata.core.model.FolderSorts
 import dev.cluvex.strata.core.archive.ArchiveFormat
+import dev.cluvex.strata.core.archive.ArchiveManager
 import dev.cluvex.strata.core.fs.Conflict
 import dev.cluvex.strata.core.model.FileItem
 import dev.cluvex.strata.core.open.Opener
@@ -236,6 +237,7 @@ fun ExplorerScreen(
         value = single != null && single.isDirectory && vm.hasSmali(ui.active, single)
     }
     val jarFile = single != null && !single.isDirectory && single.extension.equals("jar", ignoreCase = true)
+    val archiveFile = single != null && !single.isDirectory && ArchiveManager.isExtractable(single.name)
 
     fun selectionInOrder() = visibleItems(ui.activePane, ui.settings, ui.query).filter { it.path in ui.activePane.selected }
 
@@ -343,6 +345,7 @@ fun ExplorerScreen(
                 projectLabel = project?.kind?.label,
                 smaliFolder = smaliFolder,
                 jarFile = jarFile,
+                archiveFile = archiveFile,
                 vault = ui.isVault(ui.active),
                 browse = ui.settings.actions.browse,
                 selection = ui.settings.actions.selection,
@@ -403,6 +406,8 @@ fun ExplorerScreen(
                     onCustomize = onCustomize,
                     onMoveToVault = { vm.moveSelectionToVault(ui.active) },
                     onRestore = { vm.restoreFromVault(ui.active) },
+                    onOpenWith = { single?.takeIf { !it.isDirectory }?.let { f -> withLocal(f) { onOpenWith(it) } } },
+                    onExtract = { single?.takeIf { !it.isDirectory }?.let { f -> localOnly(f) { vm.extractArchive(ui.active, f) } } },
                 ),
             )
         },

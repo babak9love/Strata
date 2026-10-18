@@ -299,7 +299,7 @@
     <string name="settings_backup_open_failed">Couldn\'t open the file</string>
     <string name="settings_backup_subtitle">Keep or move your settings</string>
     <string name="settings_group_export">Export</string>
-    <string name="settings_export_footer">Plugin trust and the folders you were last in are never exported.</string>
+    <string name="settings_export_footer">Bookmarks and storage connections, including saved passwords, are included in plain text, so keep the file private. Plugin trust and the folders you were last in are never exported.</string>
     <string name="settings_export">Export settings</string>
     <string name="settings_export_summary">Saves a settings file in %1$s</string>
     <string name="settings_saved">Saved %1$s</string>

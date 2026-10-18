@@ -298,7 +298,7 @@
     <string name="settings_backup_open_failed">فایل باز نشد</string>
     <string name="settings_backup_subtitle">تنظیماتتان را نگه دارید یا منتقل کنید</string>
     <string name="settings_group_export">خروجی</string>
-    <string name="settings_export_footer">اعتماد به افزونه‌ها و پوشه‌هایی که آخرین بار در آن‌ها بودید هرگز در خروجی قرار نمی‌گیرند.</string>
+    <string name="settings_export_footer">بوکمارک‌ها و اتصال‌های حافظه، همراه با رمزهای ذخیره‌شده، به‌صورت متن ساده در خروجی قرار می‌گیرند؛ پس فایل را خصوصی نگه دارید. اعتماد به افزونه‌ها و پوشه‌هایی که آخرین بار در آن‌ها بودید هرگز در خروجی قرار نمی‌گیرند.</string>
     <string name="settings_export">خروجی گرفتن از تنظیمات</string>
     <string name="settings_export_summary">یک فایل تنظیمات در \u2068%1$s\u2069 ذخیره می‌شود</string>
     <string name="settings_saved">ذخیره شد: \u2068%1$s\u2069</string>
