@@ -30,6 +30,7 @@
     <string name="model_selection_compare">比较</string>
     <string name="model_selection_links">创建软链接</string>
     <string name="model_selection_share">分享</string>
+    <string name="model_selection_copy_path">复制路径</string>
     <string name="model_selection_properties">属性</string>
     <string name="model_selection_invert">反选</string>
     <string name="model_add_bookmark">添加到书签</string>

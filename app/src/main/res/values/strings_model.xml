@@ -30,6 +30,7 @@
     <string name="model_selection_compare">Compare</string>
     <string name="model_selection_links">Create soft links</string>
     <string name="model_selection_share">Share</string>
+    <string name="model_selection_copy_path">Copy path</string>
     <string name="model_selection_properties">Properties</string>
     <string name="model_selection_invert">Invert selection</string>
     <string name="model_smali_to_dex" translatable="false">Smali → Dex</string>

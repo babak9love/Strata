@@ -170,6 +170,7 @@ fun ExplorerScreen(
     var overflow by remember { mutableStateOf(false) }
     var lastBackPress by remember { mutableLongStateOf(0L) }
     val rootPath = vm.rootPath
+    val textClipboard = dev.cluvex.strata.ui.rememberTextClipboard()
     val dual = ui.settings.dualPanePreferred
     val termux = viewModel<TermuxViewModel>().session
     val sshHere = RemoteUri.parse(ui.activePane.path)?.let { (id, dir) ->
@@ -368,6 +369,10 @@ fun ExplorerScreen(
                     onCompress = { dialog = Dialog.CreateArchive(ui.active, selectionInOrder()) },
                     onShare = { IntentUtils.share(context, selection) },
                     onProperties = { dialog = Dialog.Properties(selection) },
+                    onCopyPath = {
+                        textClipboard.setText(selection.joinToString("\n") { it.path })
+                        vm.notifyPathsCopied(selection.size)
+                    },
                     onInvert = { vm.invertSelection(ui.active, visibleOfActive()) },
                     onBookmarks = { dialog = Dialog.Bookmarks },
                     onBookmarkFolder = { vm.addBookmarks(listOf(ui.activePane.path)) },

@@ -30,6 +30,7 @@
     <string name="model_selection_compare">Сравнить</string>
     <string name="model_selection_links">Создать символические ссылки</string>
     <string name="model_selection_share">Поделиться</string>
+    <string name="model_selection_copy_path">Копировать путь</string>
     <string name="model_selection_properties">Свойства</string>
     <string name="model_selection_invert">Инвертировать выделение</string>
     <string name="model_add_bookmark">Добавить в закладки</string>

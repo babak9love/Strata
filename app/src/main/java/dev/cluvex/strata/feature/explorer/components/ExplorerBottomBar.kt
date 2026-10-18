@@ -88,6 +88,7 @@ class BottomBarActions(
     val onCompress: () -> Unit,
     val onShare: () -> Unit,
     val onProperties: () -> Unit,
+    val onCopyPath: () -> Unit,
     val onInvert: () -> Unit,
     val onBookmarks: () -> Unit,
     val onBookmarkFolder: () -> Unit,
@@ -327,6 +328,7 @@ private fun SelectionAction.run(a: BottomBarActions, dual: Boolean) = when (this
     SelectionAction.VAULT -> a.onMoveToVault()
     SelectionAction.RESTORE -> a.onRestore()
     SelectionAction.SHARE -> a.onShare()
+    SelectionAction.COPY_PATH -> a.onCopyPath()
     SelectionAction.PROPERTIES -> a.onProperties()
     SelectionAction.SELECT_ALL -> a.onSelectAll()
     SelectionAction.INVERT -> a.onInvert()

@@ -30,6 +30,7 @@
     <string name="model_selection_compare">مقایسه</string>
     <string name="model_selection_links">ساخت پیوندهای نمادین</string>
     <string name="model_selection_share">اشتراک‌گذاری</string>
+    <string name="model_selection_copy_path">کپی مسیر</string>
     <string name="model_selection_properties">ویژگی‌ها</string>
     <string name="model_selection_invert">وارونه کردن انتخاب</string>
     <string name="model_add_bookmark">افزودن به نشانک‌ها</string>

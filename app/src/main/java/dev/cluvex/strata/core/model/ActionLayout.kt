@@ -42,6 +42,7 @@ enum class SelectionAction(@StringRes val label: Int, val asks: Boolean = false)
     VAULT(R.string.model_move_to_vault),
     RESTORE(R.string.model_restore),
     SHARE(R.string.model_selection_share),
+    COPY_PATH(R.string.model_selection_copy_path),
     PROPERTIES(R.string.model_selection_properties),
     SELECT_ALL(R.string.model_browse_select_all),
     INVERT(R.string.model_selection_invert),
@@ -122,7 +123,7 @@ val SelectionAction.hint: Int?
         SelectionAction.SMALI_TO_DEX -> R.string.model_hint_smali_folder
         SelectionAction.JAR_TO_DEX -> R.string.model_hint_jar_file
         SelectionAction.BATCH_RENAME, SelectionAction.COMPRESS, SelectionAction.LINKS, SelectionAction.SHARE,
-        SelectionAction.PROPERTIES, SelectionAction.VAULT -> R.string.model_hint_local_folders
+        SelectionAction.PROPERTIES, SelectionAction.COPY_PATH, SelectionAction.VAULT -> R.string.model_hint_local_folders
         SelectionAction.RESTORE -> R.string.model_hint_in_vault
         else -> null
     }
@@ -160,7 +161,7 @@ fun SelectionAction.available(c: SelectionContext): Boolean = when (this) {
     SelectionAction.SELECT_ALL, SelectionAction.INVERT -> true
     SelectionAction.RENAME -> c.count == 1
     SelectionAction.BATCH_RENAME, SelectionAction.COMPRESS, SelectionAction.LINKS, SelectionAction.SHARE,
-    SelectionAction.PROPERTIES -> !c.remote
+    SelectionAction.PROPERTIES, SelectionAction.COPY_PATH -> !c.remote
     SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD -> c.dual
     SelectionAction.MERGE -> !c.remote && c.files >= 2
     SelectionAction.COMPARE -> !c.remote && c.count == 2 && c.files == 2
@@ -295,7 +296,7 @@ data class ActionLayout(
                     SelectionAction.RENAME, SelectionAction.BATCH_RENAME, SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD,
                     SelectionAction.COMPRESS, SelectionAction.MERGE, SelectionAction.COMPARE, SelectionAction.SMALI_TO_DEX,
                     SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARK, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
-                    SelectionAction.PROPERTIES, SelectionAction.SELECT_ALL, SelectionAction.INVERT,
+                    SelectionAction.COPY_PATH, SelectionAction.PROPERTIES, SelectionAction.SELECT_ALL, SelectionAction.INVERT,
                 ),
                 emptyList(),
             ),

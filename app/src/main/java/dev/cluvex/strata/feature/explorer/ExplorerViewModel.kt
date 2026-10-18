@@ -1405,6 +1405,9 @@ class ExplorerViewModel(
         sessions.closeAll()
     }
 
+    fun notifyPathsCopied(count: Int) =
+        postMessage(if (count == 1) tr(R.string.props_path_copied) else trPlural(R.plurals.props_paths_copied, count, count))
+
     private fun postMessage(msg: String?) {
         if (msg != null) _state.update { it.copy(message = msg) }
     }

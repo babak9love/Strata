@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Coffee
 import androidx.compose.material.icons.rounded.Compare
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.ContentPaste
 import androidx.compose.material.icons.rounded.CopyAll
@@ -94,6 +95,7 @@ val SelectionAction.icon: ImageVector
         SelectionAction.VAULT -> Icons.Rounded.EnhancedEncryption
         SelectionAction.RESTORE -> Icons.Rounded.Outbox
         SelectionAction.SHARE -> Icons.Rounded.Share
+        SelectionAction.COPY_PATH -> Icons.Rounded.Link
         SelectionAction.PROPERTIES -> Icons.Rounded.Info
         SelectionAction.SELECT_ALL -> Icons.Rounded.SelectAll
         SelectionAction.INVERT -> Icons.Rounded.Flip
