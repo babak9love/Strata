@@ -283,6 +283,7 @@ fun AppShell(
     }
 
     fun locate(folder: String, reveal: String?) {
+        visitedOtherRoute = false
         stack.clear()
         openDialog = null
         vm.showInFolder(vm.state.value.active, folder, reveal)
