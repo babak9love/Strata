@@ -163,6 +163,10 @@
     <string name="settings_group_layout">Layout</string>
     <string name="settings_view_as">View as</string>
     <string name="settings_density">Density</string>
+    <string name="settings_grid_columns">Grid columns</string>
+    <string name="settings_grid_columns_auto">Auto</string>
+    <string name="settings_tile_frame">Frame around items</string>
+    <string name="settings_tile_frame_summary">Show a background card behind each file and folder in grid view</string>
     <string name="settings_wrap_names">Wrap long names</string>
     <string name="settings_wrap_names_summary">Show the whole name on several lines</string>
     <string name="settings_group_files">Files</string>

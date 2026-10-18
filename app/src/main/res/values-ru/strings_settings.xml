@@ -162,6 +162,10 @@
     <string name="settings_group_layout">Вид</string>
     <string name="settings_view_as">Отображение</string>
     <string name="settings_density">Плотность</string>
+    <string name="settings_grid_columns">Столбцов в сетке</string>
+    <string name="settings_grid_columns_auto">Авто</string>
+    <string name="settings_tile_frame">Рамка вокруг элементов</string>
+    <string name="settings_tile_frame_summary">Фон-карточка за каждым файлом и папкой в сетке</string>
     <string name="settings_wrap_names">Переносить длинные имена</string>
     <string name="settings_wrap_names_summary">Показывать имя целиком в несколько строк</string>
     <string name="settings_group_files">Файлы</string>

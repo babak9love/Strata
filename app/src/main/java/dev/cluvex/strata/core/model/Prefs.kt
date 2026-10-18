@@ -32,6 +32,8 @@ data class ListPrefs(
     val wrapNames: Boolean = false,
     val showExtensions: Boolean = true,
     val persianCalendar: Boolean = true,
+    val tileFrame: Boolean = true,
+    val gridColumns: Int = 0,
 )
 
 enum class StartFolder(@StringRes val label: Int) {

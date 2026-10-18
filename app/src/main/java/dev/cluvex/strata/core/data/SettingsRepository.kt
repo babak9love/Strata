@@ -135,6 +135,8 @@ class SettingsRepository(private val context: Context) {
         val USE_24H = booleanPreferencesKey("use_24h")
         val SIZE_UNITS = stringPreferencesKey("size_units")
         val WRAP_NAMES = booleanPreferencesKey("wrap_names")
+        val TILE_FRAME = booleanPreferencesKey("tile_frame")
+        val GRID_COLUMNS = intPreferencesKey("grid_columns")
         val SHOW_EXTENSIONS = booleanPreferencesKey("show_extensions")
         val START_FOLDER = stringPreferencesKey("start_folder")
         val START_PATH = stringPreferencesKey("start_path")
@@ -190,13 +192,13 @@ class SettingsRepository(private val context: Context) {
 
         val BOOLEANS = listOf(
             SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, APK_ICONS, SHOW_DATE,
-            SHOW_SIZE, USE_24H, WRAP_NAMES, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, KEEP_SCREEN_TASKS, KEEP_MTIME, SECURE_SCREEN,
+            SHOW_SIZE, USE_24H, WRAP_NAMES, TILE_FRAME, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, KEEP_SCREEN_TASKS, KEEP_MTIME, SECURE_SCREEN,
             DUAL_PANE, TRASH_DEFAULT, ROOT_ACCESS, SHIZUKU_ACCESS, VERIFY_BEFORE_INSTALL, INSTALL_WITH_ROOT, EDITOR_WRAP,
             EDITOR_LINE_NUMBERS, EDITOR_WHITESPACE, EDITOR_SYMBOL_BAR, EDITOR_AUTO_INDENT, EDITOR_AUTO_PAIRS, EDITOR_HIGHLIGHT_LINE,
             EDITOR_HIGHLIGHT_BRACKETS, EDITOR_PINCH_ZOOM, EDITOR_STICKY_SCROLL, EDITOR_INDENT_GUIDES, EDITOR_PIN_LINE_NUMBERS,
             EDITOR_CURSOR_ANIMATION, EDITOR_KEEP_SCREEN_ON, READER_KEEP_SCREEN, APP_LOCK, PERSIAN_CALENDAR,
         )
-        val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH)
+        val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS)
         val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE)
         val STRINGS = listOf(
             SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
@@ -438,6 +440,8 @@ class SettingsRepository(private val context: Context) {
             wrapNames = p[Keys.WRAP_NAMES] ?: false,
             showExtensions = p[Keys.SHOW_EXTENSIONS] ?: true,
             persianCalendar = p[Keys.PERSIAN_CALENDAR] ?: true,
+            tileFrame = p[Keys.TILE_FRAME] ?: true,
+            gridColumns = (p[Keys.GRID_COLUMNS] ?: 0).let { if (it == 4 || it == 6) it else 0 },
         )
 
         private fun writeList(p: MutablePreferences, l: ListPrefs) {
@@ -452,6 +456,8 @@ class SettingsRepository(private val context: Context) {
             p[Keys.PERSIAN_CALENDAR] = l.persianCalendar
             p[Keys.WRAP_NAMES] = l.wrapNames
             p[Keys.SHOW_EXTENSIONS] = l.showExtensions
+            p[Keys.TILE_FRAME] = l.tileFrame
+            p[Keys.GRID_COLUMNS] = l.gridColumns
         }
 
         internal fun readBehavior(p: Preferences) = BehaviorPrefs(

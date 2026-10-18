@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -207,7 +208,7 @@ fun FileTile(
         when {
             drop.hovered -> colors.primaryContainer
             selected -> colors.secondaryContainer
-            else -> colors.surfaceContainerLow
+            else -> if (list.tileFrame) colors.surfaceContainerLow else androidx.compose.ui.graphics.Color.Transparent
         },
         motion.defaultEffectsSpec(),
         label = "tileBg",
@@ -217,6 +218,10 @@ fun FileTile(
     val flashColor = colors.primary.copy(alpha = 0.32f)
     val shape = settings.appearance.iconShape.toShape()
     val kind = FileKinds.of(item)
+    val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)
+    val apk = showThumbnail && list.apkIcons && kind == FileKind.APK
+    val compact = !list.tileFrame && !picture
+    val iconSize = when (list.gridColumns) { 6 -> 36.dp; 4 -> 48.dp; else -> 56.dp }
     Column(
         modifier
             .then(drop.spot)
@@ -237,9 +242,10 @@ fun FileTile(
             .testTag("file-tile"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f).then(drop.anchor).dropHaloBehind(look, reach = 0.72f), contentAlignment = Alignment.Center) {
-            val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)
-            val apk = showThumbnail && list.apkIcons && kind == FileKind.APK
+        Box(
+            Modifier.fillMaxWidth().then(if (compact) Modifier.height(iconSize + 8.dp) else Modifier.aspectRatio(1f)).then(drop.anchor).dropHaloBehind(look, reach = 0.72f),
+            contentAlignment = Alignment.Center,
+        ) {
             when {
                 picture -> {
                     KindIcon(item, 48.dp, shape)
@@ -250,8 +256,8 @@ fun FileTile(
                         modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.medium),
                     )
                 }
-                apk -> ApkIconOrKind(item, 56.dp, shape)
-                else -> KindIcon(item, 56.dp, shape)
+                apk -> ApkIconOrKind(item, iconSize, shape)
+                else -> KindIcon(item, iconSize, shape)
             }
             Box(
                 Modifier
@@ -277,7 +283,7 @@ fun FileTile(
             maxLines = if (list.wrapNames) 3 else 2,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 6.dp),
+            modifier = Modifier.padding(top = if (compact) 2.dp else 6.dp),
         )
         val info = trailingInfo(item, list) ?: if (list.showDate) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
         if (info != null) {

@@ -127,6 +127,15 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
         ThemePreview(settings)
         SettingsGroup(stringResource(R.string.settings_group_layout)) {
             if (!settings.dualPanePreferred) choice(tr(R.string.settings_view_as), ViewMode.entries, l.viewMode, { tr(it.label) }, { v -> act.list { it.copy(viewMode = v) } }, icon = Icons.Rounded.GridView)
+            if (!settings.dualPanePreferred && l.viewMode == ViewMode.GRID) {
+                choice(
+                    tr(R.string.settings_grid_columns), listOf(0, 4, 6), l.gridColumns,
+                    { if (it == 0) tr(R.string.settings_grid_columns_auto) else it.toString() },
+                    { v -> act.list { it.copy(gridColumns = v) } },
+                    icon = Icons.Rounded.ViewColumn,
+                )
+                switch(tr(R.string.settings_tile_frame), l.tileFrame, { v -> act.list { it.copy(tileFrame = v) } }, summary = tr(R.string.settings_tile_frame_summary), icon = Icons.Rounded.GridView)
+            }
             choice(tr(R.string.settings_density), UiDensity.entries, settings.uiDensity, { tr(it.label) }, { d -> act.run { setUiDensity(d) } }, icon = Icons.Rounded.ViewColumn)
             switch(tr(R.string.settings_wrap_names), l.wrapNames, { v -> act.list { it.copy(wrapNames = v) } }, summary = tr(R.string.settings_wrap_names_summary), icon = Icons.AutoMirrored.Rounded.WrapText)
         }

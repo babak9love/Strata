@@ -162,6 +162,10 @@
     <string name="settings_group_layout">چیدمان</string>
     <string name="settings_view_as">نمایش به‌صورت</string>
     <string name="settings_density">تراکم</string>
+    <string name="settings_grid_columns">تعداد ستون‌ها</string>
+    <string name="settings_grid_columns_auto">خودکار</string>
+    <string name="settings_tile_frame">کادر دور آیتم‌ها</string>
+    <string name="settings_tile_frame_summary">پس‌زمینه‌ی کارتی پشت هر فایل و پوشه در نمای شبکه‌ای</string>
     <string name="settings_wrap_names">شکستن نام‌های بلند</string>
     <string name="settings_wrap_names_summary">نام کامل در چند خط نشان داده شود</string>
     <string name="settings_group_files">فایل‌ها</string>

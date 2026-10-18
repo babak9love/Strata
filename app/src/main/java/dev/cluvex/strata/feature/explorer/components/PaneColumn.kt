@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.aspectRatio
@@ -436,7 +437,7 @@ private fun FolderGrid(
     }
     PullToRefreshBox(isRefreshing = refreshing, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 92.dp),
+            columns = LocalSettings.current.list.gridColumns.let { if (it == 4 || it == 6) GridCells.Fixed(it) else GridCells.Adaptive(minSize = 92.dp) },
             state = gridState,
             modifier = Modifier
                 .fillMaxSize()
@@ -480,22 +481,28 @@ private fun FolderGrid(
 private fun ParentTile(onClick: () -> Unit, look: DropLook = DropLook.NONE) {
     val colors = MaterialTheme.colorScheme
     val anim = rememberDropAnimation(look)
+    val list = LocalSettings.current.list
+    val framed = list.tileFrame
+    val iconSize = when (list.gridColumns) { 6 -> 36.dp; 4 -> 48.dp; else -> 56.dp }
     Column(
         Modifier
             .then(look.spot)
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.large)
-            .background(if (look.hovered) colors.primaryContainer else colors.surfaceContainerLow)
+            .background(if (look.hovered) colors.primaryContainer else if (framed) colors.surfaceContainerLow else androidx.compose.ui.graphics.Color.Transparent)
             .clickable(onClickLabel = stringResource(R.string.explorer_parent_folder), onClick = onClick)
             .padding(6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f).then(look.anchor).dropHaloBehind(anim, reach = 0.72f), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(56.dp).clip(MaterialTheme.shapes.large).background(colors.surfaceVariant), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.fillMaxWidth().then(if (framed) Modifier.aspectRatio(1f) else Modifier.height(iconSize + 8.dp)).then(look.anchor).dropHaloBehind(anim, reach = 0.72f),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.size(iconSize).clip(MaterialTheme.shapes.large).background(colors.surfaceVariant), contentAlignment = Alignment.Center) {
                 Icon(Icons.Rounded.ArrowUpward, contentDescription = null, tint = colors.onSurfaceVariant)
             }
         }
-        Text("..", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 6.dp))
+        Text("..", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = if (framed) 6.dp else 2.dp))
     }
 }
 
