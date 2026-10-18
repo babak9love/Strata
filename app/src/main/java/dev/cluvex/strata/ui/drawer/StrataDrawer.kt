@@ -305,11 +305,31 @@ private fun StrataMark(reduced: Boolean, modifier: Modifier) {
     }
 }
 
+/** Internal storage only: round the data-partition size up to the next standard capacity (8, 16, 32, 64 ... GiB). */
+private fun nominalCapacity(total: Long, path: String): Long {
+    val internal = runCatching { android.os.Environment.getExternalStorageDirectory().path }.getOrNull()
+    if (total <= 0 || internal == null || !path.startsWith(internal)) return total
+    val gib = total / (1024.0 * 1024.0 * 1024.0)
+    var cap = 8L
+    while (cap < gib && cap < 8192L) cap *= 2
+    return cap * 1024L * 1024L * 1024L
+}
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun StorageStrata(path: String, open: Boolean, reduced: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val usage = remember(path) { runCatching { StatFs(path).let { it.availableBytes to it.totalBytes } }.getOrNull() }
+    // StatFs only reports the user-data partition (e.g. 46 GiB on a "64 GB" phone). Like the system
+    // Settings / Samsung My Files, show the device's nominal capacity (rounded up to the next
+    // standard size, in GiB) and treat everything that isn't free as used (system + apps + data).
+    val usage = remember(path) {
+        runCatching {
+            val st = StatFs(path)
+            val free = st.availableBytes
+            val total = nominalCapacity(st.totalBytes, path)
+            free to total
+        }.getOrNull()
+    }
     val used = usage?.let { (free, total) -> if (total > 0) (1f - free.toFloat() / total).coerceIn(0f, 1f) else 0f } ?: 0f
     val fill by animateFloatAsState(if (open || reduced) used else 0f, if (reduced) snap() else spring(dampingRatio = 0.62f, stiffness = 90f))
     Surface(
@@ -334,7 +354,7 @@ private fun StorageStrata(path: String, open: Boolean, reduced: Boolean, modifie
                     Modifier.size(48.dp).clip(MaterialShapes.Cookie9Sided.toShape()).background(colors.primaryContainer),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(stringResource(R.string.ui_percent, (used * 100).roundToInt()), style = MaterialTheme.typography.labelLarge, color = colors.onPrimaryContainer)
+                    Text(stringResource(R.string.ui_percent, (used * 100).toInt()), style = MaterialTheme.typography.labelLarge, color = colors.onPrimaryContainer)
                 }
             }
             StrataGauge(fill, reduced, Modifier.fillMaxWidth().padding(top = 14.dp).height(30.dp))
