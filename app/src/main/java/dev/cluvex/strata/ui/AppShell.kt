@@ -364,6 +364,7 @@ fun AppShell(
                             scope.launch { drawerState.close() }
                             stack.clear()
                         },
+                        onClose = { scope.launch { drawerState.close() } },
                     ),
                 )
             }
@@ -380,6 +381,7 @@ fun AppShell(
                     onOpenSearch = { stack.push(Route.Search(it)) },
                     onOpenDrawer = { scope.launch { drawerState.open() } },
                     onCustomize = { tab -> stack.push(Route.Customize(tab)) },
+                    onOpenSettings = { stack.push(Route.Settings) },
                     drawerOpen = drawerState.isOpen || route != Route.Files,
                     appSnackbar = snackbar.takeIf { route != Route.Files },
                 )

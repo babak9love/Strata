@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.i18n.tr
+import dev.cluvex.strata.core.media.FolderIconEntry
 import dev.cluvex.strata.core.remote.RemoteConnection
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -52,15 +53,22 @@ object SettingsBackup {
 
     const val BOOKMARKS_KEY = "bookmarks"
     const val CONNECTIONS_KEY = "connections"
+    const val FOLDER_ICONS_KEY = "folderIcons"
 
-    class Extras(val bookmarks: List<Bookmark>?, val connections: List<RemoteConnection>?)
+    class Extras(val bookmarks: List<Bookmark>?, val connections: List<RemoteConnection>?, val folderIcons: List<FolderIconEntry>? = null)
 
-    fun attach(text: String, bookmarks: List<Bookmark>, connections: List<RemoteConnection>): String {
+    fun attach(
+        text: String,
+        bookmarks: List<Bookmark>,
+        connections: List<RemoteConnection>,
+        folderIcons: List<FolderIconEntry> = emptyList(),
+    ): String {
         val root = Json.parseToJsonElement(text).jsonObject
         val extended = JsonObject(
             root + mapOf(
                 BOOKMARKS_KEY to lenient.encodeToJsonElement(bookmarks),
                 CONNECTIONS_KEY to lenient.encodeToJsonElement(connections),
+                FOLDER_ICONS_KEY to lenient.encodeToJsonElement(folderIcons),
             ),
         )
         return pretty.encodeToString(JsonObject.serializer(), extended)
@@ -71,8 +79,13 @@ object SettingsBackup {
         return Extras(
             bookmarks = root.list<Bookmark>(BOOKMARKS_KEY),
             connections = root.list<RemoteConnection>(CONNECTIONS_KEY),
+            folderIcons = root.tolerantList<FolderIconEntry>(FOLDER_ICONS_KEY),
         )
     }
+
+    /** Like [list], but one malformed entry is skipped instead of dropping the whole list. */
+    private inline fun <reified T> JsonObject.tolerantList(key: String): List<T>? =
+        (this[key] as? JsonArray)?.mapNotNull { el -> runCatching { lenient.decodeFromJsonElement<T>(el) }.getOrNull() }
 
     private inline fun <reified T> JsonObject.list(key: String): List<T>? =
         (this[key] as? JsonArray)?.let { runCatching { lenient.decodeFromJsonElement<List<T>>(it) }.getOrNull() }

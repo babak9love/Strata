@@ -166,6 +166,7 @@ fun ExplorerScreen(
     onOpenSearch: (String) -> Unit,
     onOpenDrawer: () -> Unit,
     onCustomize: (ToolbarTab) -> Unit = {},
+    onOpenSettings: () -> Unit = {},
     drawerOpen: Boolean = false,
     appSnackbar: SnackbarHostState? = null,
 ) {
@@ -331,6 +332,7 @@ fun ExplorerScreen(
                                         onClick = { overflow = false; termux.openSsh(c.host, c.port, c.username, dir) },
                                     )
                                 }
+                                DropdownMenuItem(text = { Text(stringResource(R.string.common_settings)) }, onClick = { overflow = false; onOpenSettings() })
                             }
                         }
                     },

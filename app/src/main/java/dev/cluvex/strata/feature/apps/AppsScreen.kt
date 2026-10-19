@@ -61,6 +61,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.delay
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -144,12 +148,20 @@ fun AppsScreen(
                     navigationIcon = { IconButton(onClick = actions.onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back)) } },
                     title = {
                         if (searching) {
+                            val focusRequester = remember { FocusRequester() }
+                            val keyboard = LocalSoftwareKeyboardController.current
+                            // Opening the search puts the cursor in the field and brings up the keyboard.
+                            LaunchedEffect(Unit) {
+                                delay(100)
+                                runCatching { focusRequester.requestFocus() }
+                                keyboard?.show()
+                            }
                             OutlinedTextField(
                                 value = s.query,
                                 onValueChange = vm::setQuery,
                                 placeholder = { Text(stringResource(R.string.apps_search_hint)) },
                                 singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                             )
                         } else {
                             Column {

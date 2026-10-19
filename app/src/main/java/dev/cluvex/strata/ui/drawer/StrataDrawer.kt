@@ -96,6 +96,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -130,6 +131,7 @@ class DrawerActions(
     val onSigningKeys: () -> Unit,
     val onPlugins: () -> Unit,
     val onVault: () -> Unit = {},
+    val onClose: () -> Unit = {},
 )
 
 private class Place(@StringRes val label: Int, val icon: ImageVector, val folder: String, val shape: RoundedPolygon)
@@ -177,7 +179,7 @@ fun StrataDrawerContent(
             .padding(top = 18.dp, bottom = 20.dp)
             .testTag("strata-drawer"),
     ) {
-        Brand(reduced, Modifier.stagger())
+        Brand(reduced, Modifier.stagger(), actions.onClose)
         StorageStrata(root, !closed, reduced, Modifier.stagger().padding(top = 16.dp)) { actions.onShortcut(root) }
 
         SectionTitle(stringResource(R.string.drawer_places), Modifier.stagger())
@@ -268,9 +270,17 @@ fun StrataDrawerContent(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun Brand(reduced: Boolean, modifier: Modifier) {
+private fun Brand(reduced: Boolean, modifier: Modifier, onClose: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    Row(modifier.fillMaxWidth().padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+    // Tapping the logo acts like Back: it closes the drawer and returns to the file list.
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClickLabel = stringResource(R.string.common_back), role = Role.Button, onClick = onClose)
+            .padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         StrataMark(reduced, Modifier.size(40.dp))
         Column(Modifier.padding(start = 12.dp)) {
             Text("Strata", style = MaterialTheme.typography.headlineSmallEmphasized, color = colors.onSurface)

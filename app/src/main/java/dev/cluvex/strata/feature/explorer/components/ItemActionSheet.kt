@@ -179,7 +179,15 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
             Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(colors.secondaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(kind.icon, contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(28.dp))
+            if (item.extension == "py" || item.extension == "pyw" || item.extension == "pyi") {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(R.drawable.ic_python),
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp),
+                )
+            } else {
+                Icon(kind.icon, contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(28.dp))
+            }
             if (local && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)) {
                 val model = remember(item.path) { item.path.toPath() }
                 AsyncImage(model = model, contentDescription = null, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)))

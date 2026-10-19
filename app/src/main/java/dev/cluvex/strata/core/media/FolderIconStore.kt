@@ -6,8 +6,18 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.Serializable
 import org.json.JSONObject
 import java.io.File
+
+/** One folder icon as written to a settings backup: [type] is "app" (uses [packageName]) or "file" (a file inside the folder). */
+@Serializable
+data class FolderIconEntry(
+    val path: String,
+    val name: String,
+    val type: String,
+    val packageName: String? = null,
+)
 
 /**
  * User-chosen icons for individual folders. Each folder path maps to one spec string:
@@ -21,6 +31,8 @@ object FolderIconStore {
     private const val INDEX = "folder_icons.json"
     private const val DIR = "folder_icons"
     private const val MAX_SIDE = 256
+    private const val TYPE_APP = "app"
+    private const val TYPE_FILE = "file"
 
     private val _specs = MutableStateFlow<Map<String, String>>(emptyMap())
     val specs: StateFlow<Map<String, String>> = _specs
@@ -63,6 +75,44 @@ object FolderIconStore {
         val next = _specs.value - path
         _specs.value = next
         save(next)
+    }
+
+    /** The app / file choices for the settings backup. Own pictures are private files and are not included. */
+    fun exportEntries(): List<FolderIconEntry> = _specs.value.entries.sortedBy { it.key }.mapNotNull { (path, spec) ->
+        val name = File(path).name
+        when {
+            spec.startsWith("app:") -> spec.removePrefix("app:").takeIf { it.isNotBlank() }
+                ?.let { FolderIconEntry(path, name, TYPE_APP, it) }
+            spec == "auto" -> FolderIconEntry(path, name, TYPE_FILE)
+            else -> null
+        }
+    }
+
+    /**
+     * Applies entries from a backup. A folder that doesn't exist here (or an entry that can't be read) is skipped silently;
+     * nothing is thrown. Returns how many were applied.
+     */
+    fun restore(entries: List<FolderIconEntry>): Int {
+        var next = _specs.value
+        var applied = 0
+        for (e in entries) {
+            runCatching {
+                if (e.path.isBlank() || !File(e.path).isDirectory) return@runCatching
+                val spec = when (e.type) {
+                    TYPE_APP -> e.packageName?.trim()?.takeIf { it.isNotEmpty() }?.let { "app:$it" }
+                    TYPE_FILE -> "auto"
+                    else -> null
+                } ?: return@runCatching
+                deleteImageOf(e.path) // replacing an own picture: drop its file
+                next = next + (e.path to spec)
+                applied++
+            }
+        }
+        if (applied > 0) {
+            _specs.value = next
+            save(next)
+        }
+        return applied
     }
 
     fun imageFile(context: Context, name: String): File = File(File(context.filesDir, DIR), name)

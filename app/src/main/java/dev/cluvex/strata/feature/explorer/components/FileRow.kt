@@ -477,6 +477,14 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
     val colors = MaterialTheme.colorScheme
     val settings = LocalSettings.current
     val kind = FileKinds.of(item)
+    if (item.extension == "py" || item.extension == "pyw" || item.extension == "pyi") {
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(R.drawable.ic_python),
+            contentDescription = stringResource(kind.label),
+            modifier = Modifier.size(iconSize).padding(iconSize * 0.06f),
+        )
+        return
+    }
     val tile = KindPalette.colors(kind, settings.appearance.colorfulIcons, colors, colors.background.luminance() < 0.5f)
     Box(
         Modifier
