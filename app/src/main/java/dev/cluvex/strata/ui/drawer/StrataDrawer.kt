@@ -81,10 +81,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -327,29 +324,7 @@ private fun storageUsage(context: android.content.Context, path: String): Pair<L
     return st.availableBytes to st.totalBytes
 }
 
-/** Raw numbers from both sources, for the long-press diagnostic on the storage card. */
-private fun storageDiagnostics(context: android.content.Context, path: String): String {
-    fun gib(b: Long) = String.format(java.util.Locale.US, "%.3f GiB", b / (1024.0 * 1024.0 * 1024.0))
-    val sb = StringBuilder("build: v16-diag\npath: $path\n\n")
-    runCatching {
-        val st = StatFs(path)
-        sb.append("StatFs\n total: ${st.totalBytes} (${gib(st.totalBytes)})\n free: ${st.availableBytes} (${gib(st.availableBytes)})\n\n")
-    }.onFailure { sb.append("StatFs failed: ${it}\n\n") }
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-        runCatching {
-            val stats = context.getSystemService(android.app.usage.StorageStatsManager::class.java)
-            val total = stats.getTotalBytes(android.os.storage.StorageManager.UUID_DEFAULT)
-            val free = stats.getFreeBytes(android.os.storage.StorageManager.UUID_DEFAULT)
-            sb.append("StorageStatsManager\n total: $total (${gib(total)})\n free: $free (${gib(free)})\n")
-        }.onFailure { sb.append("StorageStatsManager failed: ${it}\n") }
-    } else {
-        sb.append("StorageStatsManager: needs API 26+\n")
-    }
-    sb.append("\nSDK: ${android.os.Build.VERSION.SDK_INT}, ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
-    return sb.toString()
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun StorageStrata(path: String, open: Boolean, reduced: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
@@ -357,21 +332,11 @@ private fun StorageStrata(path: String, open: Boolean, reduced: Boolean, modifie
     val usage = remember(path) { runCatching { storageUsage(context, path) }.getOrNull() }
     val used = usage?.let { (free, total) -> if (total > 0) (1f - free.toFloat() / total).coerceIn(0f, 1f) else 0f } ?: 0f
     val fill by animateFloatAsState(if (open || reduced) used else 0f, if (reduced) snap() else spring(dampingRatio = 0.62f, stiffness = 90f))
-    var showDiag by remember { mutableStateOf(false) }
-    if (showDiag) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showDiag = false },
-            title = { Text("Storage diagnostics") },
-            text = { Text(remember { storageDiagnostics(context, path) }, style = MaterialTheme.typography.bodySmall) },
-            confirmButton = { androidx.compose.material3.TextButton(onClick = { showDiag = false }) { Text(stringResource(R.string.common_ok)) } },
-        )
-    }
     Surface(
+        onClick = onClick,
         shape = RoundedCornerShape(30.dp),
         color = colors.surfaceContainerHigh,
-        modifier = modifier.fillMaxWidth().testTag("drawer-storage")
-            .clip(RoundedCornerShape(30.dp))
-            .combinedClickable(onClick = onClick, onLongClick = { showDiag = true }),
+        modifier = modifier.fillMaxWidth().testTag("drawer-storage"),
     ) {
         Column(Modifier.padding(start = 18.dp, end = 14.dp, top = 16.dp, bottom = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
