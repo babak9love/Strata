@@ -411,23 +411,17 @@ private fun ApkIconOrKind(item: FileItem, size: Dp, shape: Shape) {
     }
 }
 
-/** Folder icon with a small badge in its bottom corner: the default media app, or the app whose APK lives inside. */
+/** Folder icon with a small badge in its bottom corner: the phone's own media app, or the app whose APK lives inside. */
 @Composable
 private fun FolderIconWithBadge(item: FileItem, iconSize: Dp, shape: Shape) {
-    val colors = MaterialTheme.colorScheme
-    var loaded by remember(item.path) { mutableStateOf(false) }
-    val badgeSize = iconSize * 0.5f
     Box(Modifier.size(iconSize)) {
         KindIcon(item, iconSize, shape)
         AsyncImage(
             model = remember(item.path, item.lastModified) { FolderBadge(item.path, item.lastModified) },
             contentDescription = null,
-            onSuccess = { loaded = true },
-            onError = { loaded = false },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .size(badgeSize)
-                .then(if (loaded) Modifier.clip(CircleShape).background(colors.surface.copy(alpha = 0.85f)).padding(badgeSize * 0.08f) else Modifier)
+                .size(iconSize * 0.5f)
                 .testTag("folder-badge"),
         )
     }

@@ -2,7 +2,9 @@ package dev.cluvex.strata.core.media
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.os.Environment
 import androidx.core.graphics.drawable.toBitmap
@@ -24,6 +26,7 @@ object FolderBadges {
     private const val SIZE = 128
     private const val MAX_ENTRIES = 400
     private const val MAX_APK_TRIES = 3
+    private const val PHOTOS_PACKAGE = "com.google.android.apps.photos"
 
     private val imageFolders = setOf("pictures", "dcim", "camera")
     private val audioFolders = setOf("music")
@@ -36,33 +39,53 @@ object FolderBadges {
      */
     fun load(context: Context, path: String): Bitmap? {
         val dir = File(path)
-        mediaMime(dir)?.let { mime -> defaultAppIcon(context, mime)?.let { return it } }
+        mediaKind(dir)?.let { media -> defaultAppIcon(context, media)?.let { return it } }
         return apkIcon(context, dir)
     }
 
-    private fun mediaMime(dir: File): String? {
+    private enum class Media { IMAGE, AUDIO, VIDEO }
+
+    private fun mediaKind(dir: File): Media? {
         val root = runCatching { Environment.getExternalStorageDirectory() }.getOrNull() ?: return null
         if (dir.parentFile?.canonicalPath != root.canonicalPath) return null
         val name = dir.name.lowercase()
         return when (name) {
-            in imageFolders -> "image/*"
-            in audioFolders -> "audio/*"
-            in videoFolders -> "video/*"
+            in imageFolders -> Media.IMAGE
+            in audioFolders -> Media.AUDIO
+            in videoFolders -> Media.VIDEO
             else -> null
         }
     }
 
-    private fun defaultAppIcon(context: Context, mime: String): Bitmap? = runCatching {
+    private fun defaultAppIcon(context: Context, media: Media): Bitmap? = runCatching {
         val pm = context.packageManager
-        val intent = Intent(Intent.ACTION_VIEW).setType(mime)
-        var info = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-        // "android" means the system chooser, i.e. the user has no default app for this type: take the first real handler.
-        if (info == null || info.activityInfo?.packageName == "android") {
-            info = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
-                .firstOrNull { it.activityInfo?.packageName != "android" }
+        val gallery = categoryApp(pm, Intent.CATEGORY_APP_GALLERY)
+        val info = when (media) {
+            // The phone's own Gallery / Music apps (what the launcher calls "Gallery" and "Music"),
+            // not whichever app happens to be the "open with" default for the file type.
+            Media.IMAGE -> gallery ?: viewHandler(pm, "image/*", emptySet())
+            Media.AUDIO -> categoryApp(pm, Intent.CATEGORY_APP_MUSIC) ?: viewHandler(pm, "audio/*", emptySet())
+            // There is no "video player" category: take a real video handler that is not the gallery / photos app.
+            Media.VIDEO -> viewHandler(pm, "video/*", setOfNotNull(gallery?.activityInfo?.packageName, PHOTOS_PACKAGE))
+                ?: viewHandler(pm, "video/*", emptySet())
         }
         info?.loadIcon(pm)?.toBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888)
     }.getOrNull()
+
+    private fun categoryApp(pm: PackageManager, category: String): ResolveInfo? {
+        val intent = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, category)
+        val direct = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        if (direct != null && direct.activityInfo?.packageName != "android") return direct
+        return pm.queryIntentActivities(intent, 0).firstOrNull { it.activityInfo?.packageName != "android" }
+    }
+
+    private fun viewHandler(pm: PackageManager, mime: String, exclude: Set<String>): ResolveInfo? {
+        val intent = Intent(Intent.ACTION_VIEW).setType(mime)
+        val all = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            .filter { it.activityInfo?.packageName.let { pkg -> pkg != "android" && pkg !in exclude } }
+        // Prefer a built-in app (the phone's own player) over third-party ones.
+        return all.firstOrNull { (it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 } ?: all.firstOrNull()
+    }
 
     private fun apkIcon(context: Context, dir: File): Bitmap? {
         val files = runCatching { dir.listFiles() }.getOrNull() ?: return null
