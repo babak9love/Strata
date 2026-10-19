@@ -1,5 +1,9 @@
 package dev.cluvex.strata.feature.explorer
 
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import kotlinx.coroutines.delay
 import dev.cluvex.strata.core.i18n.separator
 import dev.cluvex.strata.feature.vault.VaultSetupDialog
 import dev.cluvex.strata.feature.vault.VaultUnlockDialog
@@ -750,6 +754,14 @@ internal fun countsLine(items: List<FileItem>): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterBar(query: String, onQuery: (String) -> Unit, onClose: () -> Unit) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    // Opening the filter puts the cursor in the field and brings up the keyboard.
+    LaunchedEffect(Unit) {
+        delay(100)
+        runCatching { focusRequester.requestFocus() }
+        keyboard?.show()
+    }
     TopAppBar(
         navigationIcon = {
             IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_close)) }
@@ -761,7 +773,7 @@ private fun FilterBar(query: String, onQuery: (String) -> Unit, onClose: () -> U
                 singleLine = true,
                 textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
                 placeholder = { Text(stringResource(R.string.explorer_filter_placeholder)) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
             )
         },
     )
