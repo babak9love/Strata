@@ -35,6 +35,18 @@ object FolderBadges {
     private val videoFolders = setOf("movies", "video", "videos")
 
     /**
+     * Folders that belong to a known app, by lower-case folder name -> candidate package names (first installed wins).
+     * Every package listed here must also be declared in the manifest's <queries>, or Android hides it from us.
+     */
+    private val appFolders: Map<String, List<String>> = mapOf(
+        "1dmp" to listOf(
+            "idm.internet.download.manager.plus",
+            "idm.internet.download.manager",
+            "idm.internet.download.manager.adm.lite",
+        ),
+    )
+
+    /**
      * Badge for [path]:
      *  - top-level Pictures / DCIM / Music / Movies folders show the icon of the phone's default app for that media type;
      *  - any other folder that contains an APK shows that app's icon.
@@ -42,6 +54,7 @@ object FolderBadges {
     fun load(context: Context, path: String): Bitmap? {
         val dir = File(path)
         mediaKind(dir)?.let { media -> defaultAppIcon(context, media)?.let { return it } }
+        appFolders[dir.name.lowercase()]?.let { packages -> installedAppIcon(context, packages)?.let { return it } }
         return apkIcon(context, dir)
     }
 
@@ -98,6 +111,15 @@ object FolderBadges {
             .filter { it.activityInfo?.packageName.let { pkg -> pkg != "android" && pkg !in exclude } }
         // Prefer a built-in app (the phone's own player) over third-party ones.
         return all.firstOrNull { (it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 } ?: all.firstOrNull()
+    }
+
+    private fun installedAppIcon(context: Context, packages: List<String>): Bitmap? {
+        val pm = context.packageManager
+        for (pkg in packages) {
+            val icon = runCatching { pm.getApplicationIcon(pkg).toBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888) }.getOrNull()
+            if (icon != null) return icon
+        }
+        return null
     }
 
     private fun apkIcon(context: Context, dir: File): Bitmap? {

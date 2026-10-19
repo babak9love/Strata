@@ -34,6 +34,9 @@
 
     <queries>
         <package android:name="com.termux" />
+        <package android:name="idm.internet.download.manager.plus" />
+        <package android:name="idm.internet.download.manager" />
+        <package android:name="idm.internet.download.manager.adm.lite" />
         <intent>
             <action android:name="dev.cluvex.strata.plugin.action.FILE" />
             <data android:mimeType="*/*" />
