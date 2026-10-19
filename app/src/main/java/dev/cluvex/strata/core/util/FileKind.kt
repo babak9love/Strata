@@ -1,5 +1,6 @@
 package dev.cluvex.strata.core.util
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import dev.cluvex.strata.R
 import androidx.compose.material.icons.Icons
@@ -96,6 +97,19 @@ object FileKinds {
             ext in document -> FileKind.DOCUMENT
             else -> FileKind.BINARY
         }
+    }
+
+    /** Branded vector icon for a few well-known file types, or null to use the generic icon of its kind. */
+    @DrawableRes
+    fun customIcon(item: FileItem): Int? = when (item.extension) {
+        "py", "pyw", "pyi" -> R.drawable.ic_python
+        "sh", "bash", "zsh" -> R.drawable.ic_shell
+        "txt", "log" -> R.drawable.ic_text
+        "json", "jsonc", "json5" -> R.drawable.ic_json
+        "md", "markdown" -> R.drawable.ic_markdown
+        "html", "htm", "xhtml" -> R.drawable.ic_html
+        "xml" -> R.drawable.ic_xml
+        else -> null
     }
 
     fun isImage(item: FileItem) = of(item) == FileKind.IMAGE

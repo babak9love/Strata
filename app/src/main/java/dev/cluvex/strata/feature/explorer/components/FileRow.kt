@@ -477,9 +477,10 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
     val colors = MaterialTheme.colorScheme
     val settings = LocalSettings.current
     val kind = FileKinds.of(item)
-    if (item.extension == "py" || item.extension == "pyw" || item.extension == "pyi") {
+    val custom = FileKinds.customIcon(item)
+    if (custom != null) {
         androidx.compose.foundation.Image(
-            painter = androidx.compose.ui.res.painterResource(R.drawable.ic_python),
+            painter = androidx.compose.ui.res.painterResource(custom),
             contentDescription = stringResource(kind.label),
             modifier = Modifier.size(iconSize).padding(iconSize * 0.06f),
         )

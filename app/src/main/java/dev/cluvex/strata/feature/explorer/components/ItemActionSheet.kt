@@ -179,9 +179,10 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
             Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(colors.secondaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            if (item.extension == "py" || item.extension == "pyw" || item.extension == "pyi") {
+            val custom = FileKinds.customIcon(item)
+            if (custom != null) {
                 androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(R.drawable.ic_python),
+                    painter = androidx.compose.ui.res.painterResource(custom),
                     contentDescription = null,
                     modifier = Modifier.size(36.dp),
                 )
