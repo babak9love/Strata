@@ -1,5 +1,10 @@
 package dev.cluvex.strata.feature.settings
 
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import kotlin.math.roundToInt
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -385,6 +390,80 @@ fun SettingsGroupScope.slider(
         Text(valueLabel(live), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 12.dp))
     }
     preview?.invoke(live)
+}
+
+/**
+ * Whole-number percent slider: drag for a quick change, or tap the number to type an exact value in [min]..[max].
+ */
+fun SettingsGroupScope.percentSlider(
+    title: String,
+    value: Int,
+    min: Int,
+    max: Int,
+    onChange: (Int) -> Unit,
+    icon: ImageVector? = null,
+    tint: Tint = Tint.SECONDARY,
+) = custom(title = title, icon = icon, tint = tint) {
+    var live by remember(value) { mutableFloatStateOf(value.toFloat()) }
+    var editing by remember { mutableStateOf(false) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Slider(
+            value = live,
+            onValueChange = { live = it },
+            onValueChangeFinished = {
+                val v = live.roundToInt().coerceIn(min, max)
+                live = v.toFloat()
+                onChange(v)
+            },
+            valueRange = min.toFloat()..max.toFloat(),
+            steps = 0,
+            modifier = Modifier.weight(1f).testTag("setting-slider"),
+        )
+        Text(
+            "${live.roundToInt()}%",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .clip(MaterialTheme.shapes.small)
+                .clickable { editing = true }
+                .padding(horizontal = 8.dp, vertical = 6.dp)
+                .testTag("setting-slider-value"),
+        )
+    }
+    if (editing) {
+        var text by remember { mutableStateOf(live.roundToInt().toString()) }
+        // Accept any script's digits (e.g. Persian/Arabic keyboards) as well as ASCII.
+        val number = text.map { c -> if (Character.isDigit(c)) Character.digit(c, 10).digitToChar() else c }.joinToString("").toIntOrNull()
+        val valid = number != null && number in min..max
+        AlertDialog(
+            onDismissRequest = { editing = false },
+            title = { Text(title) },
+            text = {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.take(4) },
+                    singleLine = true,
+                    isError = !valid,
+                    suffix = { Text("%") },
+                    supportingText = { Text("$min – $max") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = valid,
+                    onClick = {
+                        val v = number!!.coerceIn(min, max)
+                        live = v.toFloat()
+                        onChange(v)
+                        editing = false
+                    },
+                ) { Text(stringResource(R.string.common_ok)) }
+            },
+            dismissButton = { TextButton(onClick = { editing = false }) { Text(stringResource(R.string.common_cancel)) } },
+        )
+    }
 }
 
 @Composable

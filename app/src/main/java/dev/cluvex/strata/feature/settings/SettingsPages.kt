@@ -143,22 +143,19 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
                 )
                 switch(tr(R.string.settings_tile_frame), l.tileFrame, { v -> act.list { it.copy(tileFrame = v) } }, summary = tr(R.string.settings_tile_frame_summary), icon = Icons.Rounded.GridView)
             }
-            slider(
-                tr(R.string.settings_item_size), l.itemScale.toFloat(), ItemScale.MIN.toFloat()..ItemScale.MAX.toFloat(),
-                (ItemScale.MAX - ItemScale.MIN) / ItemScale.STEP - 1, { "${it.toInt()}%" },
-                { v -> act.list { it.copy(itemScale = ItemScale.clamp(v.toInt())) } },
+            percentSlider(
+                tr(R.string.settings_item_size), l.itemScale, ItemScale.MIN, ItemScale.MAX,
+                { v -> act.list { it.copy(itemScale = ItemScale.clamp(v)) } },
                 icon = Icons.Rounded.ZoomIn,
             )
-            slider(
-                tr(R.string.settings_name_size), l.nameScale.toFloat(), ItemScale.MIN.toFloat()..ItemScale.MAX.toFloat(),
-                (ItemScale.MAX - ItemScale.MIN) / ItemScale.STEP - 1, { "${it.toInt()}%" },
-                { v -> act.list { it.copy(nameScale = ItemScale.clamp(v.toInt())) } },
+            percentSlider(
+                tr(R.string.settings_name_size), l.nameScale, ItemScale.MIN, ItemScale.MAX,
+                { v -> act.list { it.copy(nameScale = ItemScale.clamp(v)) } },
                 icon = Icons.Rounded.ZoomIn,
             )
-            slider(
-                tr(R.string.settings_meta_size), l.metaScale.toFloat(), ItemScale.MIN.toFloat()..ItemScale.MAX.toFloat(),
-                (ItemScale.MAX - ItemScale.MIN) / ItemScale.STEP - 1, { "${it.toInt()}%" },
-                { v -> act.list { it.copy(metaScale = ItemScale.clamp(v.toInt())) } },
+            percentSlider(
+                tr(R.string.settings_meta_size), l.metaScale, ItemScale.MIN, ItemScale.MAX,
+                { v -> act.list { it.copy(metaScale = ItemScale.clamp(v)) } },
                 icon = Icons.Rounded.ZoomIn,
             )
             choice(tr(R.string.settings_density), UiDensity.entries, settings.uiDensity, { tr(it.label) }, { d -> act.run { setUiDensity(d) } }, icon = Icons.Rounded.ViewColumn)
