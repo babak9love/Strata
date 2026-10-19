@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.os.Environment
+import android.provider.MediaStore
 import androidx.core.graphics.drawable.toBitmap
 import coil3.ImageLoader
 import coil3.asImage
@@ -28,7 +29,8 @@ object FolderBadges {
     private const val MAX_APK_TRIES = 3
     private const val PHOTOS_PACKAGE = "com.google.android.apps.photos"
 
-    private val imageFolders = setOf("pictures", "dcim", "camera")
+    private val imageFolders = setOf("pictures")
+    private val cameraFolders = setOf("dcim", "camera")
     private val audioFolders = setOf("music")
     private val videoFolders = setOf("movies", "video", "videos")
 
@@ -43,7 +45,7 @@ object FolderBadges {
         return apkIcon(context, dir)
     }
 
-    private enum class Media { IMAGE, AUDIO, VIDEO }
+    private enum class Media { IMAGE, CAMERA, AUDIO, VIDEO }
 
     private fun mediaKind(dir: File): Media? {
         val root = runCatching { Environment.getExternalStorageDirectory() }.getOrNull() ?: return null
@@ -51,6 +53,7 @@ object FolderBadges {
         val name = dir.name.lowercase()
         return when (name) {
             in imageFolders -> Media.IMAGE
+            in cameraFolders -> Media.CAMERA
             in audioFolders -> Media.AUDIO
             in videoFolders -> Media.VIDEO
             else -> null
@@ -64,6 +67,8 @@ object FolderBadges {
             // The phone's own Gallery / Music apps (what the launcher calls "Gallery" and "Music"),
             // not whichever app happens to be the "open with" default for the file type.
             Media.IMAGE -> gallery ?: viewHandler(pm, "image/*", emptySet())
+            // DCIM / Camera: the phone's camera app (the app that handles "take a photo").
+            Media.CAMERA -> actionHandler(pm, MediaStore.ACTION_IMAGE_CAPTURE) ?: gallery
             Media.AUDIO -> categoryApp(pm, Intent.CATEGORY_APP_MUSIC) ?: viewHandler(pm, "audio/*", emptySet())
             // There is no "video player" category: take a real video handler that is not the gallery / photos app.
             Media.VIDEO -> viewHandler(pm, "video/*", setOfNotNull(gallery?.activityInfo?.packageName, PHOTOS_PACKAGE))
@@ -77,6 +82,14 @@ object FolderBadges {
         val direct = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
         if (direct != null && direct.activityInfo?.packageName != "android") return direct
         return pm.queryIntentActivities(intent, 0).firstOrNull { it.activityInfo?.packageName != "android" }
+    }
+
+    private fun actionHandler(pm: PackageManager, action: String): ResolveInfo? {
+        val intent = Intent(action)
+        val all = pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            .filter { it.activityInfo?.packageName != "android" }
+        // Prefer a built-in app (the phone's own camera) over third-party ones.
+        return all.firstOrNull { (it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 } ?: all.firstOrNull()
     }
 
     private fun viewHandler(pm: PackageManager, mime: String, exclude: Set<String>): ResolveInfo? {
