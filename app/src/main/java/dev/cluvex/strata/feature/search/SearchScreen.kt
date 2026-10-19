@@ -1,5 +1,14 @@
 package dev.cluvex.strata.feature.search
 
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
+import kotlinx.coroutines.delay
+import androidx.compose.ui.platform.testTag
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -47,14 +56,12 @@ import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -171,7 +178,7 @@ fun SearchScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             QueryForm(ui, vm)
-            StatusBar(ui, vm)
+            StatusBar(ui)
             HorizontalDivider()
             if (ui.finished && ui.results.isEmpty()) {
                 ExpressiveEmptyState(
@@ -257,6 +264,19 @@ private val SearchHiddenActions = setOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QueryForm(ui: SearchUiState, vm: SearchViewModel) {
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    // Opening the search screen puts the cursor in the name field and brings up the keyboard.
+    LaunchedEffect(Unit) {
+        delay(150)
+        runCatching { focusRequester.requestFocus() }
+        keyboard?.show()
+    }
+    val startSearch = {
+        focusManager.clearFocus()
+        vm.start()
+    }
     Card(Modifier.fillMaxWidth().padding(12.dp)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
@@ -266,7 +286,20 @@ private fun QueryForm(ui: SearchUiState, vm: SearchViewModel) {
                 placeholder = { Text(stringResource(R.string.search_file_name_hint)) },
                 singleLine = true,
                 textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
-                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { startSearch() }),
+                trailingIcon = {
+                    if (ui.running) {
+                        IconButton(onClick = vm::stop, modifier = Modifier.testTag("search-stop")) {
+                            Icon(Icons.Rounded.Stop, contentDescription = stringResource(R.string.common_stop))
+                        }
+                    } else {
+                        IconButton(onClick = startSearch, modifier = Modifier.testTag("search-start")) {
+                            Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.common_search))
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
             )
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 NameMatchMode.entries.forEachIndexed { i, mode ->
@@ -310,24 +343,15 @@ private fun QueryForm(ui: SearchUiState, vm: SearchViewModel) {
 }
 
 @Composable
-private fun StatusBar(ui: SearchUiState, vm: SearchViewModel) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        if (ui.running) {
-            OutlinedButton(onClick = vm::stop) {
-                Icon(Icons.Rounded.Stop, contentDescription = null)
-                Text(stringResource(R.string.common_stop))
-            }
-            Text(stringResource(R.string.search_scanned, ui.scanned, ui.results.size), style = MaterialTheme.typography.bodySmall)
-        } else {
-            Button(onClick = vm::start, modifier = Modifier.weight(1f)) {
-                Icon(Icons.Rounded.Search, contentDescription = null)
-                Text(stringResource(R.string.common_search))
-            }
-            if (ui.finished) {
+private fun StatusBar(ui: SearchUiState) {
+    if (ui.running || ui.finished) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (ui.running) {
+                Text(stringResource(R.string.search_scanned, ui.scanned, ui.results.size), style = MaterialTheme.typography.bodySmall)
+            } else {
                 val summary = if (ui.stoppedEarly) R.string.search_results_limit else R.string.search_results
                 Text(stringResource(summary, ui.results.size), style = MaterialTheme.typography.bodySmall)
             }
