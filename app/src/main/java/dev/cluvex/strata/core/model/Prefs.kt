@@ -34,8 +34,21 @@ data class ListPrefs(
     val persianCalendar: Boolean = true,
     val tileFrame: Boolean = true,
     val gridColumns: Int = 0,
+    /** Size of file/folder icons in the list and grid, in percent (100 = default). */
+    val itemScale: Int = 100,
+    /** Size of the file name text, in percent. */
+    val nameScale: Int = 100,
+    /** Size of the date / size text under each name, in percent. */
+    val metaScale: Int = 100,
     val showParentEntry: Boolean = true,
 )
+
+object ItemScale {
+    const val MIN = 70
+    const val MAX = 160
+    const val STEP = 10
+    fun clamp(v: Int) = v.coerceIn(MIN, MAX)
+}
 
 enum class StartFolder(@StringRes val label: Int) {
     HOME(R.string.model_start_home),

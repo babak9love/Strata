@@ -103,7 +103,9 @@ fun FileRow(
     val density = LocalUiDensity.current
     val settings = LocalSettings.current
     val list = settings.list
-    val iconSize = density.iconDp.dp
+    val iconSize = (density.iconDp * (list.itemScale / 100f)).dp
+    val nameScale = list.nameScale / 100f
+    val metaScale = list.metaScale / 100f
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.96f else 1f, motion.fastSpatialSpec(), label = "press")
@@ -148,7 +150,7 @@ fun FileRow(
             Text(
                 isolated(Formatters.displayName(item.name, item.isDirectory, list.showExtensions)),
                 style = MaterialTheme.typography.bodyMedium,
-                fontSize = density.nameSp.sp,
+                fontSize = (density.nameSp * nameScale).sp,
                 maxLines = if (list.wrapNames) 3 else density.nameMaxLines,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -159,7 +161,7 @@ fun FileRow(
                     Text(
                         date.orEmpty(),
                         style = MaterialTheme.typography.labelSmall,
-                        fontSize = density.metaSp.sp,
+                        fontSize = (density.metaSp * metaScale).sp,
                         color = colors.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -169,7 +171,7 @@ fun FileRow(
                         Text(
                             info,
                             style = MaterialTheme.typography.labelSmall,
-                            fontSize = density.metaSp.sp,
+                            fontSize = (density.metaSp * metaScale).sp,
                             color = colors.onSurfaceVariant,
                             maxLines = 1,
                             modifier = Modifier.padding(start = 6.dp),
@@ -223,7 +225,9 @@ fun FileTile(
     val apk = showThumbnail && list.apkIcons && kind == FileKind.APK
     val folderBadge = showThumbnail && list.apkIcons && item.isDirectory
     val compact = !list.tileFrame && !picture
-    val iconSize = if (list.gridColumns == 4) 48.dp else 56.dp
+    val iconSize = (if (list.gridColumns == 4) 48.dp else 56.dp) * (list.itemScale / 100f)
+    val nameScale = list.nameScale / 100f
+    val metaScale = list.metaScale / 100f
     Column(
         modifier
             .then(drop.spot)
@@ -283,6 +287,7 @@ fun FileTile(
         Text(
             isolated(Formatters.displayName(item.name, item.isDirectory, list.showExtensions)),
             style = MaterialTheme.typography.labelMedium,
+            fontSize = MaterialTheme.typography.labelMedium.fontSize * nameScale,
             maxLines = if (list.wrapNames) 3 else 2,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
@@ -293,6 +298,7 @@ fun FileTile(
             Text(
                 info,
                 style = MaterialTheme.typography.labelSmall,
+                fontSize = MaterialTheme.typography.labelSmall.fontSize * metaScale,
                 color = colors.onSurfaceVariant,
                 // Narrow 4-column tiles: wrap the date and time onto two lines instead of cutting it off.
                 maxLines = if (list.gridColumns == 4) 2 else 1,

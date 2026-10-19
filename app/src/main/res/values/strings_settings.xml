@@ -442,4 +442,7 @@
     <string name="settings_kw_support">donate donation support sponsor tip crypto wallet usdt trx tron bnb ton gram</string>
     <string name="settings_show_parent_entry">Show parent folder item</string>
     <string name="settings_show_parent_entry_summary">Show the ".." item at the top of the file list to go up one level</string>
+    <string name="settings_item_size">Icon size</string>
+    <string name="settings_name_size">Name size</string>
+    <string name="settings_meta_size">Date and size text size</string>
 </resources>

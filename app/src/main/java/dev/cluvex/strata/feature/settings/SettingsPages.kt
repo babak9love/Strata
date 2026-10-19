@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.FolderSpecial
 import androidx.compose.material.icons.rounded.FormatSize
 import androidx.compose.material.icons.rounded.Gavel
 import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.ZoomIn
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.LightMode
@@ -97,6 +98,7 @@ import dev.cluvex.strata.core.i18n.tr
 import dev.cluvex.strata.core.i18n.trPlural
 import dev.cluvex.strata.core.model.ConflictChoice
 import dev.cluvex.strata.core.model.DateStyle
+import dev.cluvex.strata.core.model.ItemScale
 import dev.cluvex.strata.core.model.ReaderTheme
 import dev.cluvex.strata.core.model.SizeUnits
 import dev.cluvex.strata.core.model.SortBy
@@ -141,6 +143,24 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
                 )
                 switch(tr(R.string.settings_tile_frame), l.tileFrame, { v -> act.list { it.copy(tileFrame = v) } }, summary = tr(R.string.settings_tile_frame_summary), icon = Icons.Rounded.GridView)
             }
+            slider(
+                tr(R.string.settings_item_size), l.itemScale.toFloat(), ItemScale.MIN.toFloat()..ItemScale.MAX.toFloat(),
+                (ItemScale.MAX - ItemScale.MIN) / ItemScale.STEP - 1, { "${it.toInt()}%" },
+                { v -> act.list { it.copy(itemScale = ItemScale.clamp(v.toInt())) } },
+                icon = Icons.Rounded.ZoomIn,
+            )
+            slider(
+                tr(R.string.settings_name_size), l.nameScale.toFloat(), ItemScale.MIN.toFloat()..ItemScale.MAX.toFloat(),
+                (ItemScale.MAX - ItemScale.MIN) / ItemScale.STEP - 1, { "${it.toInt()}%" },
+                { v -> act.list { it.copy(nameScale = ItemScale.clamp(v.toInt())) } },
+                icon = Icons.Rounded.ZoomIn,
+            )
+            slider(
+                tr(R.string.settings_meta_size), l.metaScale.toFloat(), ItemScale.MIN.toFloat()..ItemScale.MAX.toFloat(),
+                (ItemScale.MAX - ItemScale.MIN) / ItemScale.STEP - 1, { "${it.toInt()}%" },
+                { v -> act.list { it.copy(metaScale = ItemScale.clamp(v.toInt())) } },
+                icon = Icons.Rounded.ZoomIn,
+            )
             choice(tr(R.string.settings_density), UiDensity.entries, settings.uiDensity, { tr(it.label) }, { d -> act.run { setUiDensity(d) } }, icon = Icons.Rounded.ViewColumn)
             switch(tr(R.string.settings_show_parent_entry), l.showParentEntry, { v -> act.list { it.copy(showParentEntry = v) } }, summary = tr(R.string.settings_show_parent_entry_summary), icon = Icons.Rounded.ArrowUpward)
             switch(tr(R.string.settings_wrap_names), l.wrapNames, { v -> act.list { it.copy(wrapNames = v) } }, summary = tr(R.string.settings_wrap_names_summary), icon = Icons.AutoMirrored.Rounded.WrapText)

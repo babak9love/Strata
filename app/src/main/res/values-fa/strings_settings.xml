@@ -441,4 +441,7 @@
     <string name="settings_kw_support">حمایت کمک مالی دونیت اهدا کیف پول رمزارز ارز دیجیتال تتر ترون</string>
     <string name="settings_show_parent_entry">نمایش آیتم پوشه‌ی بالاتر</string>
     <string name="settings_show_parent_entry_summary">نمایش آیتم «..» در بالای لیست فایل‌ها برای رفتن به پوشه‌ی بالاتر</string>
+    <string name="settings_item_size">اندازه آیکون</string>
+    <string name="settings_name_size">اندازه اسم</string>
+    <string name="settings_meta_size">اندازه تاریخ و حجم</string>
 </resources>
