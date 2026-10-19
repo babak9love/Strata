@@ -66,6 +66,7 @@ import coil3.decode.BitmapFactoryDecoder
 import coil3.request.ImageRequest
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.ApkIcon
+import dev.cluvex.strata.core.media.FolderBadge
 import dev.cluvex.strata.core.model.FileItem
 import dev.cluvex.strata.core.model.ListPrefs
 import dev.cluvex.strata.core.util.FileKind
@@ -220,6 +221,7 @@ fun FileTile(
     val kind = FileKinds.of(item)
     val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)
     val apk = showThumbnail && list.apkIcons && kind == FileKind.APK
+    val folderBadge = showThumbnail && list.apkIcons && item.isDirectory
     val compact = !list.tileFrame && !picture
     val iconSize = if (list.gridColumns == 4) 48.dp else 56.dp
     Column(
@@ -257,6 +259,7 @@ fun FileTile(
                     )
                 }
                 apk -> ApkIconOrKind(item, iconSize, shape)
+                folderBadge -> FolderIconWithBadge(item, iconSize, shape)
                 else -> KindIcon(item, iconSize, shape)
             }
             Box(
@@ -387,6 +390,7 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
                     )
                 }
                 showThumbnail && settings.list.apkIcons && kind == FileKind.APK -> ApkIconOrKind(item, iconSize, shape)
+                showThumbnail && settings.list.apkIcons && item.isDirectory -> FolderIconWithBadge(item, iconSize, shape)
                 else -> KindIcon(item, iconSize, shape)
             }
         }
@@ -403,6 +407,28 @@ private fun ApkIconOrKind(item: FileItem, size: Dp, shape: Shape) {
             contentDescription = stringResource(R.string.explorer_app_icon),
             onSuccess = { loaded = true },
             modifier = Modifier.size(size).testTag("apk-icon"),
+        )
+    }
+}
+
+/** Folder icon with a small badge in its bottom corner: the default media app, or the app whose APK lives inside. */
+@Composable
+private fun FolderIconWithBadge(item: FileItem, iconSize: Dp, shape: Shape) {
+    val colors = MaterialTheme.colorScheme
+    var loaded by remember(item.path) { mutableStateOf(false) }
+    val badgeSize = iconSize * 0.5f
+    Box(Modifier.size(iconSize)) {
+        KindIcon(item, iconSize, shape)
+        AsyncImage(
+            model = remember(item.path, item.lastModified) { FolderBadge(item.path, item.lastModified) },
+            contentDescription = null,
+            onSuccess = { loaded = true },
+            onError = { loaded = false },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(badgeSize)
+                .then(if (loaded) Modifier.clip(CircleShape).background(colors.surface.copy(alpha = 0.85f)).padding(badgeSize * 0.08f) else Modifier)
+                .testTag("folder-badge"),
         )
     }
 }

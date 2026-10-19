@@ -12,6 +12,8 @@ import coil3.svg.SvgDecoder
 import coil3.video.VideoFrameDecoder
 import dev.cluvex.strata.core.media.ApkIconFetcher
 import dev.cluvex.strata.core.media.ApkIconKeyer
+import dev.cluvex.strata.core.media.FolderBadgeFetcher
+import dev.cluvex.strata.core.media.FolderBadgeKeyer
 import dev.cluvex.strata.core.remote.SafFileSystem
 import dev.cluvex.strata.core.root.RootManager
 import dev.cluvex.strata.core.shizuku.ShizukuManager
@@ -44,6 +46,8 @@ class StrataApp : Application(), SingletonImageLoader.Factory {
                 add(SvgDecoder.Factory())
                 add(ApkIconFetcher.Factory())
                 add(ApkIconKeyer())
+                add(FolderBadgeFetcher.Factory())
+                add(FolderBadgeKeyer())
             }
             .crossfade(true)
             .build()
