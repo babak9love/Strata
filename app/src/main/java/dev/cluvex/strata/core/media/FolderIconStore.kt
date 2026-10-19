@@ -12,7 +12,7 @@ import java.io.File
 /**
  * User-chosen icons for individual folders. Each folder path maps to one spec string:
  *  - "app:<package>"  the icon of an installed app
- *  - "auto"           an image / video / APK found inside the folder
+ *  - "auto"           a file inside the folder: its image / video / APK, else the file's own default icon
  *  - "img:<file>"     a PNG the user picked (copied into the app's private storage)
  * A folder with no entry keeps the automatic icon. Entries are keyed by path, so renaming or moving a folder drops its icon.
  */
@@ -57,6 +57,7 @@ object FolderIconStore {
         return true
     }
 
+    /** Back to the automatic icon: forgets the choice for [path] and deletes its picture, if any. */
     fun clear(path: String) {
         deleteImageOf(path)
         val next = _specs.value - path

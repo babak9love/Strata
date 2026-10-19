@@ -32,20 +32,20 @@ import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.FolderIconStore
 
-private enum class IconChoice { DEFAULT, APP, AUTO, IMAGE }
+private enum class IconChoice { APP, AUTO, IMAGE }
 
 /**
- * Lets the user pick the small icon shown on one folder: back to automatic, an installed app (by package name),
- * an image/video/APK found inside the folder, or a picture of their own.
+ * Lets the user pick the small icon shown on one folder: an installed app (by package name),
+ * a file inside the folder (its image / video / APK, else the file's own default icon), or a picture of their own.
  */
 @Composable
 fun FolderIconDialog(path: String, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val current = remember(path) { FolderIconStore.spec(path) }
     var choice by remember {
-        mutableStateOf(
+        mutableStateOf<IconChoice?>(
             when {
-                current == null -> IconChoice.DEFAULT
+                current == null -> null
                 current.startsWith("app:") -> IconChoice.APP
                 current == "auto" -> IconChoice.AUTO
                 else -> IconChoice.IMAGE
@@ -66,8 +66,8 @@ fun FolderIconDialog(path: String, onDismiss: () -> Unit) {
 
     val valid = when (choice) {
         IconChoice.APP -> packageName.isNotBlank()
-        IconChoice.IMAGE -> false // applied by the picker itself
-        else -> true
+        IconChoice.AUTO -> true
+        else -> false // nothing picked yet, or the image is applied by the picker itself
     }
 
     AlertDialog(
@@ -75,7 +75,6 @@ fun FolderIconDialog(path: String, onDismiss: () -> Unit) {
         title = { Text(stringResource(R.string.model_folder_icon)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                ChoiceRow(choice == IconChoice.DEFAULT, stringResource(R.string.folder_icon_default)) { choice = IconChoice.DEFAULT }
                 ChoiceRow(choice == IconChoice.APP, stringResource(R.string.folder_icon_app)) { choice = IconChoice.APP }
                 if (choice == IconChoice.APP) {
                     OutlinedTextField(
@@ -96,6 +95,15 @@ fun FolderIconDialog(path: String, onDismiss: () -> Unit) {
                         modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
                     ) { Text(stringResource(R.string.folder_icon_choose_image)) }
                 }
+                if (current != null) {
+                    TextButton(
+                        onClick = {
+                            FolderIconStore.clear(path)
+                            onDismiss()
+                        },
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) { Text(stringResource(R.string.folder_icon_reset)) }
+                }
             }
         },
         confirmButton = {
@@ -103,10 +111,9 @@ fun FolderIconDialog(path: String, onDismiss: () -> Unit) {
                 enabled = valid,
                 onClick = {
                     when (choice) {
-                        IconChoice.DEFAULT -> FolderIconStore.clear(path)
                         IconChoice.APP -> FolderIconStore.setApp(path, packageName)
                         IconChoice.AUTO -> FolderIconStore.setAuto(path)
-                        IconChoice.IMAGE -> Unit
+                        else -> Unit
                     }
                     onDismiss()
                 },

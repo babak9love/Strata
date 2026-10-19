@@ -183,5 +183,5 @@
     <string name="model_protocol_webdavs">\u200FWebDAV روی HTTPS</string>
     <string name="model_protocol_saf">حافظه محلی</string>
     <string name="model_protocol_vault">گاوصندوق</string>
-    <string name="model_folder_icon">آیکون پوشه…</string>
+    <string name="model_folder_icon">آیکون پوشه</string>
 </resources>

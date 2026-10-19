@@ -44,6 +44,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +72,9 @@ import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.ApkIcon
 import dev.cluvex.strata.core.media.FolderBadge
 import dev.cluvex.strata.core.model.FileItem
+import java.io.File
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import dev.cluvex.strata.core.model.ListPrefs
 import dev.cluvex.strata.core.util.FileKind
 import dev.cluvex.strata.core.util.FileKinds
@@ -420,23 +424,51 @@ private fun ApkIconOrKind(item: FileItem, size: Dp, shape: Shape) {
     }
 }
 
-/** Folder icon with a small badge in its bottom corner: the phone's own media app, or the app whose APK lives inside. */
+/** Folder icon with a small badge in its bottom corner: the phone's own media app, the app whose APK lives inside, or a chosen file. */
 @Composable
 private fun FolderIconWithBadge(item: FileItem, iconSize: Dp, shape: Shape) {
     val specs by FolderIconStore.specs.collectAsState()
     val spec = specs[item.path]
+    val badgeSize = iconSize * 0.5f
+    val badgeShape = RoundedCornerShape(20)
+    var failed by remember(item.path, item.lastModified, spec) { mutableStateOf(false) }
+    // "A file inside the folder": when it has no image / video / APK to show, fall back to the default icon of its first file.
+    val fallback by produceState<FileItem?>(null, item.path, item.lastModified, spec, failed) {
+        value = if (spec == "auto" && failed) {
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    File(item.path).listFiles()
+                        ?.filter { it.isFile }
+                        ?.minWithOrNull(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+                        ?.let { FileItem.of(it) }
+                }.getOrNull()
+            }
+        } else {
+            null
+        }
+    }
     Box(Modifier.size(iconSize)) {
         KindIcon(item, iconSize, shape)
         AsyncImage(
             model = remember(item.path, item.lastModified, spec) { FolderBadge(item.path, item.lastModified, spec) },
             contentDescription = null,
             contentScale = ContentScale.Crop,
+            onError = { failed = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .size(iconSize * 0.5f)
-                .clip(RoundedCornerShape(20))
+                .size(badgeSize)
+                .clip(badgeShape)
                 .testTag("folder-badge"),
         )
+        fallback?.let { file ->
+            Box(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(badgeSize)
+                    .clip(badgeShape)
+                    .testTag("folder-badge-file"),
+            ) { KindIcon(file, badgeSize, badgeShape) }
+        }
     }
 }
 
