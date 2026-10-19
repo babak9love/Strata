@@ -286,4 +286,11 @@
     <string name="rename_mode_full">Полное имя</string>
     <string name="rename_mode_extension">Расширение</string>
     <string name="rename_extension">Расширение</string>
+    <string name="folder_icon_default">Автоматически</string>
+    <string name="folder_icon_app">Значок приложения</string>
+    <string name="folder_icon_package">Имя пакета</string>
+    <string name="folder_icon_auto">Файл внутри папки (изображение, видео или APK)</string>
+    <string name="folder_icon_image">Своё изображение</string>
+    <string name="folder_icon_choose_image">Выбрать изображение…</string>
+    <string name="folder_icon_image_failed">Не удалось прочитать изображение</string>
 </resources>

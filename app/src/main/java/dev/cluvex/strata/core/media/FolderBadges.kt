@@ -6,7 +6,8 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
-import android.os.Environment
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
 import androidx.core.graphics.drawable.toBitmap
 import coil3.ImageLoader
@@ -20,7 +21,7 @@ import coil3.request.Options
 import java.io.File
 
 /** Request for the small badge drawn on a folder's icon: [path] is the folder, [modified] busts the cache when it changes. */
-data class FolderBadge(val path: String, val modified: Long)
+data class FolderBadge(val path: String, val modified: Long, val spec: String? = null)
 
 object FolderBadges {
 
@@ -31,11 +32,10 @@ object FolderBadges {
 
     private val imageFolders = setOf("pictures")
     private val cameraFolders = setOf("dcim", "camera")
-    private val audioFolders = setOf("music")
-    // Distinctive enough to match at any depth (the others only at the top level of internal storage).
-    private val anyDepthAudio = setOf("audio")
-    private val anyDepthRecorder = setOf("recordings", "voice recorder")
-    private val videoFolders = setOf("movies", "video", "videos")
+    private val movieFolders = setOf("movies")
+    private val videoFolders = setOf("video", "videos")
+    private val audioFolders = setOf("music", "audio")
+    private val recorderFolders = setOf("recordings", "voice recorder")
 
     /**
      * Folders that belong to a known app, by lower-case folder name -> candidate package names (first installed wins).
@@ -56,6 +56,7 @@ object FolderBadges {
      */
     fun load(context: Context, path: String): Bitmap? {
         val dir = File(path)
+        FolderIconStore.spec(path)?.let { spec -> customIcon(context, dir, spec)?.let { return it } }
         mediaKind(dir)?.let { media -> defaultAppIcon(context, media)?.let { return it } }
         appFolders[dir.name.lowercase()]?.let { packages -> installedAppIcon(context, packages)?.let { return it } }
         return apkIcon(context, dir)
@@ -63,21 +64,14 @@ object FolderBadges {
 
     private enum class Media { IMAGE, CAMERA, AUDIO, VIDEO, RECORDER }
 
-    private fun mediaKind(dir: File): Media? {
-        val name = dir.name.lowercase()
-        when (name) {
-            in anyDepthAudio -> return Media.AUDIO
-            in anyDepthRecorder -> return Media.RECORDER
-        }
-        val root = runCatching { Environment.getExternalStorageDirectory() }.getOrNull() ?: return null
-        if (dir.parentFile?.canonicalPath != root.canonicalPath) return null
-        return when (name) {
-            in imageFolders -> Media.IMAGE
-            in cameraFolders -> Media.CAMERA
-            in audioFolders -> Media.AUDIO
-            in videoFolders -> Media.VIDEO
-            else -> null
-        }
+    /** Folder names are matched at any depth, not only at the top level of internal storage. */
+    private fun mediaKind(dir: File): Media? = when (dir.name.lowercase()) {
+        in imageFolders -> Media.IMAGE
+        in cameraFolders -> Media.CAMERA
+        in movieFolders, in videoFolders -> Media.VIDEO
+        in audioFolders -> Media.AUDIO
+        in recorderFolders -> Media.RECORDER
+        else -> null
     }
 
     private fun defaultAppIcon(context: Context, media: Media): Bitmap? = runCatching {
@@ -122,6 +116,51 @@ object FolderBadges {
         return all.firstOrNull { (it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 } ?: all.firstOrNull()
     }
 
+    /** The icon the user picked for this folder; null (so the automatic icon is used) if it can't be produced. */
+    private fun customIcon(context: Context, dir: File, spec: String): Bitmap? = runCatching {
+        when {
+            spec.startsWith("app:") -> installedAppIcon(context, listOf(spec.removePrefix("app:")))
+            spec.startsWith("img:") -> BitmapFactory.decodeFile(FolderIconStore.imageFile(context, spec.removePrefix("img:")).path)
+            spec == "auto" -> contentIcon(context, dir)
+            else -> null
+        }
+    }.getOrNull()
+
+    private val imageExt = setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "avif")
+    private val videoExt = setOf("mp4", "mkv", "webm", "mov", "avi", "3gp", "m4v")
+
+    /** First image, else video, else APK inside the folder (by name), rendered as a small bitmap. */
+    private fun contentIcon(context: Context, dir: File): Bitmap? {
+        val files = dir.listFiles()?.asSequence()?.take(MAX_ENTRIES)?.filter { it.isFile }?.sortedBy { it.name }?.toList() ?: return null
+        files.firstOrNull { it.extension.lowercase() in imageExt }?.let { f ->
+            decodeImage(f)?.let { return it }
+        }
+        files.firstOrNull { it.extension.lowercase() in videoExt }?.let { f ->
+            videoFrame(f)?.let { return it }
+        }
+        return apkIcon(context, dir)
+    }
+
+    private fun decodeImage(file: File): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.path, bounds)
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= SIZE && bounds.outHeight / (sample * 2) >= SIZE) sample *= 2
+        return BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
+    }
+
+    private fun videoFrame(file: File): Bitmap? {
+        val r = MediaMetadataRetriever()
+        return try {
+            r.setDataSource(file.path)
+            r.getFrameAtTime(1_000_000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+        } catch (_: Exception) {
+            null
+        } finally {
+            runCatching { r.release() }
+        }
+    }
+
     private fun installedAppIcon(context: Context, packages: List<String>): Bitmap? {
         val pm = context.packageManager
         for (pkg in packages) {
@@ -155,5 +194,5 @@ class FolderBadgeFetcher(private val data: FolderBadge, private val options: Opt
 }
 
 class FolderBadgeKeyer : Keyer<FolderBadge> {
-    override fun key(data: FolderBadge, options: Options): String = "folder-badge:${data.path}:${data.modified}"
+    override fun key(data: FolderBadge, options: Options): String = "folder-badge:${data.path}:${data.modified}:${data.spec.orEmpty()}"
 }

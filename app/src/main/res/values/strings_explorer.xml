@@ -259,4 +259,11 @@
     <string name="rename_mode_full">Full name</string>
     <string name="rename_mode_extension">Extension</string>
     <string name="rename_extension">Extension</string>
+    <string name="folder_icon_default">Automatic</string>
+    <string name="folder_icon_app">Icon of an app</string>
+    <string name="folder_icon_package">Package name</string>
+    <string name="folder_icon_auto">A file inside the folder (image, video or APK)</string>
+    <string name="folder_icon_image">My own picture</string>
+    <string name="folder_icon_choose_image">Choose picture…</string>
+    <string name="folder_icon_image_failed">Couldn\'t read that picture</string>
 </resources>

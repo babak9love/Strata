@@ -14,6 +14,7 @@ import androidx.compose.material.icons.rounded.AddLink
 import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.BookmarkAdd
+import androidx.compose.material.icons.rounded.FolderSpecial
 import androidx.compose.material.icons.rounded.Bookmarks
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -93,6 +94,7 @@ val SelectionAction.icon: ImageVector
         SelectionAction.SMALI_TO_DEX -> Icons.Rounded.Build
         SelectionAction.JAR_TO_DEX -> Icons.Rounded.Coffee
         SelectionAction.BOOKMARK -> Icons.Rounded.BookmarkAdd
+        SelectionAction.FOLDER_ICON -> Icons.Rounded.FolderSpecial
         SelectionAction.LINKS -> Icons.Rounded.AddLink
         SelectionAction.VAULT -> Icons.Rounded.EnhancedEncryption
         SelectionAction.RESTORE -> Icons.Rounded.Outbox

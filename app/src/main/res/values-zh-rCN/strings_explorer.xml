@@ -244,4 +244,11 @@
     <string name="rename_mode_full">完整名称</string>
     <string name="rename_mode_extension">扩展名</string>
     <string name="rename_extension">扩展名</string>
+    <string name="folder_icon_default">自动</string>
+    <string name="folder_icon_app">应用图标</string>
+    <string name="folder_icon_package">包名</string>
+    <string name="folder_icon_auto">文件夹内的文件（图片、视频或 APK）</string>
+    <string name="folder_icon_image">我自己的图片</string>
+    <string name="folder_icon_choose_image">选择图片…</string>
+    <string name="folder_icon_image_failed">无法读取该图片</string>
 </resources>

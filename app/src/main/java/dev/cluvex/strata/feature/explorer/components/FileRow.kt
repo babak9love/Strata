@@ -1,5 +1,8 @@
 package dev.cluvex.strata.feature.explorer.components
 
+import dev.cluvex.strata.core.media.FolderIconStore
+import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import dev.cluvex.strata.ui.isolated
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
@@ -420,14 +423,18 @@ private fun ApkIconOrKind(item: FileItem, size: Dp, shape: Shape) {
 /** Folder icon with a small badge in its bottom corner: the phone's own media app, or the app whose APK lives inside. */
 @Composable
 private fun FolderIconWithBadge(item: FileItem, iconSize: Dp, shape: Shape) {
+    val specs by FolderIconStore.specs.collectAsState()
+    val spec = specs[item.path]
     Box(Modifier.size(iconSize)) {
         KindIcon(item, iconSize, shape)
         AsyncImage(
-            model = remember(item.path, item.lastModified) { FolderBadge(item.path, item.lastModified) },
+            model = remember(item.path, item.lastModified, spec) { FolderBadge(item.path, item.lastModified, spec) },
             contentDescription = null,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .size(iconSize * 0.5f)
+                .clip(RoundedCornerShape(20))
                 .testTag("folder-badge"),
         )
     }

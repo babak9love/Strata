@@ -40,6 +40,7 @@ enum class SelectionAction(@StringRes val label: Int, val asks: Boolean = false)
     SMALI_TO_DEX(R.string.model_smali_to_dex),
     JAR_TO_DEX(R.string.model_jar_to_dex),
     BOOKMARK(R.string.model_add_bookmark),
+    FOLDER_ICON(R.string.model_folder_icon),
     LINKS(R.string.model_selection_links, asks = true),
     VAULT(R.string.model_move_to_vault),
     RESTORE(R.string.model_restore),
@@ -165,6 +166,7 @@ fun SelectionAction.available(c: SelectionContext): Boolean = when (this) {
     SelectionAction.COPY, SelectionAction.MOVE, SelectionAction.DELETE, SelectionAction.BOOKMARK,
     SelectionAction.SELECT_ALL, SelectionAction.INVERT -> true
     SelectionAction.RENAME -> c.count == 1
+    SelectionAction.FOLDER_ICON -> !c.remote && c.count == 1 && c.files == 0
     SelectionAction.OPEN_WITH -> c.count == 1 && c.files == 1
     SelectionAction.EXTRACT -> !c.remote && c.count == 1 && c.archive
     SelectionAction.BATCH_RENAME, SelectionAction.COMPRESS, SelectionAction.LINKS, SelectionAction.SHARE,
@@ -302,7 +304,7 @@ data class ActionLayout(
                 listOf(
                     SelectionAction.OPEN_WITH, SelectionAction.EXTRACT, SelectionAction.RENAME, SelectionAction.BATCH_RENAME, SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD,
                     SelectionAction.COMPRESS, SelectionAction.MERGE, SelectionAction.COMPARE, SelectionAction.SMALI_TO_DEX,
-                    SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARK, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
+                    SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARK, SelectionAction.FOLDER_ICON, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
                     SelectionAction.COPY_PATH, SelectionAction.PROPERTIES, SelectionAction.SELECT_ALL, SelectionAction.INVERT,
                 ),
                 emptyList(),

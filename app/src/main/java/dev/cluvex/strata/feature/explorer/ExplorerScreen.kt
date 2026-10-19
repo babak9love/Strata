@@ -90,6 +90,7 @@ import dev.cluvex.strata.feature.explorer.dnd.LocalFileDrag
 import dev.cluvex.strata.feature.explorer.dnd.dragHost
 import dev.cluvex.strata.feature.apk.SignApkDialog
 import dev.cluvex.strata.feature.explorer.components.BatchRenameDialog
+import dev.cluvex.strata.feature.explorer.components.FolderIconDialog
 import dev.cluvex.strata.feature.explorer.components.RenameDialog
 import dev.cluvex.strata.feature.explorer.components.BookmarkActions
 import dev.cluvex.strata.feature.explorer.components.BookmarkChipsBar
@@ -146,6 +147,7 @@ private sealed interface Dialog {
     data class Transfer(val move: Boolean) : Dialog
     data class JumpTo(val pane: Pane) : Dialog
     data class Rename(val pane: Pane, val item: FileItem) : Dialog
+    data class FolderIcon(val item: FileItem) : Dialog
     data class ItemSheet(val pane: Pane, val item: FileItem) : Dialog
     data class Checksum(val item: FileItem) : Dialog
     data class Properties(val items: List<FileItem>) : Dialog
@@ -385,6 +387,7 @@ fun ExplorerScreen(
                     onBookmarks = { dialog = Dialog.Bookmarks },
                     onBookmarkFolder = { vm.addBookmarks(listOf(ui.activePane.path)) },
                     onBookmarkSelection = { vm.addSelectionToBookmarks(ui.active) },
+                    onFolderIcon = { single?.takeIf { it.isDirectory }?.let { dialog = Dialog.FolderIcon(it); vm.clearSelection(ui.active) } },
                     onBatchRename = { dialog = Dialog.BatchRename(ui.active, selectionInOrder()) },
                     onCreateLinks = { dialog = Dialog.CreateLink(ui.active, selectionInOrder()) },
                     onMerge = { dialog = Dialog.Merge(ui.active, selectionInOrder().filterNot { it.isDirectory }) },
@@ -556,6 +559,7 @@ fun ExplorerScreen(
             onConfirm = { vm.openPath(d.pane, it.trim()); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
+        is Dialog.FolderIcon -> FolderIconDialog(d.item.path) { dialog = Dialog.None }
         is Dialog.Rename -> RenameDialog(
             name = d.item.name, isDirectory = d.item.isDirectory,
             onConfirm = { vm.rename(d.pane, d.item, it); vm.clearSelection(d.pane); dialog = Dialog.None },

@@ -259,4 +259,11 @@
     <string name="rename_mode_full">نام کامل</string>
     <string name="rename_mode_extension">پسوند</string>
     <string name="rename_extension">پسوند</string>
+    <string name="folder_icon_default">خودکار</string>
+    <string name="folder_icon_app">آیکون یک برنامه</string>
+    <string name="folder_icon_package">نام بسته (Package name)</string>
+    <string name="folder_icon_auto">یک فایل داخل پوشه (تصویر، ویدیو یا APK)</string>
+    <string name="folder_icon_image">تصویر دلخواه من</string>
+    <string name="folder_icon_choose_image">انتخاب تصویر…</string>
+    <string name="folder_icon_image_failed">این تصویر خوانده نشد</string>
 </resources>

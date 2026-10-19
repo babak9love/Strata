@@ -34,6 +34,7 @@ class StrataApp : Application(), SingletonImageLoader.Factory {
         AppLock.track(this)
         RootManager.init(this)
         SafFileSystem.appContext = this
+        dev.cluvex.strata.core.media.FolderIconStore.init(this)
         runCatching { ShizukuManager.init(this) }
         runCatching { UiSounds.device = SoundPoolDevice(this).also { it.trackActivities(this) } }
     }

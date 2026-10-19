@@ -93,6 +93,7 @@ class BottomBarActions(
     val onBookmarks: () -> Unit = {},
     val onBookmarkFolder: () -> Unit = {},
     val onBookmarkSelection: () -> Unit = {},
+    val onFolderIcon: () -> Unit = {},
     val onBatchRename: () -> Unit = {},
     val onCreateLinks: () -> Unit = {},
     val onMerge: () -> Unit = {},
@@ -330,6 +331,7 @@ private fun SelectionAction.run(a: BottomBarActions, dual: Boolean) = when (this
     SelectionAction.SMALI_TO_DEX -> a.onSmaliToDex()
     SelectionAction.JAR_TO_DEX -> a.onJarToDex()
     SelectionAction.BOOKMARK -> a.onBookmarkSelection()
+    SelectionAction.FOLDER_ICON -> a.onFolderIcon()
     SelectionAction.LINKS -> a.onCreateLinks()
     SelectionAction.VAULT -> a.onMoveToVault()
     SelectionAction.RESTORE -> a.onRestore()
