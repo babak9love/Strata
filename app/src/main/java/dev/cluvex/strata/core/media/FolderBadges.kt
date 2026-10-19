@@ -32,6 +32,9 @@ object FolderBadges {
     private val imageFolders = setOf("pictures")
     private val cameraFolders = setOf("dcim", "camera")
     private val audioFolders = setOf("music")
+    // Distinctive enough to match at any depth (the others only at the top level of internal storage).
+    private val anyDepthAudio = setOf("audio")
+    private val anyDepthRecorder = setOf("recordings", "voice recorder")
     private val videoFolders = setOf("movies", "video", "videos")
 
     /**
@@ -58,12 +61,16 @@ object FolderBadges {
         return apkIcon(context, dir)
     }
 
-    private enum class Media { IMAGE, CAMERA, AUDIO, VIDEO }
+    private enum class Media { IMAGE, CAMERA, AUDIO, VIDEO, RECORDER }
 
     private fun mediaKind(dir: File): Media? {
+        val name = dir.name.lowercase()
+        when (name) {
+            in anyDepthAudio -> return Media.AUDIO
+            in anyDepthRecorder -> return Media.RECORDER
+        }
         val root = runCatching { Environment.getExternalStorageDirectory() }.getOrNull() ?: return null
         if (dir.parentFile?.canonicalPath != root.canonicalPath) return null
-        val name = dir.name.lowercase()
         return when (name) {
             in imageFolders -> Media.IMAGE
             in cameraFolders -> Media.CAMERA
@@ -82,6 +89,8 @@ object FolderBadges {
             Media.IMAGE -> gallery ?: viewHandler(pm, "image/*", emptySet())
             // DCIM / Camera: the phone's camera app (the app that handles "take a photo").
             Media.CAMERA -> actionHandler(pm, MediaStore.ACTION_IMAGE_CAPTURE) ?: gallery
+            // The phone's own voice recorder (the app that handles "record sound"); no fallback, so no wrong icon.
+            Media.RECORDER -> actionHandler(pm, MediaStore.Audio.Media.RECORD_SOUND_ACTION)
             Media.AUDIO -> categoryApp(pm, Intent.CATEGORY_APP_MUSIC) ?: viewHandler(pm, "audio/*", emptySet())
             // There is no "video player" category: take a real video handler that is not the gallery / photos app.
             Media.VIDEO -> viewHandler(pm, "video/*", setOfNotNull(gallery?.activityInfo?.packageName, PHOTOS_PACKAGE))
