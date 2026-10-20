@@ -78,7 +78,10 @@ object FileKinds {
         "properties", "prop", "log", "csv", "tsv", "mtl", "mtsx", "diff", "patch",
     )
     private val font = setOf("ttf", "otf", "woff", "woff2", "ttc")
-    private val document = setOf("doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "rtf", "epub")
+    private val document = setOf(
+        "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+        "odt", "ods", "odp", "rtf", "epub",
+    )
 
     fun of(item: FileItem): FileKind {
         if (item.isDirectory) return FileKind.FOLDER
@@ -122,9 +125,12 @@ object FileKinds {
         "pdf" -> R.drawable.ic_pdf
         "apk", "apks", "xapk", "apkm" -> R.drawable.ic_apk
         "mp3", "wav", "flac", "m4a", "aac", "ogg", "opus" -> R.drawable.ic_audio
-        "doc", "docx", "odt", "rtf" -> R.drawable.ic_word
-        "xls", "xlsx", "ods" -> R.drawable.ic_excel
-        "ppt", "pptx", "odp" -> R.drawable.ic_powerpoint
+        "doc", "docx", "rtf" -> R.drawable.ic_word
+        "odt" -> R.drawable.ic_odt
+        "xls", "xlsx" -> R.drawable.ic_excel
+        "ods" -> R.drawable.ic_ods
+        "ppt", "pptx" -> R.drawable.ic_powerpoint
+        "odp" -> R.drawable.ic_odp
         "kt", "kts" -> R.drawable.ic_kotlin
         "zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz" -> R.drawable.ic_archive
         "jks", "keystore", "p12", "pfx", "pem" -> R.drawable.ic_keystore // keys & certificates
