@@ -128,16 +128,6 @@ object FileKinds {
         "kt", "kts" -> R.drawable.ic_kotlin
         "zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz" -> R.drawable.ic_archive
         "jks", "keystore", "p12", "pfx", "pem" -> R.drawable.ic_keystore // keys & certificates
-        "js", "mjs", "cjs", "jsx", "tsx" -> R.drawable.ic_javascript
-        "java" -> R.drawable.ic_java
-        "css", "scss", "sass", "less" -> R.drawable.ic_css
-        "c", "h", "cc", "cpp", "cxx", "hpp", "hh" -> R.drawable.ic_cpp
-        "csv", "tsv" -> R.drawable.ic_csv
-        "ini", "toml", "conf", "cfg", "properties", "prop" -> R.drawable.ic_config
-        "sql" -> R.drawable.ic_sql
-        "ttf", "otf", "woff", "woff2", "ttc" -> R.drawable.ic_font
-        "jar", "war" -> R.drawable.ic_jar
-        "senc" -> R.drawable.ic_senc
         else -> null
     }
 
