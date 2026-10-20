@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.search
 
+import dev.cluvex.strata.feature.explorer.components.FileNameText
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
@@ -88,7 +89,6 @@ import dev.cluvex.strata.core.search.SearchResult
 import dev.cluvex.strata.ui.asPath
 import dev.cluvex.strata.ui.expressive.ArtTone
 import dev.cluvex.strata.ui.expressive.ExpressiveEmptyState
-import dev.cluvex.strata.ui.isolated
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -234,6 +234,7 @@ fun SearchScreen(
                 counting = counting,
                 recycleByDefault = recycleByDefault,
                 allowRecycle = remember(d.items) { explorer.canRecycleItems(d.items) },
+                singleName = d.items.singleOrNull()?.name,
                 onConfirm = { toBin ->
                     val paths = d.items.map { it.path }.toSet()
                     explorer.deleteItems(d.items, toBin) { vm.removeResults(paths) }
@@ -407,7 +408,7 @@ private fun ResultRow(
         Row(Modifier.padding(start = 12.dp, top = 4.dp, bottom = 4.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             if (selecting) Checkbox(checked = selected, onCheckedChange = null, modifier = Modifier.padding(end = 12.dp))
             Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
-                Text(isolated(result.item.name), style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                FileNameText(result.item.name, style = MaterialTheme.typography.titleSmall, maxLines = 1)
                 Text(
                     result.item.parentPath ?: result.item.path,
                     style = MaterialTheme.typography.bodySmall.asPath(),

@@ -1,6 +1,6 @@
 package dev.cluvex.strata.feature.trash
 
-import dev.cluvex.strata.ui.isolated
+import dev.cluvex.strata.feature.explorer.components.FileNameText
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -235,7 +235,7 @@ private fun TrashRow(
                 )
             }
         },
-        content = { Text(isolated(entry.name), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        content = { FileNameText(entry.name, maxLines = 1) },
         supportingContent = {
             Text(
                 entry.originalParent + "\n" + stringResource(R.string.trash_deleted_at, Formatters.date(entry.info.deletedAt), Formatters.size(entry.info.size)),

@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.open
 
+import dev.cluvex.strata.feature.explorer.components.FileNameText
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -160,12 +161,10 @@ fun OpenWithDialog(
                 }
                 Column(Modifier.padding(start = 14.dp)) {
                     Text(stringResource(R.string.open_with), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        isolated(item.name),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    FileNameText(
+                        item.name,
+                        style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }

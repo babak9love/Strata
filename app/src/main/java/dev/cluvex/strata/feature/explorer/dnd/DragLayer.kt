@@ -1,6 +1,6 @@
 package dev.cluvex.strata.feature.explorer.dnd
 
-import dev.cluvex.strata.ui.isolated
+import dev.cluvex.strata.feature.explorer.components.FileNameText
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -223,7 +223,7 @@ private fun GhostCard(item: FileItem, count: Int, hint: String, reduced: Boolean
             Row(Modifier.padding(start = 10.dp, end = 18.dp, top = 10.dp, bottom = 10.dp).widthIn(max = 260.dp), verticalAlignment = Alignment.CenterVertically) {
                 GhostIcon(item, reduced)
                 Column(Modifier.padding(start = 12.dp)) {
-                    Text(isolated(item.name), style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    FileNameText(item.name, style = MaterialTheme.typography.titleSmall, maxLines = 1)
                     Text(hint, style = MaterialTheme.typography.labelMedium, color = colors.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }

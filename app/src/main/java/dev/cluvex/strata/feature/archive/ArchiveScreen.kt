@@ -1,6 +1,6 @@
 package dev.cluvex.strata.feature.archive
 
-import dev.cluvex.strata.ui.isolated
+import dev.cluvex.strata.feature.explorer.components.FileNameText
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.BackHandler
@@ -209,7 +209,7 @@ fun ArchiveScreen(
                     navigationIcon = { IconButton(onClick = ::leave) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back)) } },
                     title = {
                         Column {
-                            Text(isolated(s.name), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            FileNameText(s.name, maxLines = 1)
                             val entriesText = pluralStringResource(R.plurals.archive_entries, s.totalEntries, s.totalEntries)
                             val readOnly = stringResource(R.string.archive_read_only)
                             Text(

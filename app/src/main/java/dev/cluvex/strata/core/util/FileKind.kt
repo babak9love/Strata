@@ -155,6 +155,17 @@ object FileKinds {
         else -> null
     }
 
+    /**
+     * Extension text for the auto-generated icon (coloured tile with the format written inside), or null when the file
+     * already has a branded icon, is a folder / picture / video (which have their own thumbnails) or has no extension.
+     */
+    fun autoIconLabel(item: FileItem): String? {
+        if (item.isDirectory || customIcon(item) != null) return null
+        val kind = of(item)
+        if (kind == FileKind.IMAGE || kind == FileKind.VIDEO) return null
+        return item.extension.ifEmpty { null }
+    }
+
     fun isImage(item: FileItem) = of(item) == FileKind.IMAGE
     fun isVideo(item: FileItem) = of(item) == FileKind.VIDEO
     fun isThumbnailable(item: FileItem) = isImage(item) || isVideo(item) || item.extension == "apk"

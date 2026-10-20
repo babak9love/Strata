@@ -1,6 +1,6 @@
 package dev.cluvex.strata.feature.remote
 
-import dev.cluvex.strata.ui.isolated
+import dev.cluvex.strata.feature.explorer.components.FileNameText
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -381,7 +381,7 @@ private fun Browser(
                         leadingContent = {
                             Icon(if (e.isDirectory) Icons.Rounded.Folder else Icons.Rounded.Description, null, tint = if (e.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                         },
-                        content = { Text(isolated(e.name), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        content = { FileNameText(e.name, maxLines = 1) },
                         supportingContent = if (e.isDirectory) null else ({ Text(Formatters.size(e.size), style = MaterialTheme.typography.labelMedium) }),
                         trailingContent = {
                             Box {

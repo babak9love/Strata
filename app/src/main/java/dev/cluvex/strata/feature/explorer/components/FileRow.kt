@@ -3,7 +3,6 @@ package dev.cluvex.strata.feature.explorer.components
 import dev.cluvex.strata.core.media.FolderIconStore
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import dev.cluvex.strata.ui.isolated
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -154,12 +153,10 @@ fun FileRow(
         }
         Spacer(Modifier.width(if (density.iconDp <= 30) 8.dp else 10.dp))
         Column(Modifier.weight(1f)) {
-            Text(
-                isolated(Formatters.displayName(item.name, item.isDirectory, list.showExtensions)),
-                style = MaterialTheme.typography.bodyMedium,
-                fontSize = (density.nameSp * nameScale).sp,
+            FileNameText(
+                name = Formatters.displayName(item.name, item.isDirectory, list.showExtensions),
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = (density.nameSp * nameScale).sp),
                 maxLines = if (list.wrapNames) 3 else density.nameMaxLines,
-                overflow = TextOverflow.Ellipsis,
             )
             val date = if (list.showDate) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
             val info = trailingInfo(item, list)
@@ -291,12 +288,10 @@ fun FileTile(
                 }
             }
         }
-        Text(
-            isolated(Formatters.displayName(item.name, item.isDirectory, list.showExtensions)),
-            style = MaterialTheme.typography.labelMedium,
-            fontSize = MaterialTheme.typography.labelMedium.fontSize * nameScale,
+        FileNameText(
+            name = Formatters.displayName(item.name, item.isDirectory, list.showExtensions),
+            style = MaterialTheme.typography.labelMedium.let { it.copy(fontSize = it.fontSize * nameScale) },
             maxLines = if (list.wrapNames) 3 else 2,
-            overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = if (compact) 2.dp else 6.dp),
         )
@@ -371,7 +366,8 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
     Box(
         Modifier
             .size(iconSize)
-            .clip(shape)
+            // Folders are not clipped to the rounded tile: their corner badge would get its corner cut off (grid tiles never clip them).
+            .then(if (item.isDirectory) Modifier else Modifier.clip(shape))
             .then(if (onIconClick != null) Modifier.clickable(onClickLabel = stringResource(R.string.common_select)) { onIconClick() } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
@@ -484,6 +480,15 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
             contentDescription = stringResource(kind.label),
             // The folder art is wide and already tightly cropped, so it fills the whole box; the other icons keep a small margin.
             modifier = Modifier.size(iconSize).padding(if (item.isDirectory) 0.dp else iconSize * 0.06f),
+        )
+        return
+    }
+    val autoLabel = FileKinds.autoIconLabel(item)
+    if (autoLabel != null) {
+        ExtensionIcon(
+            extension = autoLabel,
+            contentDescription = stringResource(kind.label),
+            modifier = Modifier.size(iconSize).padding(iconSize * 0.06f),
         )
         return
     }

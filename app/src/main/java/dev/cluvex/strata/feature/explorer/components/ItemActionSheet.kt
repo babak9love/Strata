@@ -1,6 +1,5 @@
 package dev.cluvex.strata.feature.explorer.components
 
-import dev.cluvex.strata.ui.isolated
 import dev.cluvex.strata.core.i18n.separator
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -186,6 +185,8 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
                     contentDescription = null,
                     modifier = Modifier.size(36.dp),
                 )
+            } else if (FileKinds.autoIconLabel(item) != null) {
+                ExtensionIcon(extension = FileKinds.autoIconLabel(item).orEmpty(), modifier = Modifier.size(36.dp))
             } else {
                 Icon(kind.icon, contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(28.dp))
             }
@@ -195,7 +196,7 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
             }
         }
         Column(Modifier.weight(1f).padding(start = 14.dp)) {
-            Text(isolated(item.name), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            FileNameText(item.name, style = MaterialTheme.typography.titleMedium, maxLines = 2)
             val meta = buildList {
                 when {
                     item.isSymlink -> add(stringResource(R.string.explorer_symlink))

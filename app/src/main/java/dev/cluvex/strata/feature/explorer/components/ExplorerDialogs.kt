@@ -138,6 +138,7 @@ fun DeleteDialog(
     onConfirm: (toRecycleBin: Boolean) -> Unit,
     onDismiss: () -> Unit,
     allowRecycle: Boolean = true,
+    singleName: String? = null,
 ) {
     var checked by remember { mutableStateOf(recycleByDefault) }
     val toBin = allowRecycle && checked
@@ -151,6 +152,15 @@ fun DeleteDialog(
         text = {
             Column {
                 Text(pluralStringResource(R.plurals.explorer_delete_confirm, count, count))
+                if (singleName != null) {
+                    // The exact file / folder name; a very long one keeps its start and its end (with the extension).
+                    FileNameText(
+                        name = singleName,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                        maxLines = 3,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
                 if (stats != null) {
                     val parts = buildList {
                         if (stats.folders > 0) add(pluralStringResource(R.plurals.explorer_delete_folders, stats.folders, stats.folders))
