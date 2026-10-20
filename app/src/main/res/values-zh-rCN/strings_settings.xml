@@ -42,7 +42,6 @@
     <string name="settings_kw_contrast">无障碍 高对比度</string>
     <string name="settings_kw_text_size">字体 缩放 更大 更小 字号</string>
     <string name="settings_kw_corners">圆角 方角 形状 半径</string>
-    <string name="settings_kw_icon_shape">饼干 四叶草 圆形 形状</string>
     <string name="settings_kw_colorful_icons">文件类型 颜色 彩色</string>
     <string name="settings_kw_animations">动画 动效 减弱 弹性</string>
     <string name="settings_kw_haptics">振动 震动 触感</string>
@@ -141,8 +140,6 @@
     <string name="settings_corners">圆角</string>
     <string name="settings_corners_summary">卡片、面板和按钮的圆润程度</string>
     <string name="settings_group_file_icons">文件图标</string>
-    <string name="settings_icon_shape">图标形状</string>
-    <string name="settings_icon_shape_option">图标形状：%1$s</string>
     <string name="settings_colorful_icons">彩色图标</string>
     <string name="settings_colorful_icons_summary">图片、视频、音乐、应用和代码各有专属颜色</string>
     <string name="settings_group_motion">动效与反馈</string>

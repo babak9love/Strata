@@ -19,7 +19,7 @@ import dev.cluvex.strata.core.model.ContrastLevel
 import dev.cluvex.strata.core.model.CornerStyle
 import dev.cluvex.strata.core.model.DateStyle
 import dev.cluvex.strata.core.model.FolderSorts
-import dev.cluvex.strata.core.model.IconShape
+import dev.cluvex.strata.core.model.DEFAULT_ITEM_SCALE
 import dev.cluvex.strata.core.model.ItemScale
 import dev.cluvex.strata.core.model.ListPrefs
 import dev.cluvex.strata.core.model.LockDelay
@@ -121,7 +121,6 @@ class SettingsRepository(private val context: Context) {
         val PURE_BLACK = booleanPreferencesKey("pure_black")
         val TEXT_SCALE = floatPreferencesKey("text_scale")
         val CORNERS = stringPreferencesKey("corner_style")
-        val ICON_SHAPE = stringPreferencesKey("icon_shape")
         val COLORFUL_ICONS = booleanPreferencesKey("colorful_icons")
         val MOTION = stringPreferencesKey("motion")
         val HAPTICS = booleanPreferencesKey("haptics")
@@ -208,7 +207,7 @@ class SettingsRepository(private val context: Context) {
         val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, NAME_SCALE, META_SCALE)
         val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE)
         val STRINGS = listOf(
-            SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
+            SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
             START_FOLDER, START_PATH, CONFLICT, UI_DENSITY, OPEN_DEFAULTS, EDITOR_THEME, APK_EXTRACT_DIR, APK_NAME_PATTERN,
             RENAME_HISTORY, RECENT_COLORS, PLUGIN_PINS, LAST_LEFT, LAST_RIGHT, RUN_COMMANDS, READER_THEME, READER_SPOTS, READER_MARKS,
             ACTION_LAYOUT, LOCK_DELAY, VAULT_LOCK_DELAY,
@@ -410,7 +409,6 @@ class SettingsRepository(private val context: Context) {
             pureBlack = p[Keys.PURE_BLACK] ?: false,
             textScale = AppearancePrefs.textScale(p[Keys.TEXT_SCALE] ?: 1f),
             corners = enumOf(p[Keys.CORNERS], CornerStyle.ROUND),
-            iconShape = enumOf(p[Keys.ICON_SHAPE], IconShape.ROUNDED),
             colorfulIcons = p[Keys.COLORFUL_ICONS] ?: true,
             motion = enumOf(p[Keys.MOTION], MotionStyle.EXPRESSIVE),
             haptics = p[Keys.HAPTICS] ?: true,
@@ -427,7 +425,6 @@ class SettingsRepository(private val context: Context) {
             p[Keys.PURE_BLACK] = a.pureBlack
             p[Keys.TEXT_SCALE] = AppearancePrefs.textScale(a.textScale)
             p[Keys.CORNERS] = a.corners.name
-            p[Keys.ICON_SHAPE] = a.iconShape.name
             p[Keys.COLORFUL_ICONS] = a.colorfulIcons
             p[Keys.MOTION] = a.motion.name
             p[Keys.HAPTICS] = a.haptics
@@ -449,7 +446,7 @@ class SettingsRepository(private val context: Context) {
             persianCalendar = p[Keys.PERSIAN_CALENDAR] ?: true,
             tileFrame = p[Keys.TILE_FRAME] ?: true,
             gridColumns = (p[Keys.GRID_COLUMNS] ?: 0).let { if (it == 4) 4 else 0 },
-            itemScale = ItemScale.clamp(p[Keys.ITEM_SCALE] ?: 100),
+            itemScale = ItemScale.clamp(p[Keys.ITEM_SCALE] ?: DEFAULT_ITEM_SCALE),
             nameScale = ItemScale.clamp(p[Keys.NAME_SCALE] ?: 100),
             metaScale = ItemScale.clamp(p[Keys.META_SCALE] ?: 100),
             showParentEntry = p[Keys.SHOW_PARENT_ENTRY] ?: true,

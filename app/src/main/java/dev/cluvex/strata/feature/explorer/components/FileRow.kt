@@ -87,7 +87,7 @@ import dev.cluvex.strata.feature.explorer.dnd.rememberDropAnimation
 import dev.cluvex.strata.ui.LocalSettings
 import dev.cluvex.strata.ui.LocalUiDensity
 import dev.cluvex.strata.ui.theme.KindPalette
-import dev.cluvex.strata.ui.theme.toShape
+import dev.cluvex.strata.ui.theme.IconTileShape
 import okio.Path.Companion.toPath
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -226,7 +226,7 @@ fun FileTile(
     val ghostAlpha by animateFloatAsState(if (drop.ghosted) 0.36f else 1f, motion.defaultEffectsSpec(), label = "tileGhost")
     val flash = rememberFlash(flashKey, flashPulses)
     val flashColor = colors.primary.copy(alpha = 0.32f)
-    val shape = settings.appearance.iconShape.toShape()
+    val shape = IconTileShape
     val kind = FileKinds.of(item)
     val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)
     val apk = showThumbnail && list.apkIcons && kind == FileKind.APK
@@ -366,7 +366,7 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
     val motion = MaterialTheme.motionScheme
     val colors = MaterialTheme.colorScheme
     val settings = LocalSettings.current
-    val shape = settings.appearance.iconShape.toShape()
+    val shape = IconTileShape
     val kind = FileKinds.of(item)
     Box(
         Modifier

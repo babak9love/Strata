@@ -96,14 +96,6 @@
     <string name="model_corners_round">Круглые</string>
     <string name="model_corners_extra">Очень круглые</string>
     <string name="model_corners_extra_short">Очень</string>
-    <string name="model_shape_rounded">Скруглённая</string>
-    <string name="model_shape_circle">Круг</string>
-    <string name="model_shape_cookie">Печенье</string>
-    <string name="model_shape_clover">Клевер</string>
-    <string name="model_shape_sunny">Солнце</string>
-    <string name="model_shape_gem">Самоцвет</string>
-    <string name="model_shape_puffy">Облако</string>
-    <string name="model_shape_arch">Арка</string>
     <string name="model_motion_expressive">Выразительная</string>
     <string name="model_motion_standard">Стандартная</string>
     <string name="model_motion_reduced">Сокращённая</string>

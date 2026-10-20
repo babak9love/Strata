@@ -127,7 +127,6 @@ object SettingsIndex {
         SettingEntry(R.string.settings_contrast, SettingsPage.APPEARANCE, R.string.settings_kw_contrast),
         SettingEntry(R.string.settings_text_size, SettingsPage.APPEARANCE, R.string.settings_kw_text_size),
         SettingEntry(R.string.settings_corners, SettingsPage.APPEARANCE, R.string.settings_kw_corners),
-        SettingEntry(R.string.settings_icon_shape, SettingsPage.APPEARANCE, R.string.settings_kw_icon_shape),
         SettingEntry(R.string.settings_colorful_icons, SettingsPage.APPEARANCE, R.string.settings_kw_colorful_icons),
         SettingEntry(R.string.settings_animations, SettingsPage.APPEARANCE, R.string.settings_kw_animations),
         SettingEntry(R.string.settings_haptics, SettingsPage.APPEARANCE, R.string.settings_kw_haptics),

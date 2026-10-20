@@ -42,7 +42,6 @@
     <string name="settings_kw_contrast">доступность высокий контраст</string>
     <string name="settings_kw_text_size">шрифт масштаб крупнее мельче</string>
     <string name="settings_kw_corners">скругление углы квадратные форма радиус</string>
-    <string name="settings_kw_icon_shape">печенье клевер круг формы</string>
     <string name="settings_kw_colorful_icons">тип файла цвета цветные</string>
     <string name="settings_kw_animations">движение анимация уменьшить пружина</string>
     <string name="settings_kw_haptics">вибрация отклик</string>
@@ -141,8 +140,6 @@
     <string name="settings_corners">Углы</string>
     <string name="settings_corners_summary">Насколько скруглены карточки, панели и кнопки</string>
     <string name="settings_group_file_icons">Значки файлов</string>
-    <string name="settings_icon_shape">Форма значков</string>
-    <string name="settings_icon_shape_option">Форма значков: %1$s</string>
     <string name="settings_colorful_icons">Цветные значки</string>
     <string name="settings_colorful_icons_summary">У изображений, видео, музыки, приложений и кода — свои цвета</string>
     <string name="settings_group_motion">Анимация и отклик</string>

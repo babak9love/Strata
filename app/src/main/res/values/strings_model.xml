@@ -98,14 +98,6 @@
     <string name="model_corners_round">Round</string>
     <string name="model_corners_extra">Extra round</string>
     <string name="model_corners_extra_short">Extra</string>
-    <string name="model_shape_rounded">Rounded</string>
-    <string name="model_shape_circle">Circle</string>
-    <string name="model_shape_cookie">Cookie</string>
-    <string name="model_shape_clover">Clover</string>
-    <string name="model_shape_sunny">Sunny</string>
-    <string name="model_shape_gem">Gem</string>
-    <string name="model_shape_puffy">Puffy</string>
-    <string name="model_shape_arch">Arch</string>
     <string name="model_motion_expressive">Expressive</string>
     <string name="model_motion_standard">Standard</string>
     <string name="model_motion_reduced">Reduced</string>

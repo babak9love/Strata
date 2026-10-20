@@ -43,7 +43,6 @@
     <string name="settings_kw_contrast">accessibility high contrast</string>
     <string name="settings_kw_text_size">font scale bigger smaller</string>
     <string name="settings_kw_corners">round square shape radius</string>
-    <string name="settings_kw_icon_shape">cookie clover circle shapes</string>
     <string name="settings_kw_colorful_icons">file type colors</string>
     <string name="settings_kw_animations">motion reduce spring</string>
     <string name="settings_kw_haptics">vibration vibrate</string>
@@ -142,8 +141,6 @@
     <string name="settings_corners">Corners</string>
     <string name="settings_corners_summary">How round cards, sheets and buttons are</string>
     <string name="settings_group_file_icons">File icons</string>
-    <string name="settings_icon_shape">Icon shape</string>
-    <string name="settings_icon_shape_option">%1$s icon shape</string>
     <string name="settings_colorful_icons">Colorful icons</string>
     <string name="settings_colorful_icons_summary">Pictures, videos, music, apps and code each get their own color</string>
     <string name="settings_group_motion">Motion and feel</string>

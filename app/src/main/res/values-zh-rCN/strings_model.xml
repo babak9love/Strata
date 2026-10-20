@@ -96,14 +96,6 @@
     <string name="model_corners_round">圆角</string>
     <string name="model_corners_extra">超圆角</string>
     <string name="model_corners_extra_short">超圆</string>
-    <string name="model_shape_rounded">圆角矩形</string>
-    <string name="model_shape_circle">圆形</string>
-    <string name="model_shape_cookie">饼干</string>
-    <string name="model_shape_clover">四叶草</string>
-    <string name="model_shape_sunny">太阳</string>
-    <string name="model_shape_gem">宝石</string>
-    <string name="model_shape_puffy">蓬松</string>
-    <string name="model_shape_arch">拱形</string>
     <string name="model_motion_expressive">表现力</string>
     <string name="model_motion_standard">标准</string>
     <string name="model_motion_reduced">减弱</string>

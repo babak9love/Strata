@@ -42,7 +42,6 @@
     <string name="settings_kw_contrast">دسترس‌پذیری کنتراست بالا</string>
     <string name="settings_kw_text_size">قلم فونت بزرگ‌تر کوچک‌تر اندازه</string>
     <string name="settings_kw_corners">گرد چهارگوش شکل گوشه شعاع</string>
-    <string name="settings_kw_icon_shape">کلوچه شبدر دایره شکل‌ها</string>
     <string name="settings_kw_colorful_icons">نوع فایل رنگ‌ها رنگی</string>
     <string name="settings_kw_animations">حرکت پویانمایی انیمیشن کاهش فنری</string>
     <string name="settings_kw_haptics">لرزش ویبره</string>
@@ -141,8 +140,6 @@
     <string name="settings_corners">گوشه‌ها</string>
     <string name="settings_corners_summary">میزان گردی کارت‌ها، برگه‌ها و دکمه‌ها</string>
     <string name="settings_group_file_icons">نماد فایل‌ها</string>
-    <string name="settings_icon_shape">شکل نماد</string>
-    <string name="settings_icon_shape_option">شکل نماد: \u2068%1$s\u2069</string>
     <string name="settings_colorful_icons">نمادهای رنگی</string>
     <string name="settings_colorful_icons_summary">تصاویر، ویدیوها، موسیقی، برنامه‌ها و کد هرکدام رنگ خودشان را دارند</string>
     <string name="settings_group_motion">حرکت و بازخورد</string>

@@ -34,17 +34,6 @@ enum class CornerStyle(@StringRes val label: Int, @StringRes val short: Int, val
     EXTRA(R.string.model_corners_extra, R.string.model_corners_extra_short, 1.6f),
 }
 
-enum class IconShape(@StringRes val label: Int) {
-    ROUNDED(R.string.model_shape_rounded),
-    CIRCLE(R.string.model_shape_circle),
-    COOKIE(R.string.model_shape_cookie),
-    CLOVER(R.string.model_shape_clover),
-    SUNNY(R.string.model_shape_sunny),
-    GEM(R.string.model_shape_gem),
-    PUFFY(R.string.model_shape_puffy),
-    ARCH(R.string.model_shape_arch),
-}
-
 enum class MotionStyle(@StringRes val label: Int) {
     EXPRESSIVE(R.string.model_motion_expressive),
     STANDARD(R.string.model_motion_standard),
@@ -83,7 +72,6 @@ data class AppearancePrefs(
     val pureBlack: Boolean = false,
     val textScale: Float = 1f,
     val corners: CornerStyle = CornerStyle.ROUND,
-    val iconShape: IconShape = IconShape.ROUNDED,
     val colorfulIcons: Boolean = true,
     val motion: MotionStyle = MotionStyle.EXPRESSIVE,
     val haptics: Boolean = true,

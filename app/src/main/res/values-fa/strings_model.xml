@@ -96,14 +96,6 @@
     <string name="model_corners_round">گرد</string>
     <string name="model_corners_extra">خیلی گرد</string>
     <string name="model_corners_extra_short">خیلی</string>
-    <string name="model_shape_rounded">گردگوشه</string>
-    <string name="model_shape_circle">دایره</string>
-    <string name="model_shape_cookie">کلوچه</string>
-    <string name="model_shape_clover">شبدر</string>
-    <string name="model_shape_sunny">خورشیدی</string>
-    <string name="model_shape_gem">جواهر</string>
-    <string name="model_shape_puffy">پفکی</string>
-    <string name="model_shape_arch">طاق</string>
     <string name="model_motion_expressive">اکسپرسیو</string>
     <string name="model_motion_standard">استاندارد</string>
     <string name="model_motion_reduced">کم</string>
