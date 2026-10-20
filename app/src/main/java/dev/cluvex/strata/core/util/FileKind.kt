@@ -101,7 +101,16 @@ object FileKinds {
 
     /** Branded vector icon for a few well-known file types, or null to use the generic icon of its kind. */
     @DrawableRes
-    fun customIcon(item: FileItem): Int? = when (item.extension) {
+    fun customIcon(item: FileItem): Int? {
+        if (item.isDirectory) return R.drawable.ic_folder
+        val name = item.name.lowercase()
+        // .env, .env.local, .env.production, prod.env ...
+        if (name == ".env" || name.startsWith(".env.") || name.endsWith(".env")) return R.drawable.ic_env
+        return customIconByExtension(item.extension)
+    }
+
+    @DrawableRes
+    private fun customIconByExtension(extension: String): Int? = when (extension) {
         "py", "pyw", "pyi" -> R.drawable.ic_python
         "sh", "bash", "zsh" -> R.drawable.ic_shell
         "txt", "log" -> R.drawable.ic_text
@@ -109,6 +118,14 @@ object FileKinds {
         "md", "markdown" -> R.drawable.ic_markdown
         "html", "htm", "xhtml" -> R.drawable.ic_html
         "xml" -> R.drawable.ic_xml
+        "yaml", "yml" -> R.drawable.ic_yaml
+        "pdf" -> R.drawable.ic_pdf
+        "apk", "apks", "xapk", "apkm" -> R.drawable.ic_apk
+        "mp3", "wav", "flac", "m4a", "aac", "ogg", "opus" -> R.drawable.ic_audio
+        "doc", "docx", "odt" -> R.drawable.ic_word
+        "kt", "kts" -> R.drawable.ic_kotlin
+        "zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz" -> R.drawable.ic_archive
+        "jks", "keystore", "p12", "pfx", "pem" -> R.drawable.ic_keystore // keys & certificates
         else -> null
     }
 
