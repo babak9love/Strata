@@ -482,7 +482,8 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(custom),
             contentDescription = stringResource(kind.label),
-            modifier = Modifier.size(iconSize).padding(iconSize * 0.06f),
+            // The folder art is wide and already tightly cropped, so it fills the whole box; the other icons keep a small margin.
+            modifier = Modifier.size(iconSize).padding(if (item.isDirectory) 0.dp else iconSize * 0.06f),
         )
         return
     }
