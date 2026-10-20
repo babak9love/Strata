@@ -168,7 +168,10 @@ object FileKinds {
 
     fun isImage(item: FileItem) = of(item) == FileKind.IMAGE
     fun isVideo(item: FileItem) = of(item) == FileKind.VIDEO
-    fun isThumbnailable(item: FileItem) = isImage(item) || isVideo(item) || item.extension == "apk"
+    /** .apk files and split-APK bundles (.apks / .xapk / .apkm) show the app's own icon. */
+    fun hasApkIcon(item: FileItem): Boolean = !item.isDirectory && (item.extension == "apk" || item.extension in setOf("apks", "xapk", "apkm"))
+
+    fun isThumbnailable(item: FileItem) = isImage(item) || isVideo(item) || hasApkIcon(item)
     fun isTextEditable(item: FileItem): Boolean {
         val k = of(item)
         return k == FileKind.TEXT || k == FileKind.CODE
