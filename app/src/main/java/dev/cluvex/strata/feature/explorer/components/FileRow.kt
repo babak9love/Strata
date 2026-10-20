@@ -415,7 +415,7 @@ private fun ApkIconOrKind(item: FileItem, size: Dp, shape: Shape) {
             model = remember(item.path, item.lastModified) { ApkIcon(item.path, item.lastModified) },
             contentDescription = stringResource(R.string.explorer_app_icon),
             onSuccess = { loaded = true },
-            modifier = Modifier.size(size).graphicsLayer { scaleX = APK_ICON_SCALE; scaleY = APK_ICON_SCALE }.testTag("apk-icon"),
+            modifier = Modifier.size(size).testTag("apk-icon"),
         )
     }
 }
@@ -513,8 +513,5 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
     }
 }
 
-/** File icons (branded / extension tiles) are drawn this much larger than their box so they weigh as much as the folder art. */
+/** Branded file icons (and the extension tiles that share their shape) are drawn this much larger than their box so they weigh as much as the folder art. */
 private const val FILE_ICON_SCALE = 1.06f
-
-/** App icons of APK files have a transparent margin of their own, so they get a little more. */
-private const val APK_ICON_SCALE = 1.18f
