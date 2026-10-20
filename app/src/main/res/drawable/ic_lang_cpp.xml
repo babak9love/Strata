@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+    <path android:pathData="M34,8H94A26,26 0 0 1 120,34V94A26,26 0 0 1 94,120H34A26,26 0 0 1 8,94V34A26,26 0 0 1 34,8Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="8"
+                android:endX="0"
+                android:endY="120"
+                android:type="linear">
+                <item android:color="#FF1E88D2" android:offset="0" />
+                <item android:color="#FF00579B" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Letters "C++" (outlines of Liberation Sans Bold) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M41.94 73.79Q47.24 73.79 49.31 68.46L54.42 70.39Q52.77 74.44 49.58 76.42Q46.39 78.4 41.94 78.4Q35.18 78.4 31.49 74.57Q27.81 70.75 27.81 63.87Q27.81 56.98 31.36 53.28Q34.92 49.58 41.68 49.58Q46.61 49.58 49.71 51.56Q52.81 53.54 54.06 57.37L48.89 58.78Q48.24 56.68 46.32 55.44Q44.4 54.19 41.8 54.19Q37.82 54.19 35.77 56.66Q33.71 59.12 33.71 63.87Q33.71 68.7 35.82 71.24Q37.94 73.79 41.94 73.79ZM69.06 66.69V74.8H64.57V66.69H56.64V62.24H64.57V54.13H69.06V62.24H77.05V66.69ZM92.22 66.69V74.8H87.73V66.69H79.8V62.24H87.73V54.13H92.22V62.24H100.21V66.69Z" />
+</vector>

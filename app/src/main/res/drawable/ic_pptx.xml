@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+    <!-- Page with folded corner -->
+    <path
+        android:pathData="M38,8H74L102,36V108A12,12 0 0 1 90,120H38A12,12 0 0 1 26,108V20A12,12 0 0 1 38,8Z"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="8"
+                android:endX="0"
+                android:endY="120"
+                android:type="linear">
+                <item android:color="#FFF7F9FC" android:offset="0" />
+                <item android:color="#FFDDE4EF" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#FFB9C6DB"
+        android:pathData="M74,8V36H102Z"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M40,50H76"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="6"
+        android:strokeLineCap="round" />
+    <!-- Orange PPTX banner -->
+    <path
+        android:fillColor="#FFC43E1C"
+        android:pathData="M22,66H106A6,6 0 0 1 112,72V96A6,6 0 0 1 106,102H22A6,6 0 0 1 16,96V72A6,6 0 0 1 22,66Z" />
+    <!-- Letters P P T X -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M44.7 81.52Q44.7 83.42 43.83 84.92Q42.97 86.42 41.35 87.24Q39.73 88.06 37.51 88.06H32.61V95H28.48V75.27H37.34Q40.88 75.27 42.79 76.91Q44.7 78.54 44.7 81.52ZM40.54 81.59Q40.54 78.48 36.88 78.48H32.61V84.88H36.99Q38.7 84.88 39.62 84.03Q40.54 83.18 40.54 81.59ZM63.83 81.52Q63.83 83.42 62.96 84.92Q62.09 86.42 60.47 87.24Q58.85 88.06 56.63 88.06H51.73V95H47.6V75.27H56.46Q60 75.27 61.91 76.91Q63.83 78.54 63.83 81.52ZM59.67 81.59Q59.67 78.48 56 78.48H51.73V84.88H56.11Q57.82 84.88 58.74 84.03Q59.67 83.18 59.67 81.59ZM75.63 78.47V95H71.5V78.47H65.13V75.27H82.01V78.47ZM96.85 95 91.89 87.15 86.94 95H82.57L89.4 84.63L83.14 75.27H87.51L91.89 82.25L96.28 75.27H100.62L94.62 84.63L101.19 95Z" />
+</vector>

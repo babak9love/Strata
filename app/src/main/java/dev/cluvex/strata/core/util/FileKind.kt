@@ -78,10 +78,7 @@ object FileKinds {
         "properties", "prop", "log", "csv", "tsv", "mtl", "mtsx", "diff", "patch",
     )
     private val font = setOf("ttf", "otf", "woff", "woff2", "ttc")
-    private val document = setOf(
-        "doc", "docx", "xls", "xlsx", "ppt", "pptx",
-        "odt", "ods", "odp", "rtf", "epub",
-    )
+    private val document = setOf("doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "rtf", "epub")
 
     fun of(item: FileItem): FileKind {
         if (item.isDirectory) return FileKind.FOLDER
@@ -109,6 +106,8 @@ object FileKinds {
         val name = item.name.lowercase()
         // .env, .env.local, .env.production, prod.env ...
         if (name == ".env" || name.startsWith(".env.") || name.endsWith(".env")) return R.drawable.ic_env
+        // ".ts" is TypeScript source or an MPEG-TS video: sources are tiny, videos are large.
+        if (item.extension == "ts") return if (item.size < 1_000_000L) R.drawable.ic_lang_ts else null
         return customIconByExtension(item.extension)
     }
 
@@ -125,14 +124,33 @@ object FileKinds {
         "pdf" -> R.drawable.ic_pdf
         "apk", "apks", "xapk", "apkm" -> R.drawable.ic_apk
         "mp3", "wav", "flac", "m4a", "aac", "ogg", "opus" -> R.drawable.ic_audio
-        "doc", "docx", "rtf" -> R.drawable.ic_word
+        "doc" -> R.drawable.ic_doc
+        "docx" -> R.drawable.ic_docx
         "odt" -> R.drawable.ic_odt
-        "xls", "xlsx" -> R.drawable.ic_excel
+        "rtf" -> R.drawable.ic_rtf
+        "xls" -> R.drawable.ic_xls
+        "xlsx" -> R.drawable.ic_xlsx
         "ods" -> R.drawable.ic_ods
-        "ppt", "pptx" -> R.drawable.ic_powerpoint
+        "ppt" -> R.drawable.ic_ppt
+        "pptx" -> R.drawable.ic_pptx
         "odp" -> R.drawable.ic_odp
         "kt", "kts" -> R.drawable.ic_kotlin
-        "zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz" -> R.drawable.ic_archive
+        "java" -> R.drawable.ic_lang_java
+        "js", "mjs", "cjs", "jsx" -> R.drawable.ic_lang_js
+        "tsx" -> R.drawable.ic_lang_ts
+        "css", "scss", "sass", "less" -> R.drawable.ic_lang_css
+        "cpp", "cc", "cxx", "hpp", "hh", "hxx" -> R.drawable.ic_lang_cpp
+        "c", "h" -> R.drawable.ic_lang_c
+        "cs" -> R.drawable.ic_lang_cs
+        "go" -> R.drawable.ic_lang_go
+        "rs" -> R.drawable.ic_lang_rs
+        "php" -> R.drawable.ic_lang_php
+        "rb" -> R.drawable.ic_lang_rb
+        "sql" -> R.drawable.ic_lang_sql
+        "vue" -> R.drawable.ic_lang_vue
+        "7z" -> R.drawable.ic_7z
+        "rar" -> R.drawable.ic_rar
+        "zip", "tar", "gz", "tgz", "bz2", "xz" -> R.drawable.ic_archive
         "jks", "keystore", "p12", "pfx", "pem" -> R.drawable.ic_keystore // keys & certificates
         else -> null
     }
