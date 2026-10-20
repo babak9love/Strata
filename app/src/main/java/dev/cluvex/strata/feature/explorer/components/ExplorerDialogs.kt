@@ -139,6 +139,7 @@ fun DeleteDialog(
     onDismiss: () -> Unit,
     allowRecycle: Boolean = true,
     singleName: String? = null,
+    singleIsDirectory: Boolean = false,
 ) {
     var checked by remember { mutableStateOf(recycleByDefault) }
     val toBin = allowRecycle && checked
@@ -151,7 +152,13 @@ fun DeleteDialog(
         shapes = if (toBin) HeroShapes.calm else HeroShapes.danger,
         text = {
             Column {
-                Text(pluralStringResource(R.plurals.explorer_delete_confirm, count, count))
+                Text(
+                    when {
+                        singleName == null -> pluralStringResource(R.plurals.explorer_delete_confirm, count, count)
+                        singleIsDirectory -> stringResource(R.string.explorer_delete_confirm_folder)
+                        else -> stringResource(R.string.explorer_delete_confirm_file)
+                    },
+                )
                 if (singleName != null) {
                     // The exact file / folder name; a very long one keeps its start and its end (with the extension).
                     FileNameText(

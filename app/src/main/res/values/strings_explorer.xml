@@ -128,6 +128,8 @@
         <item quantity="one">Delete %d item?</item>
         <item quantity="other">Delete %d items?</item>
     </plurals>
+    <string name="explorer_delete_confirm_file">Delete this file?</string>
+    <string name="explorer_delete_confirm_folder">Delete this folder?</string>
     <plurals name="explorer_delete_folders">
         <item quantity="one">%d folder</item>
         <item quantity="other">%d folders</item>

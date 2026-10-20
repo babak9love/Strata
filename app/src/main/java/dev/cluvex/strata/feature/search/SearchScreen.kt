@@ -235,6 +235,7 @@ fun SearchScreen(
                 recycleByDefault = recycleByDefault,
                 allowRecycle = remember(d.items) { explorer.canRecycleItems(d.items) },
                 singleName = d.items.singleOrNull()?.name,
+                singleIsDirectory = d.items.singleOrNull()?.isDirectory == true,
                 onConfirm = { toBin ->
                     val paths = d.items.map { it.path }.toSet()
                     explorer.deleteItems(d.items, toBin) { vm.removeResults(paths) }

@@ -128,6 +128,8 @@
         <item quantity="one">\u200F%d مورد حذف شود؟</item>
         <item quantity="other">\u200F%d مورد حذف شود؟</item>
     </plurals>
+    <string name="explorer_delete_confirm_file">\u200Fاین فایل حذف شود؟</string>
+    <string name="explorer_delete_confirm_folder">\u200Fاین پوشه حذف شود؟</string>
     <plurals name="explorer_delete_folders">
         <item quantity="one">\u200F%d پوشه</item>
         <item quantity="other">\u200F%d پوشه</item>

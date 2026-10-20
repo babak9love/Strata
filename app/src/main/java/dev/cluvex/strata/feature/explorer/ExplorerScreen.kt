@@ -582,6 +582,7 @@ fun ExplorerScreen(
             recycleByDefault = ui.settings.trashByDefault,
             allowRecycle = remember(ui.active, ui.activePane.path, ui.activePane.viaRoot) { vm.canRecycle(ui.active) },
             singleName = selection.singleOrNull()?.name,
+            singleIsDirectory = selection.singleOrNull()?.isDirectory == true,
             onConfirm = { toBin -> vm.deleteSelection(ui.active, toBin); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )

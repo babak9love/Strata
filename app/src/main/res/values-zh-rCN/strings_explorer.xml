@@ -121,6 +121,8 @@
     <plurals name="explorer_delete_confirm">
         <item quantity="other">要删除 %d 项吗？</item>
     </plurals>
+    <string name="explorer_delete_confirm_file">要删除此文件吗？</string>
+    <string name="explorer_delete_confirm_folder">要删除此文件夹吗？</string>
     <plurals name="explorer_delete_folders">
         <item quantity="other">%d 个文件夹</item>
     </plurals>
