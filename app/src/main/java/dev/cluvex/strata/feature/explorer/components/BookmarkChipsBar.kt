@@ -1,6 +1,7 @@
 package dev.cluvex.strata.feature.explorer.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -8,6 +9,9 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -29,7 +33,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -45,7 +52,7 @@ private val CHIP_SPACING = 8.dp
 /**
  * Horizontal bookmark chips (Material Files style).
  * Short press opens the path; long press opens bookmark settings.
- * No leading icon; label is centered inside the capsule.
+ * Each chip has the folder icon before its name; the selected one is filled and bold.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -90,24 +97,21 @@ fun BookmarkChipsBar(
         bookmarks.forEach { bookmark ->
             val selected = Bookmarks.normalize(bookmark.path) == normalizedCurrent
             val cd = stringResource(R.string.explorer_bookmark_cd, bookmark.name)
-            val bg = if (selected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
-            }
+            // Selected chip: filled (tonal) and bold. The others: transparent with a thin outline.
+            val bg = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
             val fg = if (selected) {
                 MaterialTheme.colorScheme.onSecondaryContainer
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
             }
-            Box(
-                contentAlignment = Alignment.Center,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clip(shape)
                     .background(bg, shape)
                     .then(
-                        if (selected) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, shape)
-                        else Modifier
+                        if (selected) Modifier
+                        else Modifier.border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, shape)
                     )
                     .onGloballyPositioned { bounds[Bookmarks.normalize(bookmark.path)] = it.positionInParent().x.toInt() }
                     .semantics { contentDescription = cd }
@@ -115,11 +119,18 @@ fun BookmarkChipsBar(
                         onClick = { onOpen(bookmark) },
                         onLongClick = { onLongPress(bookmark) },
                     )
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(start = 14.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
             ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_folder),
+                    contentDescription = null,
+                    modifier = Modifier.size(width = 24.dp, height = 19.dp),
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(
                     text = bookmark.name,
                     style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (selected) FontWeight.Bold else null,
                     color = fg,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
