@@ -151,7 +151,7 @@ fun FileRow(
         DropHalo(look, drop.anchor) {
             Leading(item, selected, showThumbnail, iconSize, if (settings.behavior.iconTapSelects) onIconClick else null)
         }
-        Spacer(Modifier.width(if (density.iconDp <= 30) 8.dp else 10.dp))
+        Spacer(Modifier.width(if (density == dev.cluvex.strata.core.model.UiDensity.COMPACT) 10.dp else 12.dp))
         Column(Modifier.weight(1f)) {
             FileNameText(
                 name = Formatters.displayName(item.name, item.isDirectory, list.showExtensions),

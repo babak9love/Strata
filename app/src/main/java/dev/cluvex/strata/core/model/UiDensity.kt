@@ -11,9 +11,9 @@ enum class UiDensity(
     val metaSp: Int,
     val nameMaxLines: Int,
 ) {
-    COMPACT(R.string.model_density_compact, iconDp = 30, rowPadDp = 3, nameSp = 13, metaSp = 10, nameMaxLines = 1),
-    COMFORTABLE(R.string.model_density_comfortable, iconDp = 36, rowPadDp = 6, nameSp = 14, metaSp = 11, nameMaxLines = 1),
-    LARGE(R.string.model_density_large, iconDp = 44, rowPadDp = 9, nameSp = 16, metaSp = 12, nameMaxLines = 2),
+    COMPACT(R.string.model_density_compact, iconDp = 40, rowPadDp = 3, nameSp = 13, metaSp = 10, nameMaxLines = 1),
+    COMFORTABLE(R.string.model_density_comfortable, iconDp = 46, rowPadDp = 6, nameSp = 14, metaSp = 11, nameMaxLines = 1),
+    LARGE(R.string.model_density_large, iconDp = 56, rowPadDp = 9, nameSp = 16, metaSp = 12, nameMaxLines = 2),
     ;
 
     companion object {
