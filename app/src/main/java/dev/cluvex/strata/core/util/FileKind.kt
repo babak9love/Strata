@@ -122,10 +122,22 @@ object FileKinds {
         "pdf" -> R.drawable.ic_pdf
         "apk", "apks", "xapk", "apkm" -> R.drawable.ic_apk
         "mp3", "wav", "flac", "m4a", "aac", "ogg", "opus" -> R.drawable.ic_audio
-        "doc", "docx", "odt" -> R.drawable.ic_word
+        "doc", "docx", "odt", "rtf" -> R.drawable.ic_word
+        "xls", "xlsx", "ods" -> R.drawable.ic_excel
+        "ppt", "pptx", "odp" -> R.drawable.ic_powerpoint
         "kt", "kts" -> R.drawable.ic_kotlin
         "zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz" -> R.drawable.ic_archive
         "jks", "keystore", "p12", "pfx", "pem" -> R.drawable.ic_keystore // keys & certificates
+        "js", "mjs", "cjs", "jsx", "tsx" -> R.drawable.ic_javascript
+        "java" -> R.drawable.ic_java
+        "css", "scss", "sass", "less" -> R.drawable.ic_css
+        "c", "h", "cc", "cpp", "cxx", "hpp", "hh" -> R.drawable.ic_cpp
+        "csv", "tsv" -> R.drawable.ic_csv
+        "ini", "toml", "conf", "cfg", "properties", "prop" -> R.drawable.ic_config
+        "sql" -> R.drawable.ic_sql
+        "ttf", "otf", "woff", "woff2", "ttc" -> R.drawable.ic_font
+        "jar", "war" -> R.drawable.ic_jar
+        "senc" -> R.drawable.ic_senc
         else -> null
     }
 
