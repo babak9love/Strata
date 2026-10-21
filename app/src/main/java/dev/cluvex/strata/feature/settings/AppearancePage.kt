@@ -138,34 +138,33 @@ fun AppearancePage(settings: StrataSettings, act: SettingsActions, onBack: () ->
             }
         }
         SettingsGroup(stringResource(R.string.settings_group_file_icons)) {
+            // Two separate, mutually exclusive modes: turning one on turns the other off and greys out its options.
             switch(
                 tr(R.string.settings_strata_icons),
-                a.strataIcons,
-                { v -> act.appearance { it.copy(strataIcons = v) } },
+                a.classicIcons,
+                { v -> act.appearance { it.copy(strataIcons = v, strataGoldenFolders = if (v) false else it.strataGoldenFolders) } },
                 summary = tr(R.string.settings_strata_icons_summary),
             )
-            if (a.strataIcons) {
-                switch(
-                    tr(R.string.settings_strata_file_icons),
-                    a.strataFileIcons,
-                    { v -> act.appearance { it.copy(strataFileIcons = v) } },
-                    summary = tr(R.string.settings_strata_file_icons_summary),
-                )
-                switch(
-                    tr(R.string.settings_strata_golden_folders),
-                    a.strataGoldenFolders,
-                    { v -> act.appearance { it.copy(strataGoldenFolders = v) } },
-                    summary = tr(R.string.settings_strata_golden_folders_summary),
-                )
-                if (a.strataGoldenFolders) {
-                    switch(
-                        tr(R.string.settings_strata_golden_fixed),
-                        a.strataGoldenFixed,
-                        { v -> act.appearance { it.copy(strataGoldenFixed = v) } },
-                        summary = tr(R.string.settings_strata_golden_fixed_summary),
-                    )
-                }
-            }
+            switch(
+                tr(R.string.settings_strata_file_icons),
+                a.strataFileIcons,
+                { v -> act.appearance { it.copy(strataFileIcons = v) } },
+                summary = tr(R.string.settings_strata_file_icons_summary),
+                enabled = a.classicIcons,
+            )
+            switch(
+                tr(R.string.settings_strata_golden_folders),
+                a.strataGoldenFolders,
+                { v -> act.appearance { it.copy(strataGoldenFolders = v, strataIcons = if (v) false else it.strataIcons) } },
+                summary = tr(R.string.settings_strata_golden_folders_summary),
+            )
+            switch(
+                tr(R.string.settings_strata_golden_fixed),
+                a.strataGoldenFixed,
+                { v -> act.appearance { it.copy(strataGoldenFixed = v) } },
+                summary = tr(R.string.settings_strata_golden_fixed_summary),
+                enabled = a.strataGoldenFolders,
+            )
             custom(title = tr(R.string.settings_icon_shape), summary = tr(a.iconShape.label)) {
                 IconShapes(a) { shape -> act.appearance { it.copy(iconShape = shape) } }
             }

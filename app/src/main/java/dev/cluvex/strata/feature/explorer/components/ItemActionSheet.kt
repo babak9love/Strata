@@ -179,11 +179,10 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
             contentAlignment = Alignment.Center,
         ) {
             val look = dev.cluvex.strata.ui.LocalSettings.current.appearance
-            val dedicated = !look.strataIcons ||
-                if (item.isDirectory) look.strataGoldenFolders else look.strataFileIcons
+            val dedicated = !look.classicIcons || (!item.isDirectory && look.strataFileIcons)
             val custom = if (dedicated) FileKinds.customIcon(item) else null
             val folderTint = rememberFolderTint()
-            val tintFolder = item.isDirectory && look.strataIcons && look.strataGoldenFolders && !look.strataGoldenFixed
+            val tintFolder = item.isDirectory && look.strataGoldenFolders && !look.strataGoldenFixed
             if (custom != null) {
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(custom),
