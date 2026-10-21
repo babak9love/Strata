@@ -360,7 +360,7 @@ fun ExplorerScreen(
                 canUp = !isStorageRoot(ui.activePane.path, rootPath),
                 activeIsLeft = ui.active == Pane.LEFT,
                 dual = dual,
-                clipboardCount = ui.clipboard?.items?.size ?: 0,
+                clipboardCount = ui.clipboards.sumOf { it.items.size },
                 clipboardIsMove = ui.clipboard?.move == true,
                 selectedFiles = selection.count { !it.isDirectory },
                 remote = ui.isRemote(ui.active),
