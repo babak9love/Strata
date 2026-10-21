@@ -268,10 +268,10 @@ private fun BrowseActions(
                                 .clip(CircleShape)
                                 .combinedClickable(
                                     role = Role.Button,
-                                    onClick = a.onPaste,
+                                    onClick = a.onShowClipboard,
                                     onLongClick = {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        a.onShowClipboard()
+                                        a.onPaste()
                                     },
                                 ),
                             contentAlignment = Alignment.Center,

@@ -35,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
 import dev.cluvex.strata.feature.explorer.ClipboardState
@@ -106,8 +105,6 @@ fun ClipboardQueueDialog(
                                         style = MaterialTheme.typography.labelSmall,
                                         fontFamily = FontFamily.Monospace,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
                                     )
                                 }
                                 Icon(
@@ -128,12 +125,18 @@ fun ClipboardQueueDialog(
                             if (open) {
                                 Column(Modifier.padding(start = 32.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     clip.items.take(MAX_NAMES).forEach {
-                                        Text(
-                                            (if (it.isDirectory) "📁 " else "• ") + it.name,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                        )
+                                        Row(verticalAlignment = Alignment.Top) {
+                                            Text(
+                                                if (it.isDirectory) "📁 " else "• ",
+                                                style = MaterialTheme.typography.bodySmall,
+                                            )
+                                            FileNameText(
+                                                it.name,
+                                                maxLines = 2,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                modifier = Modifier.weight(1f),
+                                            )
+                                        }
                                     }
                                     if (clip.items.size > MAX_NAMES) Text("…", style = MaterialTheme.typography.bodySmall)
                                 }
