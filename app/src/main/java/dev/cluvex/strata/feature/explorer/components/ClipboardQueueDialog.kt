@@ -100,12 +100,6 @@ fun ClipboardQueueDialog(
                                         style = MaterialTheme.typography.labelMedium,
                                         color = if (index == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
-                                    Text(
-                                        clip.sourceDir,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontFamily = FontFamily.Monospace,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
                                 }
                                 Icon(
                                     if (open) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
@@ -122,6 +116,13 @@ fun ClipboardQueueDialog(
                                     Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.explorer_clip_remove))
                                 }
                             }
+                            Text(
+                                clip.sourceDir,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.fillMaxWidth().padding(start = 32.dp, bottom = 4.dp),
+                            )
                             if (open) {
                                 Column(Modifier.padding(start = 32.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     clip.items.take(MAX_NAMES).forEach {
