@@ -339,4 +339,6 @@
     <string name="ninepatch_summary_content">内容 %1$d, %2$d, %3$d, %4$d</string>
     <string name="ninepatch_summary_content_derived">内容 %1$d, %2$d, %3$d, %4$d（来自拉伸）</string>
     <string name="ninepatch_summary_bounds">布局边界 %1$d, %2$d, %3$d, %4$d</string>
+    <string name="archive_search_placeholder">在压缩包中搜索</string>
+    <string name="archive_no_results">没有结果</string>
 </resources>

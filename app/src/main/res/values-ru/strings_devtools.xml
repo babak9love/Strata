@@ -420,4 +420,6 @@
     <string name="ninepatch_summary_content">содержимое %1$d, %2$d, %3$d, %4$d</string>
     <string name="ninepatch_summary_content_derived">содержимое %1$d, %2$d, %3$d, %4$d (по растяжению)</string>
     <string name="ninepatch_summary_bounds">границы макета %1$d, %2$d, %3$d, %4$d</string>
+    <string name="archive_search_placeholder">Поиск в архиве</string>
+    <string name="archive_no_results">Ничего не найдено</string>
 </resources>

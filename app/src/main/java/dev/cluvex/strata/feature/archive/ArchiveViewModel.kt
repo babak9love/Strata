@@ -152,6 +152,17 @@ class ArchiveViewModel(app: Application) : AndroidViewModel(app) {
         it.copy(selected = if (path in it.selected) it.selected - path else it.selected + path)
     }
 
+    /** Every entry of the archive (any depth) whose name contains the query, folders first. */
+    fun search(query: String): List<ArchiveEntry> {
+        val q = query.trim()
+        if (q.isEmpty()) return emptyList()
+        return sorted(tree.all().filter { it.name.contains(q, ignoreCase = true) })
+    }
+
+    fun entry(path: String): ArchiveEntry? = tree[path]
+
+    fun select(paths: Collection<String>) = _state.update { it.copy(selected = paths.toSet()) }
+
     fun selectAll() = _state.update { s -> s.copy(selected = s.entries.mapTo(HashSet()) { it.path }) }
     fun clearSelection() = _state.update { it.copy(selected = emptySet()) }
 

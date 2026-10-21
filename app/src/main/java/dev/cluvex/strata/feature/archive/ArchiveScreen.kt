@@ -30,6 +30,8 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DriveFileRenameOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.SelectAll
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.automirrored.rounded.ManageSearch
 import androidx.compose.material.icons.rounded.Unarchive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -55,6 +57,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.material3.LocalTextStyle
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,6 +104,8 @@ data class ArchiveActions(
     val onOpenArsc: (archive: String, entry: String) -> Unit,
 )
 
+private enum class ArchiveSearch { NONE, FILTER, DEEP }
+
 private sealed interface ArchiveDialog {
     data object None : ArchiveDialog
     data class Extract(val paths: Set<String>) : ArchiveDialog
@@ -126,6 +135,17 @@ fun ArchiveScreen(
     var dialog by remember { mutableStateOf<ArchiveDialog>(ArchiveDialog.None) }
     var menu by remember { mutableStateOf(false) }
     var pendingOpen by remember { mutableStateOf<ArchiveEntry?>(null) }
+    var searchMode by remember { mutableStateOf(ArchiveSearch.NONE) }
+    var query by remember { mutableStateOf("") }
+    fun closeSearch() { searchMode = ArchiveSearch.NONE; query = "" }
+    // Filter: names in the current folder. Advanced search: names anywhere in the archive.
+    val visible = remember(s.entries, query, searchMode) {
+        when (searchMode) {
+            ArchiveSearch.FILTER -> if (query.isBlank()) s.entries else s.entries.filter { it.name.contains(query.trim(), ignoreCase = true) }
+            ArchiveSearch.DEEP -> vm.search(query)
+            ArchiveSearch.NONE -> s.entries
+        }
+    }
 
     LaunchedEffect(s.message) {
         s.message?.let { snackbar.showSnackbar(it); vm.consumeMessage() }
@@ -150,6 +170,7 @@ fun ArchiveScreen(
     BackHandler {
         when {
             s.selected.isNotEmpty() -> vm.clearSelection()
+            searchMode != ArchiveSearch.NONE -> closeSearch()
             vm.up() -> Unit
             else -> leave()
         }
@@ -157,6 +178,7 @@ fun ArchiveScreen(
 
     fun open(entry: ArchiveEntry) {
         if (entry.isDirectory) {
+            closeSearch()
             vm.enter(entry.path)
             return
         }
@@ -188,14 +210,14 @@ fun ArchiveScreen(
                     navigationIcon = { IconButton(onClick = vm::clearSelection) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_clear_selection)) } },
                     title = { Text(pluralStringResource(R.plurals.archive_selected, s.selected.size, s.selected.size)) },
                     actions = {
-                        IconButton(onClick = vm::selectAll) { Icon(Icons.Rounded.SelectAll, contentDescription = stringResource(R.string.common_select_all)) }
+                        IconButton(onClick = { vm.select(visible.map { it.path }) }) { Icon(Icons.Rounded.SelectAll, contentDescription = stringResource(R.string.common_select_all)) }
                         IconButton(onClick = { dialog = ArchiveDialog.Extract(s.selected) }) {
                             Icon(Icons.Rounded.Unarchive, contentDescription = stringResource(R.string.archive_extract))
                         }
                         if (s.canUpdate) {
                             if (s.selected.size == 1) {
                                 IconButton(onClick = {
-                                    s.entries.firstOrNull { it.path in s.selected }?.let { dialog = ArchiveDialog.Rename(it) }
+                                    s.selected.firstOrNull()?.let { vm.entry(it) }?.let { dialog = ArchiveDialog.Rename(it) }
                                 }) { Icon(Icons.Rounded.DriveFileRenameOutline, contentDescription = stringResource(R.string.common_rename)) }
                             }
                             IconButton(onClick = { dialog = ArchiveDialog.Delete(s.selected) }) {
@@ -203,6 +225,13 @@ fun ArchiveScreen(
                             }
                         }
                     },
+                )
+            } else if (searchMode != ArchiveSearch.NONE) {
+                ArchiveSearchBar(
+                    query = query,
+                    onQuery = { query = it },
+                    placeholder = stringResource(if (searchMode == ArchiveSearch.DEEP) R.string.archive_search_placeholder else R.string.explorer_filter_placeholder),
+                    onClose = ::closeSearch,
                 )
             } else {
                 TopAppBar(
@@ -226,6 +255,16 @@ fun ArchiveScreen(
                         Box {
                             IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.archive_options)) }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.explorer_filter)) },
+                                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                                    onClick = { menu = false; query = ""; searchMode = ArchiveSearch.FILTER },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.explorer_advanced_search)) },
+                                    leadingIcon = { Icon(Icons.AutoMirrored.Rounded.ManageSearch, contentDescription = null) },
+                                    onClick = { menu = false; query = ""; searchMode = ArchiveSearch.DEEP },
+                                )
                                 if (s.canUpdate) {
                                     DropdownMenuItem(text = { Text(stringResource(R.string.archive_add_files)) }, onClick = { menu = false; pick.launch(arrayOf("*/*")) })
                                 }
@@ -250,7 +289,7 @@ fun ArchiveScreen(
                 s.error != null -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                     Text(s.error ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                 }
-                else -> EntryList(s, onUp = { vm.up() }, onOpen = ::open, onToggle = { vm.toggle(it.path) })
+                else -> EntryList(s, visible, searchMode, query, onUp = { vm.up() }, onOpen = ::open, onToggle = { vm.toggle(it.path) })
             }
         }
     }
@@ -393,9 +432,39 @@ private fun InnerPath(name: String, dir: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ArchiveSearchBar(query: String, onQuery: (String) -> Unit, placeholder: String, onClose: () -> Unit) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(Unit) {
+        delay(100)
+        runCatching { focusRequester.requestFocus() }
+        keyboard?.show()
+    }
+    TopAppBar(
+        navigationIcon = {
+            IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_close)) }
+        },
+        title = {
+            OutlinedTextField(
+                value = query,
+                onValueChange = onQuery,
+                singleLine = true,
+                textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
+                placeholder = { Text(placeholder) },
+                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+            )
+        },
+    )
+}
+
 @Composable
 private fun EntryList(
     s: ArchiveUiState,
+    entries: List<ArchiveEntry>,
+    searchMode: ArchiveSearch,
+    query: String,
     onUp: () -> Unit,
     onOpen: (ArchiveEntry) -> Unit,
     onToggle: (ArchiveEntry) -> Unit,
@@ -403,23 +472,30 @@ private fun EntryList(
     val listState = rememberLazyListState()
     LaunchedEffect(s.dir) { listState.scrollToItem(0) }
     val selecting = s.selected.isNotEmpty()
+    val searching = searchMode != ArchiveSearch.NONE
+    val deep = searchMode == ArchiveSearch.DEEP
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize().testTag("archive-list"),
         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        if (!s.atRoot) {
+        if (!s.atRoot && !searching) {
             item(key = "..") { UpRow(onUp) }
         }
-        if (s.entries.isEmpty()) {
+        if (entries.isEmpty()) {
             item(key = "empty") {
-                ExpressiveEmptyState(stringResource(R.string.archive_empty_folder), Modifier.fillMaxWidth().padding(vertical = 32.dp), art = Art.EMPTY_FOLDER, maxHero = 140.dp)
+                val message = when {
+                    deep && query.isBlank() -> stringResource(R.string.archive_search_placeholder)
+                    searching -> stringResource(R.string.archive_no_results)
+                    else -> stringResource(R.string.archive_empty_folder)
+                }
+                ExpressiveEmptyState(message, Modifier.fillMaxWidth().padding(vertical = 32.dp), art = Art.EMPTY_FOLDER, maxHero = 140.dp)
             }
         }
-        items(s.entries, key = { it.path }) { entry ->
+        items(entries, key = { it.path }) { entry ->
             FileRow(
-                item = entry.toFileItem(),
+                item = entry.toFileItem(fullPath = deep),
                 selected = entry.path in s.selected,
                 flashKey = 0,
                 showThumbnail = false,
@@ -452,8 +528,9 @@ private fun UpRow(onClick: () -> Unit) {
 
 private const val FIRST_REAL_TIME = 378_691_200_000L
 
-private fun ArchiveEntry.toFileItem() = FileItem(
-    name = name,
+// In advanced-search results the name is the entry's full path inside the archive, so equal names stay tellable apart.
+private fun ArchiveEntry.toFileItem(fullPath: Boolean = false) = FileItem(
+    name = if (fullPath) path else name,
     path = path,
     isDirectory = isDirectory,
     size = size.coerceAtLeast(0),

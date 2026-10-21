@@ -59,6 +59,8 @@ class ArchiveTree(entries: List<ArchiveEntry>) {
 
     val size: Int get() = byPath.size
 
+    fun all(): Collection<ArchiveEntry> = byPath.values
+
     fun list(dir: String): List<ArchiveEntry> = children[normalize(dir)].orEmpty()
 
     operator fun get(path: String): ArchiveEntry? = byPath[normalize(path)]

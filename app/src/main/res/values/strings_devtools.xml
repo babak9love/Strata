@@ -369,4 +369,6 @@
     <string name="ninepatch_summary_content">content %1$d, %2$d, %3$d, %4$d</string>
     <string name="ninepatch_summary_content_derived">content %1$d, %2$d, %3$d, %4$d (from stretch)</string>
     <string name="ninepatch_summary_bounds">layout bounds %1$d, %2$d, %3$d, %4$d</string>
+    <string name="archive_search_placeholder">Search in archive</string>
+    <string name="archive_no_results">No results</string>
 </resources>

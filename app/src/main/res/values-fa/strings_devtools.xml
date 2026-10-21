@@ -366,4 +366,6 @@
     <string name="ninepatch_summary_content">محتوا %1$d، %2$d، %3$d، %4$d</string>
     <string name="ninepatch_summary_content_derived">محتوا %1$d، %2$d، %3$d، %4$d (برگرفته از کشش)</string>
     <string name="ninepatch_summary_bounds">مرزهای چیدمان %1$d، %2$d، %3$d، %4$d</string>
+    <string name="archive_search_placeholder">جستجو در آرشیو</string>
+    <string name="archive_no_results">نتیجه‌ای پیدا نشد</string>
 </resources>
