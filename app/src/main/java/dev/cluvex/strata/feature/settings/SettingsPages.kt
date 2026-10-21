@@ -150,6 +150,11 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
                 icon = Icons.Rounded.ZoomIn,
             )
             percentSlider(
+                tr(R.string.settings_folder_size), l.folderScale, ItemScale.MIN, ItemScale.MAX,
+                { v -> act.list { it.copy(folderScale = ItemScale.clamp(v)) } },
+                icon = Icons.Rounded.ZoomIn,
+            )
+            percentSlider(
                 tr(R.string.settings_name_size), l.nameScale, ItemScale.MIN, ItemScale.MAX,
                 { v -> act.list { it.copy(nameScale = ItemScale.clamp(v)) } },
                 icon = Icons.Rounded.ZoomIn,

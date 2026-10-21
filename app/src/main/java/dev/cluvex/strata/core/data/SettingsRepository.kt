@@ -145,6 +145,7 @@ class SettingsRepository(private val context: Context) {
         val TILE_FRAME = booleanPreferencesKey("tile_frame")
         val GRID_COLUMNS = intPreferencesKey("grid_columns")
         val ITEM_SCALE = intPreferencesKey("item_scale")
+        val FOLDER_SCALE = intPreferencesKey("folder_scale")
         val NAME_SCALE = intPreferencesKey("name_scale")
         val META_SCALE = intPreferencesKey("meta_scale")
         val SHOW_PARENT_ENTRY = booleanPreferencesKey("show_parent_entry")
@@ -211,7 +212,7 @@ class SettingsRepository(private val context: Context) {
             EDITOR_CURSOR_ANIMATION, EDITOR_KEEP_SCREEN_ON, READER_KEEP_SCREEN, APP_LOCK, PERSIAN_CALENDAR,
             SHOW_PARENT_ENTRY, VIDEO_AUTO_HIDE,
         )
-        val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, NAME_SCALE, META_SCALE)
+        val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, FOLDER_SCALE, NAME_SCALE, META_SCALE)
         val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE)
         val STRINGS = listOf(
             SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, FOLDER_STYLE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
@@ -464,6 +465,7 @@ class SettingsRepository(private val context: Context) {
             tileFrame = p[Keys.TILE_FRAME] ?: true,
             gridColumns = (p[Keys.GRID_COLUMNS] ?: 0).let { if (it == 4) 4 else 0 },
             itemScale = ItemScale.clamp(p[Keys.ITEM_SCALE] ?: DEFAULT_ITEM_SCALE),
+            folderScale = ItemScale.clamp(p[Keys.FOLDER_SCALE] ?: DEFAULT_ITEM_SCALE),
             nameScale = ItemScale.clamp(p[Keys.NAME_SCALE] ?: 100),
             metaScale = ItemScale.clamp(p[Keys.META_SCALE] ?: 100),
             showParentEntry = p[Keys.SHOW_PARENT_ENTRY] ?: true,
@@ -484,6 +486,7 @@ class SettingsRepository(private val context: Context) {
             p[Keys.TILE_FRAME] = l.tileFrame
             p[Keys.GRID_COLUMNS] = l.gridColumns
             p[Keys.ITEM_SCALE] = ItemScale.clamp(l.itemScale)
+            p[Keys.FOLDER_SCALE] = ItemScale.clamp(l.folderScale)
             p[Keys.NAME_SCALE] = ItemScale.clamp(l.nameScale)
             p[Keys.META_SCALE] = ItemScale.clamp(l.metaScale)
             p[Keys.SHOW_PARENT_ENTRY] = l.showParentEntry

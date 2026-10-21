@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_section_general">عمومی</string>
+    <string name="media_section_audio">صدا</string>
+    <string name="media_section_video">ویدیو</string>
+    <string name="media_section_tags">تگ‌ها</string>
+    <string name="media_duration">مدت</string>
+    <string name="media_bitrate">بیت‌ریت</string>
+    <string name="media_format">فرمت</string>
+    <string name="media_codec">کدک</string>
+    <string name="media_channels">تعداد کانال‌ها</string>
+    <string name="media_sample_rate">نرخ نمونه</string>
+    <string name="media_bit_depth">عمق بیت</string>
+    <string name="media_resolution">رزولوشن</string>
+    <string name="media_frame_rate">نرخ فریم</string>
+    <string name="media_title">عنوان</string>
+    <string name="media_artist">هنرمند</string>
+    <string name="media_album">آلبوم</string>
+    <string name="media_album_artist">هنرمند آلبوم</string>
+    <string name="media_genre">ژانر</string>
+    <string name="media_year">سال</string>
+    <string name="media_track">شماره ترک</string>
+    <string name="media_disc">دیسک</string>
+    <string name="media_composer">آهنگساز</string>
+    <string name="media_writer">نویسنده</string>
+    <string name="media_location">مکان</string>
+</resources>

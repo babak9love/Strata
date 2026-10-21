@@ -34,8 +34,10 @@ data class ListPrefs(
     val persianCalendar: Boolean = true,
     val tileFrame: Boolean = true,
     val gridColumns: Int = 0,
-    /** Size of file/folder icons in the list and grid, in percent (140 = default). */
+    /** Size of file icons (not folders) in the list and grid, in percent (140 = default). */
     val itemScale: Int = DEFAULT_ITEM_SCALE,
+    /** Size of folder icons only, in percent (140 = default). */
+    val folderScale: Int = DEFAULT_ITEM_SCALE,
     /** Size of the file name text, in percent. */
     val nameScale: Int = 100,
     /** Size of the date / size text under each name, in percent. */

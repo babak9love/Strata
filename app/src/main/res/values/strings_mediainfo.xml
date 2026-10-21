@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_section_general">General</string>
+    <string name="media_section_audio">Audio</string>
+    <string name="media_section_video">Video</string>
+    <string name="media_section_tags">Tags</string>
+    <string name="media_duration">Duration</string>
+    <string name="media_bitrate">Bitrate</string>
+    <string name="media_format">Format</string>
+    <string name="media_codec">Codec</string>
+    <string name="media_channels">Channels</string>
+    <string name="media_sample_rate">Sample rate</string>
+    <string name="media_bit_depth">Bit depth</string>
+    <string name="media_resolution">Resolution</string>
+    <string name="media_frame_rate">Frame rate</string>
+    <string name="media_title">Title</string>
+    <string name="media_artist">Artist</string>
+    <string name="media_album">Album</string>
+    <string name="media_album_artist">Album artist</string>
+    <string name="media_genre">Genre</string>
+    <string name="media_year">Year</string>
+    <string name="media_track">Track</string>
+    <string name="media_disc">Disc</string>
+    <string name="media_composer">Composer</string>
+    <string name="media_writer">Writer</string>
+    <string name="media_location">Location</string>
+</resources>

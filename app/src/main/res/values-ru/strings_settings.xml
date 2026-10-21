@@ -457,7 +457,8 @@
     <string name="settings_kw_support">пожертвование поддержка донат спонсор криптовалюта кошелёк usdt trx tron bnb ton</string>
     <string name="settings_show_parent_entry">Показывать элемент «родительская папка»</string>
     <string name="settings_show_parent_entry_summary">Показывать элемент «..» в начале списка для перехода на уровень выше</string>
-    <string name="settings_item_size">Размер значков</string>
+    <string name="settings_item_size">Размер значков файлов</string>
+    <string name="settings_folder_size">Размер значков папок</string>
     <string name="settings_name_size">Размер имён</string>
     <string name="settings_meta_size">Размер даты и размера файла</string>
     <string name="settings_kw_icon_shape">печенье клевер круг формы</string>

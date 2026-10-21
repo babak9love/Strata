@@ -109,7 +109,7 @@ fun FileRow(
     val density = LocalUiDensity.current
     val settings = LocalSettings.current
     val list = settings.list
-    val iconSize = (density.iconDp * (list.itemScale / 100f)).dp
+    val iconSize = (density.iconDp * ((if (item.isDirectory) list.folderScale else list.itemScale) / 100f)).dp
     val nameScale = list.nameScale / 100f
     val metaScale = list.metaScale / 100f
     val interaction = remember { MutableInteractionSource() }
@@ -229,7 +229,7 @@ fun FileTile(
     val apk = showThumbnail && list.apkIcons && FileKinds.hasApkIcon(item)
     val folderBadge = showThumbnail && list.apkIcons && item.isDirectory
     val compact = !list.tileFrame && !picture
-    val iconSize = (if (list.gridColumns == 4) 56.dp else 66.dp) * (list.itemScale / 100f)
+    val iconSize = (if (list.gridColumns == 4) 56.dp else 66.dp) * ((if (item.isDirectory) list.folderScale else list.itemScale) / 100f)
     val nameScale = list.nameScale / 100f
     val metaScale = list.metaScale / 100f
     Column(

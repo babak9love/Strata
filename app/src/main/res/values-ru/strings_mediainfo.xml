@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_section_general">Общие</string>
+    <string name="media_section_audio">Аудио</string>
+    <string name="media_section_video">Видео</string>
+    <string name="media_section_tags">Теги</string>
+    <string name="media_duration">Длительность</string>
+    <string name="media_bitrate">Битрейт</string>
+    <string name="media_format">Формат</string>
+    <string name="media_codec">Кодек</string>
+    <string name="media_channels">Каналы</string>
+    <string name="media_sample_rate">Частота дискретизации</string>
+    <string name="media_bit_depth">Разрядность</string>
+    <string name="media_resolution">Разрешение</string>
+    <string name="media_frame_rate">Частота кадров</string>
+    <string name="media_title">Название</string>
+    <string name="media_artist">Исполнитель</string>
+    <string name="media_album">Альбом</string>
+    <string name="media_album_artist">Исполнитель альбома</string>
+    <string name="media_genre">Жанр</string>
+    <string name="media_year">Год</string>
+    <string name="media_track">Трек</string>
+    <string name="media_disc">Диск</string>
+    <string name="media_composer">Композитор</string>
+    <string name="media_writer">Автор</string>
+    <string name="media_location">Место</string>
+</resources>
