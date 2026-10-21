@@ -59,11 +59,15 @@ data class PaneState(
     val hasSelection: Boolean get() = selected.isNotEmpty()
 }
 
+/** Entries cut out of an archive: removed from the archive once their copies have been pasted. */
+data class ArchiveCut(val archive: String, val paths: Set<String>)
+
 data class ClipboardState(
     val items: List<FileItem>,
     val move: Boolean,
     val sourceDir: String = items.firstOrNull()?.parentPath ?: "/",
     val viaRoot: Boolean = false,
+    val archiveCut: ArchiveCut? = null,
 )
 
 enum class PasswordPurpose { EXTRACT, DECRYPT }

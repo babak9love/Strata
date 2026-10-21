@@ -371,4 +371,5 @@
     <string name="ninepatch_summary_bounds">layout bounds %1$d, %2$d, %3$d, %4$d</string>
     <string name="archive_search_placeholder">Search in archive</string>
     <string name="archive_no_results">No results</string>
+    <string name="archive_cut_kept">Some items could not be pasted, so they were kept in the archive</string>
 </resources>

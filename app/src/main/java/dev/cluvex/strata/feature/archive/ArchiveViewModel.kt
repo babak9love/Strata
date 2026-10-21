@@ -316,6 +316,33 @@ class ArchiveViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Extracts the selected entries into a cache folder (one sub-folder per source folder) and hands over the extracted files. */
+    fun stageForClipboard(paths: Set<String>, onReady: (List<File>) -> Unit) {
+        val s = _state.value
+        if (paths.isEmpty()) return
+        viewModelScope.launch {
+            val title = tr(R.string.archive_extracting)
+            _state.update { it.copy(task = TaskState(title, indeterminate = true)) }
+            try {
+                val root = File(getApplication<Application>().cacheDir, "archive-clip")
+                withContext(Dispatchers.IO) { FsUtil.deleteRecursively(root) }
+                val files = ArrayList<File>()
+                paths.groupBy { it.substringBeforeLast('/', "") }.entries.forEachIndexed { i, group ->
+                    val dest = File(root, i.toString())
+                    ArchiveManager.extract(s.path, dest.path, password = password, selection = ArchiveSelection(group.value.toSet(), base = group.key))
+                        .collect { p -> if (p is OpProgress.Running) _state.update { it.copy(task = taskState(title, p)) } }
+                    group.value.forEach { files += File(dest, it.substringAfterLast('/')) }
+                }
+                _state.update { it.copy(task = null, selected = emptySet()) }
+                onReady(files.filter { it.exists() })
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(task = null, message = tr(R.string.archive_extract_failed, e.message ?: e.javaClass.simpleName)) }
+            }
+        }
+    }
+
     fun deleteStats(paths: Set<String>): ArchiveTree.Stats = tree.stats(paths)
 
     fun delete(paths: Set<String>) {

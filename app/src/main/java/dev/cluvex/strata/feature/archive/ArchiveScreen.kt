@@ -26,6 +26,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCut
+import androidx.compose.material.icons.rounded.CopyAll
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DriveFileRenameOutline
 import androidx.compose.material.icons.rounded.MoreVert
@@ -102,6 +104,7 @@ data class ArchiveActions(
     val onSignApk: (String) -> Unit,
     val onLocate: (folder: String, reveal: String?) -> Unit,
     val onOpenArsc: (archive: String, entry: String) -> Unit,
+    val onClipboard: (files: List<File>, move: Boolean, archive: String, paths: Set<String>) -> Unit,
 )
 
 private enum class ArchiveSearch { NONE, FILTER, DEEP }
@@ -206,22 +209,41 @@ fun ArchiveScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             if (s.selected.isNotEmpty()) {
+                var selMenu by remember { mutableStateOf(false) }
+                val clip = { move: Boolean ->
+                    val paths = s.selected
+                    vm.stageForClipboard(paths) { files -> actions.onClipboard(files, move, s.path, paths) }
+                }
                 TopAppBar(
                     navigationIcon = { IconButton(onClick = vm::clearSelection) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_clear_selection)) } },
                     title = { Text(pluralStringResource(R.plurals.archive_selected, s.selected.size, s.selected.size)) },
                     actions = {
                         IconButton(onClick = { vm.select(visible.map { it.path }) }) { Icon(Icons.Rounded.SelectAll, contentDescription = stringResource(R.string.common_select_all)) }
-                        IconButton(onClick = { dialog = ArchiveDialog.Extract(s.selected) }) {
-                            Icon(Icons.Rounded.Unarchive, contentDescription = stringResource(R.string.archive_extract))
-                        }
+                        IconButton(onClick = { clip(false) }) { Icon(Icons.Rounded.CopyAll, contentDescription = stringResource(R.string.common_copy)) }
                         if (s.canUpdate) {
-                            if (s.selected.size == 1) {
-                                IconButton(onClick = {
-                                    s.selected.firstOrNull()?.let { vm.entry(it) }?.let { dialog = ArchiveDialog.Rename(it) }
-                                }) { Icon(Icons.Rounded.DriveFileRenameOutline, contentDescription = stringResource(R.string.common_rename)) }
-                            }
+                            IconButton(onClick = { clip(true) }) { Icon(Icons.Rounded.ContentCut, contentDescription = stringResource(R.string.explorer_cut)) }
                             IconButton(onClick = { dialog = ArchiveDialog.Delete(s.selected) }) {
                                 Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.common_delete))
+                            }
+                        }
+                        Box {
+                            IconButton(onClick = { selMenu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.archive_options)) }
+                            DropdownMenu(expanded = selMenu, onDismissRequest = { selMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.archive_extract)) },
+                                    leadingIcon = { Icon(Icons.Rounded.Unarchive, contentDescription = null) },
+                                    onClick = { selMenu = false; dialog = ArchiveDialog.Extract(s.selected) },
+                                )
+                                if (s.canUpdate && s.selected.size == 1) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.common_rename)) },
+                                        leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, contentDescription = null) },
+                                        onClick = {
+                                            selMenu = false
+                                            s.selected.firstOrNull()?.let { vm.entry(it) }?.let { dialog = ArchiveDialog.Rename(it) }
+                                        },
+                                    )
+                                }
                             }
                         }
                     },

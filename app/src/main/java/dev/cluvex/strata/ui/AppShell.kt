@@ -566,6 +566,7 @@ private fun Screen(
                 onSignApk = { p -> actions.signApk(FileItem.of(File(p))) },
                 onLocate = actions.locate,
                 onOpenArsc = { archive, entry -> actions.push(Route.Arsc(archive, entry)) },
+                onClipboard = { files, move, archive, paths -> vm.setArchiveClipboard(files, move, archive, paths) },
             ),
         )
         is Route.Image -> ImageViewerScreen(

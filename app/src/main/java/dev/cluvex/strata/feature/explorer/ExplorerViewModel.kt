@@ -28,6 +28,7 @@ import dev.cluvex.strata.core.archive.ArchiveManager
 import dev.cluvex.strata.core.archive.ArchiveOptions
 import dev.cluvex.strata.core.archive.PasswordRequiredException
 import dev.cluvex.strata.core.archive.WrongPasswordException
+import dev.cluvex.strata.core.archive.ZipEditor
 import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.bookmarks.BookmarkRepository
 import dev.cluvex.strata.core.bookmarks.Bookmarks
@@ -599,6 +600,27 @@ class ExplorerViewModel(
         postMessage(trPlural(if (move) R.plurals.explorer_clip_cut else R.plurals.explorer_clip_copied, items.size, items.size))
     }
 
+    /** Files staged from an archive go on the clipboard; a cut also removes the entries from the archive after a full paste. */
+    fun setArchiveClipboard(files: List<File>, move: Boolean, archive: String?, paths: Set<String>) {
+        val items = files.map { FileItem.of(it) }
+        if (items.isEmpty()) return
+        val cut = if (move && archive != null) ArchiveCut(archive, paths) else null
+        _state.update { it.copy(clipboard = ClipboardState(items, move, sourceDir = items.first().parentPath ?: "/", archiveCut = cut)) }
+        UiSounds.play(UiSound.POP)
+        postMessage(trPlural(if (move) R.plurals.explorer_clip_cut else R.plurals.explorer_clip_copied, items.size, items.size))
+    }
+
+    private fun finishArchiveCut(cut: ArchiveCut, moved: Int, total: Int) {
+        if (moved < total) {
+            postMessage(tr(R.string.archive_cut_kept))
+            return
+        }
+        viewModelScope.launch {
+            runCatching { withContext(Dispatchers.IO) { ZipEditor.delete(File(cut.archive), cut.paths) } }
+                .onFailure { postMessage(tr(R.string.archive_delete_failed, it.message ?: it.javaClass.simpleName)) }
+        }
+    }
+
     fun clearClipboard() = _state.update { it.copy(clipboard = null) }
 
     fun paste(pane: Pane) {
@@ -627,6 +649,7 @@ class ExplorerViewModel(
             }, sound = UiSound.LAND) { done ->
                 _state.update { it.copy(clipboard = null) }
                 refreshAllRevealing(dst.path, done.created)
+                clip.archiveCut?.let { finishArchiveCut(it, done.created.size, clip.items.size) }
             }
             return
         }
@@ -641,6 +664,7 @@ class ExplorerViewModel(
         }, sound = UiSound.LAND) { done ->
             _state.update { it.copy(clipboard = null) }
             refreshAllRevealing(dst.path, done.created)
+            clip.archiveCut?.let { finishArchiveCut(it, done.created.size, clip.items.size) }
         }
     }
 
