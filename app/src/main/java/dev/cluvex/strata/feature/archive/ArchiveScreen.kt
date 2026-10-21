@@ -27,7 +27,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCut
-import androidx.compose.material.icons.rounded.CopyAll
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DriveFileRenameOutline
 import androidx.compose.material.icons.rounded.MoreVert
@@ -81,7 +81,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.layout.offset
 import dev.cluvex.strata.R
+import dev.cluvex.strata.core.util.Formatters
 import dev.cluvex.strata.core.archive.ArchiveEntry
 import dev.cluvex.strata.core.archive.ArchiveManager
 import dev.cluvex.strata.core.archive.PasswordRequiredException
@@ -216,10 +218,10 @@ fun ArchiveScreen(
                 }
                 TopAppBar(
                     navigationIcon = { IconButton(onClick = vm::clearSelection) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_clear_selection)) } },
-                    title = { Text(pluralStringResource(R.plurals.archive_selected, s.selected.size, s.selected.size)) },
+                    title = { Text(Formatters.number(s.selected.size.toLong()), maxLines = 1, modifier = Modifier.offset(x = (-8).dp)) },
                     actions = {
                         IconButton(onClick = { vm.select(visible.map { it.path }) }) { Icon(Icons.Rounded.SelectAll, contentDescription = stringResource(R.string.common_select_all)) }
-                        IconButton(onClick = { clip(false) }) { Icon(Icons.Rounded.CopyAll, contentDescription = stringResource(R.string.common_copy)) }
+                        IconButton(onClick = { clip(false) }) { Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.common_copy)) }
                         if (s.canUpdate) {
                             IconButton(onClick = { clip(true) }) { Icon(Icons.Rounded.ContentCut, contentDescription = stringResource(R.string.explorer_cut)) }
                             IconButton(onClick = { dialog = ArchiveDialog.Delete(s.selected) }) {

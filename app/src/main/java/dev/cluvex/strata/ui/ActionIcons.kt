@@ -5,7 +5,6 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.CallMerge
 import androidx.compose.material.icons.automirrored.rounded.CallSplit
-import androidx.compose.material.icons.automirrored.rounded.DriveFileMove
 import androidx.compose.material.icons.automirrored.rounded.ManageSearch
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Outbox
@@ -82,7 +81,7 @@ val SelectionAction.icon: ImageVector
         SelectionAction.OPEN_WITH -> Icons.AutoMirrored.Rounded.OpenInNew
         SelectionAction.EXTRACT -> Icons.Rounded.Unarchive
         SelectionAction.COPY -> Icons.Rounded.ContentCopy
-        SelectionAction.MOVE -> Icons.AutoMirrored.Rounded.DriveFileMove
+        SelectionAction.MOVE -> Icons.Rounded.ContentCut
         SelectionAction.DELETE -> Icons.Rounded.Delete
         SelectionAction.RENAME -> Icons.Rounded.DriveFileRenameOutline
         SelectionAction.BATCH_RENAME -> Icons.Rounded.FormatListNumbered

@@ -29,7 +29,6 @@ import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.West
 import androidx.compose.material.icons.rounded.LayersClear
 import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.Icon
@@ -250,9 +249,14 @@ private fun BrowseActions(
                     enter = scaleIn(motion.fastSpatialSpec()) + fadeIn(motion.fastEffectsSpec()),
                     exit = scaleOut(motion.fastSpatialSpec()) + fadeOut(motion.fastEffectsSpec()),
                 ) {
-                    IconButton(onClick = a.onPaste, shapes = IconButtonDefaults.shapes()) {
-                        BadgedBox(badge = { Badge { Text(Formatters.number(clipboardCount.toLong())) } }) {
+                    // The badge is drawn beside the button, not inside it: IconButton clips its
+                    // content to the button shape, which used to cut the badge off.
+                    Box {
+                        IconButton(onClick = a.onPaste, shapes = IconButtonDefaults.shapes()) {
                             Icon(action.icon, contentDescription = action.text(clipboardIsMove, showHidden, projectLabel))
+                        }
+                        Badge(modifier = Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 0.dp)) {
+                            Text(Formatters.number(clipboardCount.toLong()))
                         }
                     }
                 }
