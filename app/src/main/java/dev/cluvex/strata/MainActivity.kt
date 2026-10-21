@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.cluvex.strata.core.data.SettingsRepository
 import dev.cluvex.strata.core.data.StrataSettings
 import dev.cluvex.strata.core.i18n.L10n
+import dev.cluvex.strata.core.open.IncomingShare
 import dev.cluvex.strata.core.sound.UiSounds
 import dev.cluvex.strata.core.util.Formatters
 import dev.cluvex.strata.feature.pdf.ReaderSource
@@ -65,22 +66,6 @@ class MainActivity : FragmentActivity() {
         return intent.data?.takeIf { it.scheme == "file" || it.scheme == "content" }
     }
 
-    @Suppress("DEPRECATION")
-    private fun incomingShare(intent: Intent?): List<Uri> {
-        val action = intent?.action ?: return emptyList()
-        val uris = when (action) {
-            Intent.ACTION_SEND -> listOfNotNull(
-                if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                else intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM),
-            )
-            Intent.ACTION_SEND_MULTIPLE ->
-                (if (Build.VERSION.SDK_INT >= 33) intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                else intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)).orEmpty().filterNotNull()
-            else -> emptyList()
-        }
-        return uris.filter { it.scheme == "content" || it.scheme == "file" }
-    }
-
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLocales.wrap(newBase))
     }
@@ -117,7 +102,8 @@ class MainActivity : FragmentActivity() {
         UiSounds.inSilent = initial.appearance.soundsInSilent
         val incoming = incomingPdf(intent)
         val incomingFile = if (incoming == null && savedInstanceState == null) incomingFile(intent) else null
-        val incomingShare = if (savedInstanceState == null) incomingShare(intent) else emptyList()
+        val incomingShare = if (savedInstanceState == null) IncomingShare.uris(intent) else emptyList()
+        val incomingShareMode = IncomingShare.mode(intent)
         setContent {
             val settings by settingsFlow.collectAsStateWithLifecycle(initialValue = initial)
             val sounds = settings.appearance.sounds
@@ -147,6 +133,7 @@ class MainActivity : FragmentActivity() {
                                 incoming = incoming,
                                 incomingFile = incomingFile,
                                 incomingShare = incomingShare,
+                                incomingShareMode = incomingShareMode,
                                 onIncomingDone = { finish() },
                             )
                         }

@@ -110,14 +110,64 @@
                 <data android:mimeType="video/*" />
                 <data android:mimeType="application/*" />
             </intent-filter>
+        </activity>
 
+        <activity
+            android:name=".ShareReceiverActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Strata.ShareReceiver" />
+
+        <activity-alias
+            android:name=".ShareCopy"
+            android:exported="true"
+            android:label="@string/share_copy_to"
+            android:targetActivity=".ShareReceiverActivity">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="*/*" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".ShareExtract"
+            android:exported="true"
+            android:label="@string/share_extract_to"
+            android:targetActivity=".ShareReceiverActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/vnd.rar" />
+                <data android:mimeType="application/x-rar-compressed" />
+                <data android:mimeType="application/x-7z-compressed" />
+                <data android:mimeType="application/x-tar" />
+                <data android:mimeType="application/gzip" />
+                <data android:mimeType="application/x-gzip" />
+                <data android:mimeType="application/x-bzip2" />
+                <data android:mimeType="application/x-xz" />
+                <data android:mimeType="application/zstd" />
+                <data android:mimeType="application/java-archive" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".ShareArchive"
+            android:exported="true"
+            android:label="@string/share_archive_to"
+            android:targetActivity=".ShareReceiverActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
+            </intent-filter>
+        </activity-alias>
 
         <service
             android:name=".feature.media.PlaybackService"

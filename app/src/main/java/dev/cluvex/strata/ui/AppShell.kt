@@ -195,6 +195,7 @@ fun AppShell(
     incoming: ReaderSource? = null,
     incomingFile: Uri? = null,
     incomingShare: List<Uri> = emptyList(),
+    incomingShareMode: ShareMode? = null,
     onIncomingDone: () -> Unit = {},
 ) {
     val access = rememberStorageAccessState()
@@ -244,16 +245,8 @@ fun AppShell(
         incomingFile?.let { vm.locateIncoming(it) }
     }
 
-    var pendingShare by remember(incomingShare) { mutableStateOf(incomingShare) }
-    if (pendingShare.isNotEmpty()) {
-        ShareChooser(
-            uris = pendingShare,
-            onPick = { mode ->
-                vm.stageShared(pendingShare, mode)
-                pendingShare = emptyList()
-            },
-            onDismiss = { pendingShare = emptyList() },
-        )
+    LaunchedEffect(incomingShare) {
+        if (incomingShare.isNotEmpty()) vm.stageShared(incomingShare, incomingShareMode)
     }
 
     LaunchedEffect(route) {
@@ -703,33 +696,4 @@ private fun PermissionScreen(onGrant: () -> Unit) {
             Button(onClick = onGrant) { Text(stringResource(R.string.ui_storage_grant)) }
         }
     }
-}
-
-
-@Composable
-private fun ShareChooser(uris: List<Uri>, onPick: (ShareMode?) -> Unit, onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val canExtract = remember(uris) {
-        uris.size == 1 && FileKinds.isArchiveName(IncomingFiles.displayName(context, uris[0]).orEmpty())
-    }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.incoming_share_title)) },
-        text = {
-            Column {
-                TextButton(onClick = { onPick(null) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.share_copy_to), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
-                }
-                if (canExtract) {
-                    TextButton(onClick = { onPick(ShareMode.EXTRACT) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.share_extract_to), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
-                    }
-                }
-                TextButton(onClick = { onPick(ShareMode.ARCHIVE) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.share_archive_to), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
-                }
-            }
-        },
-        confirmButton = {},
-    )
 }
