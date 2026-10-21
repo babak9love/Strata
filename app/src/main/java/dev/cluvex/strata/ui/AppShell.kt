@@ -65,6 +65,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
+import dev.cluvex.strata.feature.explorer.ShareMode
+import dev.cluvex.strata.core.open.IncomingFiles
+import dev.cluvex.strata.core.util.FileKinds
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import dev.cluvex.strata.core.i18n.tr
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -189,6 +194,7 @@ fun AppShell(
     startPathOther: String? = null,
     incoming: ReaderSource? = null,
     incomingFile: Uri? = null,
+    incomingShare: List<Uri> = emptyList(),
     onIncomingDone: () -> Unit = {},
 ) {
     val access = rememberStorageAccessState()
@@ -236,6 +242,18 @@ fun AppShell(
 
     LaunchedEffect(incomingFile) {
         incomingFile?.let { vm.locateIncoming(it) }
+    }
+
+    var pendingShare by remember(incomingShare) { mutableStateOf(incomingShare) }
+    if (pendingShare.isNotEmpty()) {
+        ShareChooser(
+            uris = pendingShare,
+            onPick = { mode ->
+                vm.stageShared(pendingShare, mode)
+                pendingShare = emptyList()
+            },
+            onDismiss = { pendingShare = emptyList() },
+        )
     }
 
     LaunchedEffect(route) {
@@ -685,4 +703,33 @@ private fun PermissionScreen(onGrant: () -> Unit) {
             Button(onClick = onGrant) { Text(stringResource(R.string.ui_storage_grant)) }
         }
     }
+}
+
+
+@Composable
+private fun ShareChooser(uris: List<Uri>, onPick: (ShareMode?) -> Unit, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val canExtract = remember(uris) {
+        uris.size == 1 && FileKinds.isArchiveName(IncomingFiles.displayName(context, uris[0]).orEmpty())
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.incoming_share_title)) },
+        text = {
+            Column {
+                TextButton(onClick = { onPick(null) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.share_copy_to), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                }
+                if (canExtract) {
+                    TextButton(onClick = { onPick(ShareMode.EXTRACT) }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.share_extract_to), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                    }
+                }
+                TextButton(onClick = { onPick(ShareMode.ARCHIVE) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.share_archive_to), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                }
+            }
+        },
+        confirmButton = {},
+    )
 }

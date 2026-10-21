@@ -268,4 +268,10 @@
     <string name="folder_icon_choose_image">Choose picture…</string>
     <string name="folder_icon_reset">Reset to default icon</string>
     <string name="folder_icon_image_failed">Couldn\'t read that picture</string>
+    <string name="incoming_share_title">Shared files</string>
+    <string name="share_copy_to">Copy to…</string>
+    <string name="share_extract_to">Extract to…</string>
+    <string name="share_archive_to">Archive to…</string>
+    <string name="share_pick_extract">Open a folder and press Paste to extract here</string>
+    <string name="share_pick_archive">Open a folder and press Paste to archive here</string>
 </resources>

@@ -368,7 +368,17 @@ fun ExplorerScreen(
                     onNewFolder = { dialog = Dialog.NewFolder(ui.active) },
                     onNewFile = { dialog = Dialog.NewFile(ui.active) },
                     onRefresh = { vm.refresh(ui.active) },
-                    onPaste = { vm.paste(ui.active) },
+                    onPaste = {
+                        val clip = ui.clipboard
+                        if (clip != null && clip.shareMode == ShareMode.EXTRACT) {
+                            clip.items.firstOrNull()?.let { vm.extractArchive(ui.active, it) }
+                            vm.clearClipboard()
+                        } else if (clip != null && clip.shareMode == ShareMode.ARCHIVE) {
+                            dialog = Dialog.CreateArchive(ui.active, clip.items)
+                        } else {
+                            vm.paste(ui.active)
+                        }
+                    },
                     onCancelClipboard = vm::clearClipboard,
                     onSelectAll = { vm.selectAll(ui.active, visibleOfActive()) },
                     onClearSelection = { vm.clearSelection(ui.active) },
@@ -510,6 +520,7 @@ fun ExplorerScreen(
             defaultName = archiveName(d.items, ui.pane(d.pane).path),
             onConfirm = { name, options, independent ->
                 vm.createArchive(d.pane, d.items, name, options, independent)
+                if (ui.clipboard?.shareMode == ShareMode.ARCHIVE) vm.clearClipboard()
                 dialog = Dialog.None
             },
             onDismiss = { dialog = Dialog.None },

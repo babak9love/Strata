@@ -80,6 +80,8 @@ object FileKinds {
     private val font = setOf("ttf", "otf", "woff", "woff2", "ttc")
     private val document = setOf("doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "rtf", "epub")
 
+    fun isArchiveName(name: String): Boolean = name.substringAfterLast('.', "").lowercase() in archive
+
     fun of(item: FileItem): FileKind {
         if (item.isDirectory) return FileKind.FOLDER
         val ext = item.extension

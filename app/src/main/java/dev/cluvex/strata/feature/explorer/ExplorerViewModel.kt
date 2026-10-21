@@ -1176,6 +1176,39 @@ class ExplorerViewModel(
         }
     }
 
+    /** Files shared into Strata from another app are copied to a private folder and put on the clipboard, ready to paste anywhere. */
+    fun stageShared(uris: List<Uri>, mode: ShareMode? = null) = viewModelScope.launch {
+        val app = getApplication<Application>()
+        val files = withContext(Dispatchers.IO) {
+            val root = File(app.cacheDir, "shared")
+            root.deleteRecursively()
+            uris.mapIndexedNotNull { index, uri ->
+                runCatching {
+                    val name = IncomingPaths.safeName(IncomingFiles.displayName(app, uri))
+                    val dir = File(root, index.toString()).also { it.mkdirs() }
+                    val target = File(dir, name)
+                    val input = app.contentResolver.openInputStream(uri) ?: return@runCatching null
+                    input.use { i -> target.outputStream().use { o -> i.copyTo(o) } }
+                    target
+                }.getOrNull()
+            }
+        }
+        if (files.isEmpty()) {
+            postMessage(tr(R.string.explorer_incoming_unreadable))
+            return@launch
+        }
+        val items = files.map { FileItem.of(it) }
+        _state.update { it.copy(clipboard = ClipboardState(items, false, sourceDir = items.first().parentPath ?: "/", shareMode = mode)) }
+        UiSounds.play(UiSound.POP)
+        postMessage(
+            when (mode) {
+                ShareMode.EXTRACT -> tr(R.string.share_pick_extract)
+                ShareMode.ARCHIVE -> tr(R.string.share_pick_archive)
+                null -> trPlural(R.plurals.explorer_clip_copied, items.size, items.size)
+            },
+        )
+    }
+
     fun consumeIncoming(seq: Int) = _state.update { if (it.incoming?.seq == seq) it.copy(incoming = null) else it }
 
     fun saveIncomingCopy(copy: IncomingCopy) {

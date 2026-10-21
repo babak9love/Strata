@@ -295,4 +295,10 @@
     <string name="folder_icon_choose_image">Выбрать изображение…</string>
     <string name="folder_icon_reset">Вернуть значок по умолчанию</string>
     <string name="folder_icon_image_failed">Не удалось прочитать изображение</string>
+    <string name="incoming_share_title">Полученные файлы</string>
+    <string name="share_copy_to">Копировать в…</string>
+    <string name="share_extract_to">Извлечь в…</string>
+    <string name="share_archive_to">Архивировать в…</string>
+    <string name="share_pick_extract">Откройте папку и нажмите «Вставить», чтобы извлечь сюда</string>
+    <string name="share_pick_archive">Откройте папку и нажмите «Вставить», чтобы архивировать сюда</string>
 </resources>

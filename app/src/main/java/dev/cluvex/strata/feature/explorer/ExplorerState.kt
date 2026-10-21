@@ -62,12 +62,16 @@ data class PaneState(
 /** Entries cut out of an archive: removed from the archive once their copies have been pasted. */
 data class ArchiveCut(val archive: String, val paths: Set<String>)
 
+/** Set when the clipboard holds files shared in from another app: Paste then extracts or archives them in the open folder instead of copying. */
+enum class ShareMode { EXTRACT, ARCHIVE }
+
 data class ClipboardState(
     val items: List<FileItem>,
     val move: Boolean,
     val sourceDir: String = items.firstOrNull()?.parentPath ?: "/",
     val viaRoot: Boolean = false,
     val archiveCut: ArchiveCut? = null,
+    val shareMode: ShareMode? = null,
 )
 
 enum class PasswordPurpose { EXTRACT, DECRYPT }

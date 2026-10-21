@@ -253,4 +253,10 @@
     <string name="folder_icon_choose_image">选择图片…</string>
     <string name="folder_icon_reset">恢复默认图标</string>
     <string name="folder_icon_image_failed">无法读取该图片</string>
+    <string name="incoming_share_title">收到的文件</string>
+    <string name="share_copy_to">复制到…</string>
+    <string name="share_extract_to">解压到…</string>
+    <string name="share_archive_to">压缩到…</string>
+    <string name="share_pick_extract">打开文件夹并点击“粘贴”即可在此解压</string>
+    <string name="share_pick_archive">打开文件夹并点击“粘贴”即可在此压缩</string>
 </resources>

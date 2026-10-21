@@ -268,4 +268,10 @@
     <string name="folder_icon_choose_image">انتخاب تصویر…</string>
     <string name="folder_icon_reset">بازگشت به آیکون پیش‌فرض</string>
     <string name="folder_icon_image_failed">این تصویر خوانده نشد</string>
+    <string name="incoming_share_title">فایل‌های دریافتی</string>
+    <string name="share_copy_to">کپی در…</string>
+    <string name="share_extract_to">استخراج در…</string>
+    <string name="share_archive_to">فشرده‌سازی در…</string>
+    <string name="share_pick_extract">پوشه‌ای را باز کنید و «جای‌گذاری» را بزنید تا اینجا استخراج شود</string>
+    <string name="share_pick_archive">پوشه‌ای را باز کنید و «جای‌گذاری» را بزنید تا اینجا فشرده شود</string>
 </resources>
