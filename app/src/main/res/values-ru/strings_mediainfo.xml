@@ -11,7 +11,6 @@
     <string name="media_channels">Каналы</string>
     <string name="media_sample_rate">Частота дискретизации</string>
     <string name="media_bit_depth">Разрядность</string>
-    <string name="media_resolution">Разрешение</string>
     <string name="media_frame_rate">Частота кадров</string>
     <string name="media_title">Название</string>
     <string name="media_artist">Исполнитель</string>

@@ -11,7 +11,6 @@
     <string name="media_channels">声道</string>
     <string name="media_sample_rate">采样率</string>
     <string name="media_bit_depth">位深度</string>
-    <string name="media_resolution">分辨率</string>
     <string name="media_frame_rate">帧率</string>
     <string name="media_title">标题</string>
     <string name="media_artist">艺术家</string>

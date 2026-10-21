@@ -11,7 +11,6 @@
     <string name="media_channels">تعداد کانال‌ها</string>
     <string name="media_sample_rate">نرخ نمونه</string>
     <string name="media_bit_depth">عمق بیت</string>
-    <string name="media_resolution">رزولوشن</string>
     <string name="media_frame_rate">نرخ فریم</string>
     <string name="media_title">عنوان</string>
     <string name="media_artist">هنرمند</string>
