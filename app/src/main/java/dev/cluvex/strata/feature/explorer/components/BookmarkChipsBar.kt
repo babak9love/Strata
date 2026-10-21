@@ -15,8 +15,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.toShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.bookmarks.Bookmarks
+import dev.cluvex.strata.ui.LocalSettings
 
 private val CHIP_ROW_PADDING = 12.dp
 private val CHIP_SPACING = 8.dp
@@ -54,7 +59,7 @@ private val CHIP_SPACING = 8.dp
  * Short press opens the path; long press opens bookmark settings.
  * Each chip has the folder icon before its name; the selected one is filled and bold.
  */
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BookmarkChipsBar(
     bookmarks: List<Bookmark>,
@@ -65,7 +70,10 @@ fun BookmarkChipsBar(
 ) {
     if (bookmarks.isEmpty()) return
     val normalizedCurrent = Bookmarks.normalize(currentPath)
-    val shape = RoundedCornerShape(20.dp)
+    // Classic Strata look: each chip starts with a tile holding the first letter of the bookmark, like the drawer.
+    val classic = LocalSettings.current.appearance.strataIcons
+    // The classic chip is the drawer's: a filled pill, no outline.
+    val shape = if (classic) CircleShape else RoundedCornerShape(20.dp)
     val scroll = rememberScrollState()
     val bounds = remember { mutableStateMapOf<String, Int>() }
     val density = LocalDensity.current
@@ -98,11 +106,15 @@ fun BookmarkChipsBar(
             val selected = Bookmarks.normalize(bookmark.path) == normalizedCurrent
             val cd = stringResource(R.string.explorer_bookmark_cd, bookmark.name)
             // Selected chip: filled (tonal) and bold. The others: transparent with a thin outline.
-            val bg = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
-            val fg = if (selected) {
-                MaterialTheme.colorScheme.onSecondaryContainer
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
+            val bg = when {
+                selected -> MaterialTheme.colorScheme.secondaryContainer
+                classic -> MaterialTheme.colorScheme.surfaceContainerHigh
+                else -> Color.Transparent
+            }
+            val fg = when {
+                selected -> MaterialTheme.colorScheme.onSecondaryContainer
+                classic -> MaterialTheme.colorScheme.onSurface
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -110,7 +122,7 @@ fun BookmarkChipsBar(
                     .clip(shape)
                     .background(bg, shape)
                     .then(
-                        if (selected) Modifier
+                        if (selected || classic) Modifier
                         else Modifier.border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, shape)
                     )
                     .onGloballyPositioned { bounds[Bookmarks.normalize(bookmark.path)] = it.positionInParent().x.toInt() }
@@ -119,13 +131,32 @@ fun BookmarkChipsBar(
                         onClick = { onOpen(bookmark) },
                         onLongClick = { onLongPress(bookmark) },
                     )
-                    .padding(start = 14.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                    .then(
+                        if (classic) Modifier.padding(start = 6.dp, end = 16.dp, top = 6.dp, bottom = 6.dp)
+                        else Modifier.padding(start = 14.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                    ),
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_folder),
-                    contentDescription = null,
-                    modifier = Modifier.size(width = 24.dp, height = 19.dp),
-                )
+                if (classic) {
+                    Box(
+                        Modifier
+                            .size(32.dp)
+                            .clip(MaterialShapes.Cookie4Sided.toShape())
+                            .background(MaterialTheme.colorScheme.tertiaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            bookmark.name.take(1).uppercase(),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        )
+                    }
+                } else {
+                    Image(
+                        painter = painterResource(R.drawable.ic_folder),
+                        contentDescription = null,
+                        modifier = Modifier.size(width = 24.dp, height = 19.dp),
+                    )
+                }
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = bookmark.name,

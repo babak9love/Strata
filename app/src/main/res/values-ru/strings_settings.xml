@@ -459,4 +459,10 @@
     <string name="settings_item_size">Размер значков</string>
     <string name="settings_name_size">Размер имён</string>
     <string name="settings_meta_size">Размер даты и размера файла</string>
+    <string name="settings_kw_icon_shape">печенье клевер круг формы</string>
+    <string name="settings_icon_shape">Форма значков</string>
+    <string name="settings_icon_shape_option">Форма значков: %1$s</string>
+    <string name="settings_strata_icons">Значки Strata</string>
+    <string name="settings_strata_icons_summary">Классический вид Strata: файлы и папки в виде плитки выбранной формы с простым символом, закладки в виде плиток с буквой. Выключите, чтобы вернуть новые значки.</string>
+    <string name="settings_kw_strata_icons">классические старые значки папок</string>
 </resources>

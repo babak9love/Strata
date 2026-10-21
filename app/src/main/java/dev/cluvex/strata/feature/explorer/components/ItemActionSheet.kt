@@ -178,14 +178,15 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
             Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(colors.secondaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            val custom = FileKinds.customIcon(item)
+            val classic = dev.cluvex.strata.ui.LocalSettings.current.appearance.strataIcons
+            val custom = if (!classic) FileKinds.customIcon(item) else null
             if (custom != null) {
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(custom),
                     contentDescription = null,
                     modifier = Modifier.size(36.dp),
                 )
-            } else if (FileKinds.autoIconLabel(item) != null) {
+            } else if (!classic && FileKinds.autoIconLabel(item) != null) {
                 ExtensionIcon(extension = FileKinds.autoIconLabel(item).orEmpty(), modifier = Modifier.size(36.dp))
             } else {
                 Icon(kind.icon, contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(28.dp))

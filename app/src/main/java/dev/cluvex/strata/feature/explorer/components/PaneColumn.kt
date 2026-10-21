@@ -483,7 +483,7 @@ private fun ParentTile(onClick: () -> Unit, look: DropLook = DropLook.NONE) {
     val anim = rememberDropAnimation(look)
     val list = LocalSettings.current.list
     val framed = list.tileFrame
-    val iconSize = (if (list.gridColumns == 4) 48.dp else 56.dp) * (list.itemScale / 100f)
+    val iconSize = (if (list.gridColumns == 4) 56.dp else 66.dp) * (list.itemScale / 100f)
     Column(
         Modifier
             .then(look.spot)

@@ -20,6 +20,7 @@ import dev.cluvex.strata.core.model.CornerStyle
 import dev.cluvex.strata.core.model.DateStyle
 import dev.cluvex.strata.core.model.FolderSorts
 import dev.cluvex.strata.core.model.DEFAULT_ITEM_SCALE
+import dev.cluvex.strata.core.model.IconShape
 import dev.cluvex.strata.core.model.ItemScale
 import dev.cluvex.strata.core.model.ListPrefs
 import dev.cluvex.strata.core.model.LockDelay
@@ -121,6 +122,8 @@ class SettingsRepository(private val context: Context) {
         val PURE_BLACK = booleanPreferencesKey("pure_black")
         val TEXT_SCALE = floatPreferencesKey("text_scale")
         val CORNERS = stringPreferencesKey("corner_style")
+        val ICON_SHAPE = stringPreferencesKey("icon_shape")
+        val STRATA_ICONS = booleanPreferencesKey("strata_icons")
         val COLORFUL_ICONS = booleanPreferencesKey("colorful_icons")
         val MOTION = stringPreferencesKey("motion")
         val HAPTICS = booleanPreferencesKey("haptics")
@@ -196,7 +199,7 @@ class SettingsRepository(private val context: Context) {
         val ACTION_LAYOUT = stringPreferencesKey("action_layout")
 
         val BOOLEANS = listOf(
-            SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, APK_ICONS, SHOW_DATE,
+            SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, STRATA_ICONS, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, APK_ICONS, SHOW_DATE,
             SHOW_SIZE, USE_24H, WRAP_NAMES, TILE_FRAME, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, KEEP_SCREEN_TASKS, KEEP_MTIME, SECURE_SCREEN,
             DUAL_PANE, TRASH_DEFAULT, ROOT_ACCESS, SHIZUKU_ACCESS, VERIFY_BEFORE_INSTALL, INSTALL_WITH_ROOT, EDITOR_WRAP,
             EDITOR_LINE_NUMBERS, EDITOR_WHITESPACE, EDITOR_SYMBOL_BAR, EDITOR_AUTO_INDENT, EDITOR_AUTO_PAIRS, EDITOR_HIGHLIGHT_LINE,
@@ -207,7 +210,7 @@ class SettingsRepository(private val context: Context) {
         val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, NAME_SCALE, META_SCALE)
         val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE)
         val STRINGS = listOf(
-            SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
+            SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
             START_FOLDER, START_PATH, CONFLICT, UI_DENSITY, OPEN_DEFAULTS, EDITOR_THEME, APK_EXTRACT_DIR, APK_NAME_PATTERN,
             RENAME_HISTORY, RECENT_COLORS, PLUGIN_PINS, LAST_LEFT, LAST_RIGHT, RUN_COMMANDS, READER_THEME, READER_SPOTS, READER_MARKS,
             ACTION_LAYOUT, LOCK_DELAY, VAULT_LOCK_DELAY,
@@ -409,6 +412,8 @@ class SettingsRepository(private val context: Context) {
             pureBlack = p[Keys.PURE_BLACK] ?: false,
             textScale = AppearancePrefs.textScale(p[Keys.TEXT_SCALE] ?: 1f),
             corners = enumOf(p[Keys.CORNERS], CornerStyle.ROUND),
+            iconShape = enumOf(p[Keys.ICON_SHAPE], IconShape.ROUNDED),
+            strataIcons = p[Keys.STRATA_ICONS] ?: false,
             colorfulIcons = p[Keys.COLORFUL_ICONS] ?: true,
             motion = enumOf(p[Keys.MOTION], MotionStyle.EXPRESSIVE),
             haptics = p[Keys.HAPTICS] ?: true,
@@ -425,6 +430,8 @@ class SettingsRepository(private val context: Context) {
             p[Keys.PURE_BLACK] = a.pureBlack
             p[Keys.TEXT_SCALE] = AppearancePrefs.textScale(a.textScale)
             p[Keys.CORNERS] = a.corners.name
+            p[Keys.ICON_SHAPE] = a.iconShape.name
+            p[Keys.STRATA_ICONS] = a.strataIcons
             p[Keys.COLORFUL_ICONS] = a.colorfulIcons
             p[Keys.MOTION] = a.motion.name
             p[Keys.HAPTICS] = a.haptics

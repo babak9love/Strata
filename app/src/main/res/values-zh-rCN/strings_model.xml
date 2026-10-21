@@ -176,4 +176,12 @@
     <string name="model_protocol_saf">本地存储</string>
     <string name="model_protocol_vault">保险箱</string>
     <string name="model_folder_icon">文件夹图标</string>
+    <string name="model_shape_rounded">圆角矩形</string>
+    <string name="model_shape_circle">圆形</string>
+    <string name="model_shape_cookie">饼干</string>
+    <string name="model_shape_clover">四叶草</string>
+    <string name="model_shape_sunny">太阳</string>
+    <string name="model_shape_gem">宝石</string>
+    <string name="model_shape_puffy">蓬松</string>
+    <string name="model_shape_arch">拱形</string>
 </resources>

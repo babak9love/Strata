@@ -81,7 +81,7 @@ import dev.cluvex.strata.core.util.IntentUtils
 import dev.cluvex.strata.ui.LocalSettings
 import dev.cluvex.strata.ui.isolated
 import dev.cluvex.strata.ui.rememberSheetState
-import dev.cluvex.strata.ui.theme.IconTileShape
+import dev.cluvex.strata.ui.theme.toShape
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -144,7 +144,7 @@ fun OpenWithDialog(
         }
     }
     val ext = item.extension
-    val iconShape = IconTileShape
+    val iconShape = LocalSettings.current.appearance.iconShape.toShape()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

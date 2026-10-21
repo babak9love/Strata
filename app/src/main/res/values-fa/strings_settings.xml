@@ -441,4 +441,10 @@
     <string name="settings_item_size">اندازه آیکون</string>
     <string name="settings_name_size">اندازه اسم</string>
     <string name="settings_meta_size">اندازه تاریخ و حجم</string>
+    <string name="settings_kw_icon_shape">کلوچه شبدر دایره شکل‌ها</string>
+    <string name="settings_icon_shape">شکل نماد</string>
+    <string name="settings_icon_shape_option">شکل نماد: \u2068%1$s\u2069</string>
+    <string name="settings_strata_icons">آیکون‌های استرا</string>
+    <string name="settings_strata_icons_summary">ظاهر کلاسیک استرا: فایل‌ها و پوشه‌ها به‌صورت کاشی با شکل انتخابی و نماد ساده، و نشانک‌ها به‌صورت کاشی حرفی. خاموش کنید تا آیکون‌های جدیدتر نشان داده شوند.</string>
+    <string name="settings_kw_strata_icons">کلاسیک قدیمی آیکون پوشه</string>
 </resources>

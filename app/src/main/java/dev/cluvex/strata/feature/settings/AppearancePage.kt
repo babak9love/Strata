@@ -64,6 +64,7 @@ import dev.cluvex.strata.core.data.StrataSettings
 import dev.cluvex.strata.core.model.AppearancePrefs
 import dev.cluvex.strata.core.model.ContrastLevel
 import dev.cluvex.strata.core.model.CornerStyle
+import dev.cluvex.strata.core.model.IconShape
 import dev.cluvex.strata.core.model.MotionStyle
 import dev.cluvex.strata.core.model.ThemeMode
 import dev.cluvex.strata.core.model.ThemeSeeds
@@ -73,7 +74,7 @@ import dev.cluvex.strata.core.util.Formatters
 import dev.cluvex.strata.feature.color.ColorPickerDialog
 import dev.cluvex.strata.ui.theme.KindPalette
 import dev.cluvex.strata.ui.theme.StrataColors
-import dev.cluvex.strata.ui.theme.IconTileShape
+import dev.cluvex.strata.ui.theme.toShape
 import kotlin.math.roundToInt
 
 @Composable
@@ -137,6 +138,15 @@ fun AppearancePage(settings: StrataSettings, act: SettingsActions, onBack: () ->
             }
         }
         SettingsGroup(stringResource(R.string.settings_group_file_icons)) {
+            switch(
+                tr(R.string.settings_strata_icons),
+                a.strataIcons,
+                { v -> act.appearance { it.copy(strataIcons = v) } },
+                summary = tr(R.string.settings_strata_icons_summary),
+            )
+            custom(title = tr(R.string.settings_icon_shape), summary = tr(a.iconShape.label)) {
+                IconShapes(a) { shape -> act.appearance { it.copy(iconShape = shape) } }
+            }
             switch(
                 tr(R.string.settings_colorful_icons),
                 a.colorfulIcons,
@@ -301,7 +311,7 @@ fun ThemePreview(settings: StrataSettings) {
                 val tile = KindPalette.colors(kind, a.colorfulIcons, colors, dark)
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        Modifier.size(36.dp).clip(IconTileShape).background(tile.container),
+                        Modifier.size(36.dp).clip(a.iconShape.toShape()).background(tile.container),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(kind.icon, contentDescription = null, tint = tile.content, modifier = Modifier.size(20.dp))
@@ -327,6 +337,34 @@ fun ThemePreview(settings: StrataSettings) {
                 Button(onClick = {}) { Text(stringResource(R.string.settings_preview_paste)) }
                 Spacer(Modifier.weight(1f))
                 Switch(checked = true, onCheckedChange = null)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun IconShapes(a: AppearancePrefs, onShape: (IconShape) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        IconShape.entries.forEach { shape ->
+            val selected = a.iconShape == shape
+            val description = stringResource(R.string.settings_icon_shape_option, stringResource(shape.label))
+            Box(
+                Modifier
+                    .size(52.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(if (selected) colors.secondaryContainer else Color.Transparent)
+                    .selectable(selected, role = Role.RadioButton) { onShape(shape) }
+                    .semantics { contentDescription = description },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier.size(36.dp).clip(shape.toShape()).background(colors.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(FileKind.FOLDER.icon, contentDescription = null, tint = colors.onPrimaryContainer, modifier = Modifier.size(20.dp))
+                }
             }
         }
     }

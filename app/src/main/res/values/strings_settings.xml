@@ -442,4 +442,10 @@
     <string name="settings_item_size">Icon size</string>
     <string name="settings_name_size">Name size</string>
     <string name="settings_meta_size">Date and size text size</string>
+    <string name="settings_kw_icon_shape">cookie clover circle shapes</string>
+    <string name="settings_icon_shape">Icon shape</string>
+    <string name="settings_icon_shape_option">%1$s icon shape</string>
+    <string name="settings_strata_icons">Strata icons</string>
+    <string name="settings_strata_icons_summary">Strata\'s classic look: files and folders as a tile in the chosen shape with a simple symbol, and bookmarks as letter tiles. Turn off for the newer icons.</string>
+    <string name="settings_kw_strata_icons">classic old folder icons</string>
 </resources>

@@ -86,7 +86,7 @@ import dev.cluvex.strata.feature.explorer.dnd.rememberDropAnimation
 import dev.cluvex.strata.ui.LocalSettings
 import dev.cluvex.strata.ui.LocalUiDensity
 import dev.cluvex.strata.ui.theme.KindPalette
-import dev.cluvex.strata.ui.theme.IconTileShape
+import dev.cluvex.strata.ui.theme.toShape
 import okio.Path.Companion.toPath
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -223,13 +223,13 @@ fun FileTile(
     val ghostAlpha by animateFloatAsState(if (drop.ghosted) 0.36f else 1f, motion.defaultEffectsSpec(), label = "tileGhost")
     val flash = rememberFlash(flashKey, flashPulses)
     val flashColor = colors.primary.copy(alpha = 0.32f)
-    val shape = IconTileShape
+    val shape = LocalSettings.current.appearance.iconShape.toShape()
     val kind = FileKinds.of(item)
     val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)
     val apk = showThumbnail && list.apkIcons && FileKinds.hasApkIcon(item)
     val folderBadge = showThumbnail && list.apkIcons && item.isDirectory
     val compact = !list.tileFrame && !picture
-    val iconSize = (if (list.gridColumns == 4) 48.dp else 56.dp) * (list.itemScale / 100f)
+    val iconSize = (if (list.gridColumns == 4) 56.dp else 66.dp) * (list.itemScale / 100f)
     val nameScale = list.nameScale / 100f
     val metaScale = list.metaScale / 100f
     Column(
@@ -361,7 +361,7 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
     val motion = MaterialTheme.motionScheme
     val colors = MaterialTheme.colorScheme
     val settings = LocalSettings.current
-    val shape = IconTileShape
+    val shape = LocalSettings.current.appearance.iconShape.toShape()
     val kind = FileKinds.of(item)
     Box(
         Modifier
@@ -473,7 +473,9 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
     val colors = MaterialTheme.colorScheme
     val settings = LocalSettings.current
     val kind = FileKinds.of(item)
-    val custom = FileKinds.customIcon(item)
+    // Classic look (Strata icons on): every file and folder is a tile of the chosen shape with a simple symbol.
+    val classic = settings.appearance.strataIcons
+    val custom = if (!classic) FileKinds.customIcon(item) else null
     if (custom != null) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(custom),
@@ -485,7 +487,7 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
         )
         return
     }
-    val autoLabel = FileKinds.autoIconLabel(item)
+    val autoLabel = if (!classic) FileKinds.autoIconLabel(item) else null
     if (autoLabel != null) {
         ExtensionIcon(
             extension = autoLabel,

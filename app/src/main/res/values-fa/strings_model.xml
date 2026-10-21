@@ -176,4 +176,12 @@
     <string name="model_protocol_saf">حافظه محلی</string>
     <string name="model_protocol_vault">گاوصندوق</string>
     <string name="model_folder_icon">آیکون پوشه</string>
+    <string name="model_shape_rounded">گردگوشه</string>
+    <string name="model_shape_circle">دایره</string>
+    <string name="model_shape_cookie">کلوچه</string>
+    <string name="model_shape_clover">شبدر</string>
+    <string name="model_shape_sunny">خورشیدی</string>
+    <string name="model_shape_gem">جواهر</string>
+    <string name="model_shape_puffy">پفکی</string>
+    <string name="model_shape_arch">طاق</string>
 </resources>

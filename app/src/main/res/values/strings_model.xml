@@ -190,4 +190,12 @@
     <string name="model_protocol_saf">Local storage</string>
     <string name="model_protocol_vault">Vault</string>
     <string name="model_folder_icon">Folder icon</string>
+    <string name="model_shape_rounded">Rounded</string>
+    <string name="model_shape_circle">Circle</string>
+    <string name="model_shape_cookie">Cookie</string>
+    <string name="model_shape_clover">Clover</string>
+    <string name="model_shape_sunny">Sunny</string>
+    <string name="model_shape_gem">Gem</string>
+    <string name="model_shape_puffy">Puffy</string>
+    <string name="model_shape_arch">Arch</string>
 </resources>
