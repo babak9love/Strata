@@ -184,4 +184,8 @@
     <string name="model_shape_gem">جواهر</string>
     <string name="model_shape_puffy">پفکی</string>
     <string name="model_shape_arch">طاق</string>
+    <string name="model_folder_style_strata">استراتا</string>
+    <string name="model_folder_style_classic">کلاسیک</string>
+    <string name="model_folder_style_flat">تخت</string>
+    <string name="model_folder_style_papers">اوراق</string>
 </resources>

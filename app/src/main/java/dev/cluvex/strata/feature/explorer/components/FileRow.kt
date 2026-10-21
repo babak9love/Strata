@@ -473,11 +473,11 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
     val colors = MaterialTheme.colorScheme
     val settings = LocalSettings.current
     val kind = FileKinds.of(item)
-    // Files: dedicated icons when "Custom file icons" is on, else the classic tile. Folders: golden folder when "Golden folders" is on, else the classic tile.
-    val dedicated = if (item.isDirectory) settings.appearance.goldenFolders else settings.appearance.customFileIcons
-    val custom = if (dedicated) FileKinds.customIcon(item) else null
+    // Files: dedicated icons when "Custom file icons" is on, else the classic tile. Folders: folder artwork when "Folder-shaped icons" is on, else the classic tile.
+    val dedicated = if (item.isDirectory) settings.appearance.folderShaped else settings.appearance.customFileIcons
+    val custom = if (dedicated) FileKinds.customIcon(item, settings.appearance.folderStyle) else null
     val folderTint = rememberFolderTint()
-    val tintFolder = item.isDirectory && settings.appearance.goldenFolders && !settings.appearance.goldenFixed
+    val tintFolder = item.isDirectory && settings.appearance.folderShaped && !settings.appearance.folderFixedColor
     if (custom != null) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(custom),

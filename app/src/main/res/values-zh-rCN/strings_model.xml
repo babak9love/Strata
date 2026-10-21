@@ -184,4 +184,8 @@
     <string name="model_shape_gem">宝石</string>
     <string name="model_shape_puffy">蓬松</string>
     <string name="model_shape_arch">拱形</string>
+    <string name="model_folder_style_strata">Strata</string>
+    <string name="model_folder_style_classic">经典</string>
+    <string name="model_folder_style_flat">扁平</string>
+    <string name="model_folder_style_papers">文件</string>
 </resources>

@@ -19,6 +19,7 @@ import dev.cluvex.strata.core.model.ContrastLevel
 import dev.cluvex.strata.core.model.CornerStyle
 import dev.cluvex.strata.core.model.DateStyle
 import dev.cluvex.strata.core.model.FolderSorts
+import dev.cluvex.strata.core.model.FolderStyle
 import dev.cluvex.strata.core.model.DEFAULT_ITEM_SCALE
 import dev.cluvex.strata.core.model.IconShape
 import dev.cluvex.strata.core.model.ItemScale
@@ -124,8 +125,9 @@ class SettingsRepository(private val context: Context) {
         val CORNERS = stringPreferencesKey("corner_style")
         val ICON_SHAPE = stringPreferencesKey("icon_shape")
         val CUSTOM_FILE_ICONS = booleanPreferencesKey("custom_file_icons")
-        val GOLDEN_FOLDERS = booleanPreferencesKey("golden_folders")
-        val GOLDEN_FIXED = booleanPreferencesKey("strata_golden_fixed")
+        val FOLDER_SHAPED = booleanPreferencesKey("folder_shaped")
+        val FOLDER_FIXED_COLOR = booleanPreferencesKey("folder_fixed_color")
+        val FOLDER_STYLE = stringPreferencesKey("folder_style")
         val COLORFUL_ICONS = booleanPreferencesKey("colorful_icons")
         val MOTION = stringPreferencesKey("motion")
         val HAPTICS = booleanPreferencesKey("haptics")
@@ -201,7 +203,7 @@ class SettingsRepository(private val context: Context) {
         val ACTION_LAYOUT = stringPreferencesKey("action_layout")
 
         val BOOLEANS = listOf(
-            SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, CUSTOM_FILE_ICONS, GOLDEN_FOLDERS, GOLDEN_FIXED, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, APK_ICONS, SHOW_DATE,
+            SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, CUSTOM_FILE_ICONS, FOLDER_SHAPED, FOLDER_FIXED_COLOR, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, APK_ICONS, SHOW_DATE,
             SHOW_SIZE, USE_24H, WRAP_NAMES, TILE_FRAME, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, KEEP_SCREEN_TASKS, KEEP_MTIME, SECURE_SCREEN,
             DUAL_PANE, TRASH_DEFAULT, ROOT_ACCESS, SHIZUKU_ACCESS, VERIFY_BEFORE_INSTALL, INSTALL_WITH_ROOT, EDITOR_WRAP,
             EDITOR_LINE_NUMBERS, EDITOR_WHITESPACE, EDITOR_SYMBOL_BAR, EDITOR_AUTO_INDENT, EDITOR_AUTO_PAIRS, EDITOR_HIGHLIGHT_LINE,
@@ -212,7 +214,7 @@ class SettingsRepository(private val context: Context) {
         val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, NAME_SCALE, META_SCALE)
         val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE)
         val STRINGS = listOf(
-            SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
+            SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, FOLDER_STYLE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
             START_FOLDER, START_PATH, CONFLICT, UI_DENSITY, OPEN_DEFAULTS, EDITOR_THEME, APK_EXTRACT_DIR, APK_NAME_PATTERN,
             RENAME_HISTORY, RECENT_COLORS, PLUGIN_PINS, LAST_LEFT, LAST_RIGHT, RUN_COMMANDS, READER_THEME, READER_SPOTS, READER_MARKS,
             ACTION_LAYOUT, LOCK_DELAY, VAULT_LOCK_DELAY,
@@ -416,8 +418,9 @@ class SettingsRepository(private val context: Context) {
             corners = enumOf(p[Keys.CORNERS], CornerStyle.ROUND),
             iconShape = enumOf(p[Keys.ICON_SHAPE], IconShape.ROUNDED),
             customFileIcons = p[Keys.CUSTOM_FILE_ICONS] ?: true,
-            goldenFolders = p[Keys.GOLDEN_FOLDERS] ?: true,
-            goldenFixed = p[Keys.GOLDEN_FIXED] ?: true,
+            folderShaped = p[Keys.FOLDER_SHAPED] ?: true,
+            folderFixedColor = p[Keys.FOLDER_FIXED_COLOR] ?: true,
+            folderStyle = enumOf(p[Keys.FOLDER_STYLE], FolderStyle.STRATA),
             colorfulIcons = p[Keys.COLORFUL_ICONS] ?: true,
             motion = enumOf(p[Keys.MOTION], MotionStyle.EXPRESSIVE),
             haptics = p[Keys.HAPTICS] ?: true,
@@ -436,8 +439,9 @@ class SettingsRepository(private val context: Context) {
             p[Keys.CORNERS] = a.corners.name
             p[Keys.ICON_SHAPE] = a.iconShape.name
             p[Keys.CUSTOM_FILE_ICONS] = a.customFileIcons
-            p[Keys.GOLDEN_FOLDERS] = a.goldenFolders
-            p[Keys.GOLDEN_FIXED] = a.goldenFixed
+            p[Keys.FOLDER_SHAPED] = a.folderShaped
+            p[Keys.FOLDER_FIXED_COLOR] = a.folderFixedColor
+            p[Keys.FOLDER_STYLE] = a.folderStyle.name
             p[Keys.COLORFUL_ICONS] = a.colorfulIcons
             p[Keys.MOTION] = a.motion.name
             p[Keys.HAPTICS] = a.haptics

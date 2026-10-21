@@ -449,10 +449,10 @@
     <string name="settings_strata_file_icons">Custom file icons</string>
     <string name="settings_strata_file_icons_summary">Use the dedicated icons for known file types (CSS, PDF, ZIP…) and the colored extension icon for the rest. Off: a simple tile in the chosen shape.</string>
     <string name="settings_kw_strata_file_icons">custom branded file type icons</string>
-    <string name="settings_strata_golden_folders">Golden folders</string>
-    <string name="settings_strata_golden_folders_summary">Show folders as the golden folder shape, with its corner badges. Off: a simple tile in the chosen shape.</string>
-    <string name="settings_kw_strata_golden_folders">golden yellow folder shape</string>
-    <string name="settings_strata_golden_fixed">Fixed folder color</string>
-    <string name="settings_strata_golden_fixed_summary">On: the folder stays golden. Off: it takes the theme color chosen in the settings.</string>
-    <string name="settings_kw_strata_golden_fixed">fixed golden folder color theme</string>
+    <string name="settings_folder_shaped">Folder-shaped icons</string>
+    <string name="settings_folder_shaped_summary">Show folders as a real folder shape, with its corner badges. Off: a simple tile in the chosen shape.</string>
+    <string name="settings_kw_folder_shaped">folder shaped icons artwork style yellow classic flat papers strata</string>
+    <string name="settings_folder_fixed_color">Fixed folder color</string>
+    <string name="settings_folder_fixed_color_summary">On: the folder keeps its original colors. Off: it takes the theme color chosen in the settings.</string>
+    <string name="settings_kw_folder_fixed_color">fixed folder color theme original</string>
 </resources>

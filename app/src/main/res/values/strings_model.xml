@@ -198,4 +198,8 @@
     <string name="model_shape_gem">Gem</string>
     <string name="model_shape_puffy">Puffy</string>
     <string name="model_shape_arch">Arch</string>
+    <string name="model_folder_style_strata">Strata</string>
+    <string name="model_folder_style_classic">Classic</string>
+    <string name="model_folder_style_flat">Flat</string>
+    <string name="model_folder_style_papers">Papers</string>
 </resources>

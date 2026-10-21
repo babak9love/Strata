@@ -448,10 +448,10 @@
     <string name="settings_strata_file_icons">آیکون‌های اختصاصی فایل‌ها</string>
     <string name="settings_strata_file_icons_summary">برای فرمت‌های شناخته‌شده (CSS، PDF، ZIP و…) از آیکون اختصاصی و برای بقیه از آیکون رنگی پسوند استفاده شود. خاموش: کاشی ساده با شکل انتخابی.</string>
     <string name="settings_kw_strata_file_icons">اختصاصی سفارشی آیکون فایل فرمت</string>
-    <string name="settings_strata_golden_folders">پوشه‌های طلایی</string>
-    <string name="settings_strata_golden_folders_summary">پوشه‌ها با شکل پوشه‌ی طلایی و نشانه‌های گوشه‌اش نمایش داده شوند. خاموش: کاشی ساده با شکل انتخابی.</string>
-    <string name="settings_kw_strata_golden_folders">طلایی زرد شکل آیکون پوشه</string>
-    <string name="settings_strata_golden_fixed">رنگ ثابت پوشه</string>
-    <string name="settings_strata_golden_fixed_summary">روشن: پوشه همیشه طلایی می‌ماند. خاموش: رنگ پوشه با رنگ تم انتخاب‌شده در تنظیمات عوض می‌شود.</string>
-    <string name="settings_kw_strata_golden_fixed">رنگ ثابت طلایی پوشه تم</string>
+    <string name="settings_folder_shaped">آیکون پوشه‌ای</string>
+    <string name="settings_folder_shaped_summary">پوشه‌ها به شکل یک پوشه‌ی واقعی با نشانه‌های گوشه‌اش نمایش داده شوند. خاموش: کاشی ساده با شکل انتخابی.</string>
+    <string name="settings_kw_folder_shaped">آیکون پوشه ای شکل طرح زرد کلاسیک تخت اوراق استراتا</string>
+    <string name="settings_folder_fixed_color">رنگ ثابت پوشه</string>
+    <string name="settings_folder_fixed_color_summary">روشن: پوشه رنگ اصلی خودش را حفظ می‌کند. خاموش: رنگ پوشه با رنگ تم انتخاب‌شده در تنظیمات عوض می‌شود.</string>
+    <string name="settings_kw_folder_fixed_color">رنگ ثابت پوشه تم اصلی</string>
 </resources>

@@ -184,4 +184,8 @@
     <string name="model_shape_gem">Самоцвет</string>
     <string name="model_shape_puffy">Облако</string>
     <string name="model_shape_arch">Арка</string>
+    <string name="model_folder_style_strata">Strata</string>
+    <string name="model_folder_style_classic">Классическая</string>
+    <string name="model_folder_style_flat">Плоская</string>
+    <string name="model_folder_style_papers">С бумагами</string>
 </resources>

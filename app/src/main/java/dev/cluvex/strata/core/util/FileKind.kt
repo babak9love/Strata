@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.cluvex.strata.core.model.FileItem
+import dev.cluvex.strata.core.model.FolderStyle
 
 enum class FileKind {
     FOLDER, IMAGE, VIDEO, AUDIO, ARCHIVE, APK, CODE, TEXT, PDF, FONT, DOCUMENT, ENCRYPTED, BINARY;
@@ -103,8 +104,8 @@ object FileKinds {
 
     /** Branded vector icon for a few well-known file types, or null to use the generic icon of its kind. */
     @DrawableRes
-    fun customIcon(item: FileItem): Int? {
-        if (item.isDirectory) return R.drawable.ic_folder
+    fun customIcon(item: FileItem, folderStyle: FolderStyle = FolderStyle.STRATA): Int? {
+        if (item.isDirectory) return folderStyle.drawable
         val name = item.name.lowercase()
         // .env, .env.local, .env.production, prod.env ...
         if (name == ".env" || name.startsWith(".env.") || name.endsWith(".env")) return R.drawable.ic_env

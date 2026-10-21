@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.luminance
 
 /**
- * Re-colours the golden folder art with the theme colour while keeping its shading (the darker back tab, the lighter front).
+ * Re-colours the folder art with the theme colour while keeping its shading (the darker back tab, the lighter front).
  * Every pixel becomes its brightness times the theme colour, so the folder follows the colour chosen in the settings.
  */
 @Composable

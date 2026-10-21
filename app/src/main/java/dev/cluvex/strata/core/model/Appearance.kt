@@ -1,6 +1,7 @@
 package dev.cluvex.strata.core.model
 
 import androidx.annotation.StringRes
+import androidx.annotation.DrawableRes
 import dev.cluvex.strata.R
 
 enum class ThemeMode(@StringRes val label: Int) {
@@ -45,6 +46,14 @@ enum class IconShape(@StringRes val label: Int) {
     ARCH(R.string.model_shape_arch),
 }
 
+/** Artwork used for folders when "Folder-shaped icons" is on. */
+enum class FolderStyle(@StringRes val label: Int, @DrawableRes val drawable: Int) {
+    STRATA(R.string.model_folder_style_strata, R.drawable.ic_folder),
+    CLASSIC(R.string.model_folder_style_classic, R.drawable.ic_folder_classic),
+    FLAT(R.string.model_folder_style_flat, R.drawable.ic_folder_flat),
+    PAPERS(R.string.model_folder_style_papers, R.drawable.ic_folder_papers),
+}
+
 enum class MotionStyle(@StringRes val label: Int) {
     EXPRESSIVE(R.string.model_motion_expressive),
     STANDARD(R.string.model_motion_standard),
@@ -86,10 +95,12 @@ data class AppearancePrefs(
     val iconShape: IconShape = IconShape.ROUNDED,
     /** On: files use the dedicated (branded / extension) icons. Off: the classic tile of the chosen shape with a simple symbol. */
     val customFileIcons: Boolean = true,
-    /** On: folders use the golden folder shape (with its corner badges). Off: the classic folder tile of the chosen shape. */
-    val goldenFolders: Boolean = true,
-    /** Golden folders only: on keeps the fixed golden colour, off tints the folder with the theme colour. */
-    val goldenFixed: Boolean = true,
+    /** On: folders use a real folder shape (with its corner badges). Off: the classic folder tile of the chosen shape. */
+    val folderShaped: Boolean = true,
+    /** Folder-shaped icons only: on keeps the artwork's own colours, off tints the folder with the theme colour. */
+    val folderFixedColor: Boolean = true,
+    /** Which folder artwork is used while folder-shaped icons are on. */
+    val folderStyle: FolderStyle = FolderStyle.STRATA,
     val colorfulIcons: Boolean = true,
     val motion: MotionStyle = MotionStyle.EXPRESSIVE,
     val haptics: Boolean = true,

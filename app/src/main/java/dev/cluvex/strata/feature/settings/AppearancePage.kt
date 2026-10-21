@@ -65,6 +65,7 @@ import dev.cluvex.strata.core.data.StrataSettings
 import dev.cluvex.strata.core.model.AppearancePrefs
 import dev.cluvex.strata.core.model.ContrastLevel
 import dev.cluvex.strata.core.model.CornerStyle
+import dev.cluvex.strata.core.model.FolderStyle
 import dev.cluvex.strata.core.model.IconShape
 import dev.cluvex.strata.core.model.MotionStyle
 import dev.cluvex.strata.core.model.ThemeMode
@@ -158,27 +159,30 @@ fun AppearancePage(settings: StrataSettings, act: SettingsActions, onBack: () ->
         }
         SettingsGroup(stringResource(R.string.settings_group_folder_icons)) {
             switch(
-                tr(R.string.settings_strata_golden_folders),
-                a.goldenFolders,
-                { v -> act.appearance { it.copy(goldenFolders = v) } },
-                summary = tr(R.string.settings_strata_golden_folders_summary),
+                tr(R.string.settings_folder_shaped),
+                a.folderShaped,
+                { v -> act.appearance { it.copy(folderShaped = v) } },
+                summary = tr(R.string.settings_folder_shaped_summary),
                 leading = {
-                    // Preview of the golden folder, tinted like the real ones when "Fixed folder color" is off.
+                    // Preview of the folder, tinted like the real ones when "Fixed folder color" is off.
                     androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(R.drawable.ic_folder),
+                        painter = androidx.compose.ui.res.painterResource(a.folderStyle.drawable),
                         contentDescription = null,
-                        colorFilter = if (!a.goldenFixed) folderTint else null,
+                        colorFilter = if (!a.folderFixedColor) folderTint else null,
                         modifier = Modifier.size(width = 40.dp, height = 31.dp),
                     )
                 },
             )
             switch(
-                tr(R.string.settings_strata_golden_fixed),
-                a.goldenFixed,
-                { v -> act.appearance { it.copy(goldenFixed = v) } },
-                summary = tr(R.string.settings_strata_golden_fixed_summary),
-                enabled = a.goldenFolders,
+                tr(R.string.settings_folder_fixed_color),
+                a.folderFixedColor,
+                { v -> act.appearance { it.copy(folderFixedColor = v) } },
+                summary = tr(R.string.settings_folder_fixed_color_summary),
+                enabled = a.folderShaped,
             )
+            if (a.folderShaped) {
+                FolderStyles(a, folderTint) { style -> act.appearance { it.copy(folderStyle = style) } }
+            }
         }
         SettingsGroup(stringResource(R.string.settings_group_motion)) {
             choice(tr(R.string.settings_animations), MotionStyle.entries, a.motion, { tr(it.label) }, { m -> act.appearance { it.copy(motion = m) } }, icon = Icons.Rounded.Animation)
@@ -391,6 +395,40 @@ private fun IconShapes(a: AppearancePrefs, onShape: (IconShape) -> Unit) {
                 ) {
                     Icon(FileKind.FOLDER.icon, contentDescription = null, tint = colors.onPrimaryContainer, modifier = Modifier.size(20.dp))
                 }
+            }
+        }
+    }
+}
+
+/** Picker for the folder artwork: the Strata folder plus the three alternatives. Follows "Fixed folder color" like the real folders do. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FolderStyles(a: AppearancePrefs, folderTint: androidx.compose.ui.graphics.ColorFilter, onStyle: (FolderStyle) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        FolderStyle.entries.forEach { style ->
+            val selected = a.folderStyle == style
+            val description = stringResource(style.label)
+            Box(
+                Modifier
+                    .size(width = 72.dp, height = 60.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(if (selected) colors.secondaryContainer else Color.Transparent)
+                    .border(1.dp, if (selected) colors.primary else colors.outlineVariant, MaterialTheme.shapes.medium)
+                    .selectable(selected, role = Role.RadioButton) { onStyle(style) }
+                    .semantics { contentDescription = description },
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(style.drawable),
+                    contentDescription = null,
+                    colorFilter = if (!a.folderFixedColor) folderTint else null,
+                    modifier = Modifier.size(width = 44.dp, height = 34.dp),
+                )
             }
         }
     }
