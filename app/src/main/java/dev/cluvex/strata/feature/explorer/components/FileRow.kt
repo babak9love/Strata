@@ -475,11 +475,17 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
     val kind = FileKinds.of(item)
     // Classic look (Strata icons on): every file and folder is a tile of the chosen shape with a simple symbol.
     val classic = settings.appearance.strataIcons
-    val custom = if (!classic) FileKinds.customIcon(item) else null
+    // In the classic look, files may still use the dedicated icons (option); folders always stay classic.
+    val dedicated = !classic ||
+        if (item.isDirectory) settings.appearance.strataGoldenFolders else settings.appearance.strataFileIcons
+    val custom = if (dedicated) FileKinds.customIcon(item) else null
+    val folderTint = rememberFolderTint()
+    val tintFolder = item.isDirectory && classic && settings.appearance.strataGoldenFolders && !settings.appearance.strataGoldenFixed
     if (custom != null) {
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(custom),
             contentDescription = stringResource(kind.label),
+            colorFilter = if (tintFolder) folderTint else null,
             modifier = Modifier
                 .size(iconSize)
                 // Folder art is wide and tightly cropped: it fills the box. File icons carry their own margin, so they are drawn a bit larger.
@@ -487,7 +493,7 @@ private fun KindIcon(item: FileItem, iconSize: Dp, shape: Shape) {
         )
         return
     }
-    val autoLabel = if (!classic) FileKinds.autoIconLabel(item) else null
+    val autoLabel = if (dedicated) FileKinds.autoIconLabel(item) else null
     if (autoLabel != null) {
         ExtensionIcon(
             extension = autoLabel,

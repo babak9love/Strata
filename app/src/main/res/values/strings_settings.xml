@@ -448,4 +448,13 @@
     <string name="settings_strata_icons">Strata icons</string>
     <string name="settings_strata_icons_summary">Strata\'s classic look: files and folders as a tile in the chosen shape with a simple symbol, and bookmarks as letter tiles. Turn off for the newer icons.</string>
     <string name="settings_kw_strata_icons">classic old folder icons</string>
+    <string name="settings_strata_file_icons">Custom file icons</string>
+    <string name="settings_strata_file_icons_summary">Use the dedicated icons for known file types (CSS, PDF, ZIP…) and the colored extension icon for the rest. Folders keep the classic look.</string>
+    <string name="settings_kw_strata_file_icons">custom branded file type icons</string>
+    <string name="settings_strata_golden_folders">Golden folders</string>
+    <string name="settings_strata_golden_folders_summary">Show folders as the golden folder shape, with its corner badges, instead of a tile.</string>
+    <string name="settings_kw_strata_golden_folders">golden yellow folder shape</string>
+    <string name="settings_strata_golden_fixed">Fixed folder color</string>
+    <string name="settings_strata_golden_fixed_summary">On: the folder stays golden. Off: it takes the theme color chosen in the settings.</string>
+    <string name="settings_kw_strata_golden_fixed">fixed golden folder color theme</string>
 </resources>

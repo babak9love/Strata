@@ -465,4 +465,13 @@
     <string name="settings_strata_icons">Значки Strata</string>
     <string name="settings_strata_icons_summary">Классический вид Strata: файлы и папки в виде плитки выбранной формы с простым символом, закладки в виде плиток с буквой. Выключите, чтобы вернуть новые значки.</string>
     <string name="settings_kw_strata_icons">классические старые значки папок</string>
+    <string name="settings_strata_file_icons">Особые значки файлов</string>
+    <string name="settings_strata_file_icons_summary">Использовать особые значки для известных типов файлов (CSS, PDF, ZIP…), для остальных — цветной значок с расширением. Папки остаются в классическом виде.</string>
+    <string name="settings_kw_strata_file_icons">особые значки файлов форматы</string>
+    <string name="settings_strata_golden_folders">Золотые папки</string>
+    <string name="settings_strata_golden_folders_summary">Показывать папки в виде золотой папки с угловыми значками вместо плитки.</string>
+    <string name="settings_kw_strata_golden_folders">золотые жёлтые папки форма</string>
+    <string name="settings_strata_golden_fixed">Постоянный цвет папок</string>
+    <string name="settings_strata_golden_fixed_summary">Вкл.: папка остаётся золотой. Выкл.: цвет папки следует цвету темы из настроек.</string>
+    <string name="settings_kw_strata_golden_fixed">постоянный цвет золотой папка тема</string>
 </resources>

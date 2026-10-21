@@ -438,4 +438,13 @@
     <string name="settings_strata_icons">Strata 图标</string>
     <string name="settings_strata_icons_summary">Strata 经典外观：文件和文件夹显示为所选形状的图块加简单符号，书签显示为字母图块。关闭后使用较新的图标。</string>
     <string name="settings_kw_strata_icons">经典 旧 文件夹 图标</string>
+    <string name="settings_strata_file_icons">自定义文件图标</string>
+    <string name="settings_strata_file_icons_summary">为常见文件类型（CSS、PDF、ZIP 等）使用专用图标，其他类型使用带扩展名的彩色图标。文件夹保持经典外观。</string>
+    <string name="settings_kw_strata_file_icons">自定义 文件 图标 格式</string>
+    <string name="settings_strata_golden_folders">金色文件夹</string>
+    <string name="settings_strata_golden_folders_summary">将文件夹显示为金色文件夹形状（含角标），而不是图块。</string>
+    <string name="settings_kw_strata_golden_folders">金色 黄色 文件夹 形状</string>
+    <string name="settings_strata_golden_fixed">固定文件夹颜色</string>
+    <string name="settings_strata_golden_fixed_summary">开启：文件夹保持金色。关闭：文件夹随设置中的主题色变化。</string>
+    <string name="settings_kw_strata_golden_fixed">固定 金色 文件夹 颜色 主题</string>
 </resources>

@@ -86,6 +86,12 @@ data class AppearancePrefs(
     val iconShape: IconShape = IconShape.ROUNDED,
     /** On: Strata's classic look (tile of the chosen shape with a simple symbol, letter tiles for bookmarks). Off: the newer icons. */
     val strataIcons: Boolean = false,
+    /** Classic look only: files still use the dedicated (branded / extension) icons; folders keep the classic tile. */
+    val strataFileIcons: Boolean = false,
+    /** Classic look only: folders use the golden folder shape (with its corner badges) instead of the tile. */
+    val strataGoldenFolders: Boolean = false,
+    /** Golden folders only: on keeps the fixed golden colour, off tints the folder with the theme colour. */
+    val strataGoldenFixed: Boolean = true,
     val colorfulIcons: Boolean = true,
     val motion: MotionStyle = MotionStyle.EXPRESSIVE,
     val haptics: Boolean = true,
