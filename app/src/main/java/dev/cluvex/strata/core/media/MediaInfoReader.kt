@@ -21,6 +21,21 @@ data class MediaSection(@StringRes val title: Int, val rows: List<MediaRow>)
  */
 object MediaInfoReader {
 
+    /** "W × H" of an image (EXIF orientation applied), read from the header only; null if unknown. */
+    fun imageResolution(path: String): String? = try {
+        val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeFile(path, o)
+        var w = o.outWidth
+        var h = o.outHeight
+        if (w > 0 && h > 0) {
+            val rot = when (runCatching { android.media.ExifInterface(path).getAttributeInt("Orientation", 1) }.getOrDefault(1)) { 5, 6, 7, 8 -> true; else -> false }
+            if (rot) { val t = w; w = h; h = t }
+            "$w × $h"
+        } else null
+    } catch (_: Throwable) {
+        null
+    }
+
     fun read(path: String): List<MediaSection> {
         val general = mutableListOf<MediaRow>()
         val audio = mutableListOf<MediaRow>()
@@ -87,8 +102,12 @@ object MediaInfoReader {
                     f.int(MediaFormat.KEY_CHANNEL_COUNT)?.let { audio += MediaRow(R.string.media_channels, channels(it)) }
                     f.int(MediaFormat.KEY_SAMPLE_RATE)?.let { audio += MediaRow(R.string.media_sample_rate, hz(it)) }
                     f.int(MediaFormat.KEY_BIT_RATE)?.takeIf { it > 0 }?.let { audio += MediaRow(R.string.media_bitrate, kbps(it.toLong())) }
-                    val depth = bitsPerSample?.takeIf { it > 0 } ?: pcmDepth(f)
-                    depth?.let { audio += MediaRow(R.string.media_bit_depth, "$it bit") }
+                    // Bit depth is only meaningful for lossless/PCM audio. For lossy codecs (MP3, AAC, Opus...)
+                    // Android reports the decoder's 16-bit output, which is not a property of the file.
+                    if (isLossless(mime)) {
+                        val depth = bitsPerSample?.takeIf { it > 0 } ?: pcmDepth(f)
+                        depth?.let { audio += MediaRow(R.string.media_bit_depth, "$it bit") }
+                    }
                 } else if (mime.startsWith("video/") && !videoDone) {
                     videoDone = true
                     video += MediaRow(R.string.media_codec, codecName(mime))
@@ -115,6 +134,13 @@ object MediaInfoReader {
     private fun MediaFormat.str(k: String): String? = if (containsKey(k)) runCatching { getString(k) }.getOrNull() else null
     private fun MediaFormat.int(k: String): Int? = if (containsKey(k)) runCatching { getInteger(k) }.getOrNull() else null
     private fun MediaFormat.float(k: String): Float? = if (containsKey(k)) runCatching { getFloat(k) }.getOrNull() else null
+
+    private fun isLossless(mime: String): Boolean {
+        val m = mime.lowercase()
+        return m == "audio/flac" || m == "audio/raw" || m == "audio/alac" || m == "audio/x-wav" || m == "audio/wav" ||
+            m == "audio/x-ape" || m == "audio/x-wavpack" || m == "audio/wavpack" || m == "audio/aiff" || m == "audio/x-aiff" ||
+            m.startsWith("audio/g711") || m == "audio/x-dsf" || m == "audio/dsd"
+    }
 
     private fun pcmDepth(f: MediaFormat): Int? {
         if (Build.VERSION.SDK_INT < 24) return null

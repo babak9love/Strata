@@ -20,6 +20,7 @@ import dev.cluvex.strata.core.model.CornerStyle
 import dev.cluvex.strata.core.model.DateStyle
 import dev.cluvex.strata.core.model.FolderSorts
 import dev.cluvex.strata.core.model.FolderStyle
+import dev.cluvex.strata.core.model.DEFAULT_FOLDER_SCALE
 import dev.cluvex.strata.core.model.DEFAULT_ITEM_SCALE
 import dev.cluvex.strata.core.model.IconShape
 import dev.cluvex.strata.core.model.ItemScale
@@ -465,7 +466,7 @@ class SettingsRepository(private val context: Context) {
             tileFrame = p[Keys.TILE_FRAME] ?: true,
             gridColumns = (p[Keys.GRID_COLUMNS] ?: 0).let { if (it == 4) 4 else 0 },
             itemScale = ItemScale.clamp(p[Keys.ITEM_SCALE] ?: DEFAULT_ITEM_SCALE),
-            folderScale = ItemScale.clamp(p[Keys.FOLDER_SCALE] ?: DEFAULT_ITEM_SCALE),
+            folderScale = ItemScale.clamp(p[Keys.FOLDER_SCALE] ?: DEFAULT_FOLDER_SCALE),
             nameScale = ItemScale.clamp(p[Keys.NAME_SCALE] ?: 100),
             metaScale = ItemScale.clamp(p[Keys.META_SCALE] ?: 100),
             showParentEntry = p[Keys.SHOW_PARENT_ENTRY] ?: true,

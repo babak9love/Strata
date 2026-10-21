@@ -202,4 +202,6 @@
     <string name="model_folder_style_classic">Classic</string>
     <string name="model_folder_style_flat">Flat</string>
     <string name="model_folder_style_papers">Papers</string>
+    <string name="model_sheet_audio_info">Audio info</string>
+    <string name="model_sheet_video_info">Video info</string>
 </resources>

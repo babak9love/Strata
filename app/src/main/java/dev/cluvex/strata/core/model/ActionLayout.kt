@@ -80,6 +80,8 @@ enum class SheetAction(@StringRes val label: Int, val group: SheetGroup) {
     VAULT(R.string.model_move_to_vault, SheetGroup.ORGANIZE),
     RESTORE(R.string.model_restore, SheetGroup.ORGANIZE),
     PROPERTIES(R.string.model_selection_properties, SheetGroup.ORGANIZE),
+    AUDIO_INFO(R.string.model_sheet_audio_info, SheetGroup.OPEN),
+    VIDEO_INFO(R.string.model_sheet_video_info, SheetGroup.OPEN),
 }
 
 data class BrowseContext(val clipboard: Boolean, val termux: Boolean, val project: Boolean)
@@ -106,6 +108,8 @@ data class SheetContext(
     val smaliFolder: Boolean,
     val symlink: Boolean,
     val vault: Boolean = false,
+    val audio: Boolean = false,
+    val video: Boolean = false,
 )
 
 @get:StringRes
@@ -194,6 +198,8 @@ fun SheetAction.available(c: SheetContext): Boolean = when (this) {
     SheetAction.SPLIT, SheetAction.CIPHER -> c.local && c.file && !c.symlink
     SheetAction.VAULT -> c.local && !c.symlink
     SheetAction.RESTORE -> c.vault
+    SheetAction.AUDIO_INFO -> c.local && c.file && c.audio
+    SheetAction.VIDEO_INFO -> c.local && c.file && c.video
 }
 
 sealed interface ZoneSlot<out T> {
@@ -315,7 +321,7 @@ data class ActionLayout(
             listOf(
                 listOf(SheetAction.OPEN, SheetAction.OPEN_WITH, SheetAction.SHARE, SheetAction.RENAME),
                 listOf(
-                    SheetAction.RESTORE, SheetAction.OPEN_AS_TEXT, SheetAction.HEX, SheetAction.VIEW, SheetAction.APK_INFO, SheetAction.EXTRACT,
+                    SheetAction.RESTORE, SheetAction.OPEN_AS_TEXT, SheetAction.HEX, SheetAction.VIEW, SheetAction.APK_INFO, SheetAction.AUDIO_INFO, SheetAction.VIDEO_INFO, SheetAction.EXTRACT,
                     SheetAction.COMPRESS, SheetAction.SIGN_APK, SheetAction.SMALI_TO_DEX, SheetAction.JAR_TO_DEX, SheetAction.CHECKSUM,
                     SheetAction.SPLIT, SheetAction.CIPHER, SheetAction.SELECT, SheetAction.BOOKMARK,
                     SheetAction.LINK, SheetAction.VAULT, SheetAction.PROPERTIES,

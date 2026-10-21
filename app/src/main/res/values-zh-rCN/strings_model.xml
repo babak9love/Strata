@@ -188,4 +188,6 @@
     <string name="model_folder_style_classic">经典</string>
     <string name="model_folder_style_flat">扁平</string>
     <string name="model_folder_style_papers">文件</string>
+    <string name="model_sheet_audio_info">音频信息</string>
+    <string name="model_sheet_video_info">视频信息</string>
 </resources>

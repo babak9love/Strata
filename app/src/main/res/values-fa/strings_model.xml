@@ -188,4 +188,6 @@
     <string name="model_folder_style_classic">کلاسیک</string>
     <string name="model_folder_style_flat">تخت</string>
     <string name="model_folder_style_papers">اوراق</string>
+    <string name="model_sheet_audio_info">اطلاعات صدا</string>
+    <string name="model_sheet_video_info">اطلاعات ویدیو</string>
 </resources>

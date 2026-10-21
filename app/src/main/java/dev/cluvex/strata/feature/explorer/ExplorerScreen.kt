@@ -118,6 +118,8 @@ import dev.cluvex.strata.feature.explorer.components.SortSheet
 import dev.cluvex.strata.feature.explorer.components.SplitDialog
 import dev.cluvex.strata.feature.explorer.components.TaskOverlay
 import dev.cluvex.strata.feature.explorer.components.TransferDialog
+import dev.cluvex.strata.feature.props.MediaInfoKind
+import dev.cluvex.strata.feature.props.MediaInfoSheet
 import dev.cluvex.strata.feature.props.PropertiesSheet
 import dev.cluvex.strata.feature.remote.HostKeyChangedDialog
 import dev.cluvex.strata.feature.remote.StoragePasswordDialog
@@ -153,6 +155,7 @@ private sealed interface Dialog {
     data class ItemSheet(val pane: Pane, val item: FileItem) : Dialog
     data class Checksum(val item: FileItem) : Dialog
     data class Properties(val items: List<FileItem>) : Dialog
+    data class MediaInfo(val item: FileItem, val kind: MediaInfoKind) : Dialog
     data class NewProject(val dir: String) : Dialog
     data class RunProject(val project: Project) : Dialog
 }
@@ -660,6 +663,8 @@ fun ExplorerScreen(
                 onEncrypt = { localOnly(d.item) { dialog = Dialog.Encrypt(d.pane, d.item) } },
                 onDecrypt = { localOnly(d.item) { dialog = Dialog.Decrypt(d.pane, d.item) } },
                 onProperties = { localOnly(d.item) { dialog = Dialog.Properties(listOf(d.item)) } },
+                onAudioInfo = { localOnly(d.item) { dialog = Dialog.MediaInfo(d.item, MediaInfoKind.AUDIO) } },
+                onVideoInfo = { localOnly(d.item) { dialog = Dialog.MediaInfo(d.item, MediaInfoKind.VIDEO) } },
                 onDelete = {
                     vm.setActive(d.pane)
                     vm.clearSelection(d.pane)
@@ -676,6 +681,7 @@ fun ExplorerScreen(
             onCustomize = { dialog = Dialog.None; onCustomize(ToolbarTab.SHEET) },
         )
         is Dialog.Checksum -> ChecksumDialog(item = d.item, onDismiss = { dialog = Dialog.None })
+        is Dialog.MediaInfo -> MediaInfoSheet(item = d.item, kind = d.kind, onDismiss = { dialog = Dialog.None })
         is Dialog.Properties -> PropertiesSheet(
             items = d.items,
             rootEnabled = ui.settings.rootAccess,

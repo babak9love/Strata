@@ -188,4 +188,6 @@
     <string name="model_folder_style_classic">Классическая</string>
     <string name="model_folder_style_flat">Плоская</string>
     <string name="model_folder_style_papers">С бумагами</string>
+    <string name="model_sheet_audio_info">Сведения об аудио</string>
+    <string name="model_sheet_video_info">Сведения о видео</string>
 </resources>

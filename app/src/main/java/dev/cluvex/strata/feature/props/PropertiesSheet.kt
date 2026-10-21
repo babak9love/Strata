@@ -59,7 +59,6 @@ import dev.cluvex.strata.ui.isolated
 import dev.cluvex.strata.ui.rememberTextClipboard
 import java.text.NumberFormat
 import dev.cluvex.strata.core.media.MediaInfoReader
-import dev.cluvex.strata.core.media.MediaSection
 import dev.cluvex.strata.core.util.FileKind
 import dev.cluvex.strata.core.util.FileKinds
 import kotlinx.coroutines.Dispatchers
@@ -80,13 +79,6 @@ fun PropertiesSheet(
     var showTime by remember { mutableStateOf(false) }
     var showOwner by remember { mutableStateOf(false) }
     val clipboard = rememberTextClipboard()
-
-    val mediaTarget = ui.single?.takeIf { !it.isDirectory && !it.isSymlink && (FileKinds.of(it) == FileKind.AUDIO || FileKinds.of(it) == FileKind.VIDEO) }
-    var mediaSections by remember { mutableStateOf<List<MediaSection>>(emptyList()) }
-    LaunchedEffect(mediaTarget?.path) {
-        mediaSections = emptyList()
-        mediaTarget?.let { t -> mediaSections = withContext(Dispatchers.IO) { MediaInfoReader.read(t.path) } }
-    }
 
     LaunchedEffect(ui.changes) { if (ui.changes > 0) onChanged() }
 
@@ -116,6 +108,12 @@ fun PropertiesSheet(
                         else -> stringResource(R.string.common_file)
                     },
                 )
+                val imagePath = single.path.takeIf { !single.isDirectory && !single.isSymlink && FileKinds.of(single) == FileKind.IMAGE }
+                var resolution by remember(imagePath) { mutableStateOf<String?>(null) }
+                LaunchedEffect(imagePath) {
+                    resolution = imagePath?.let { withContext(Dispatchers.IO) { MediaInfoReader.imageResolution(it) } }
+                }
+                resolution?.let { InfoRow(stringResource(R.string.media_resolution), it, ltr = true) }
                 ui.linkTarget?.let { InfoRow(stringResource(R.string.props_linked_to), it, ltr = true) }
             } else {
                 val dirs = ui.items.count { it.isDirectory }
@@ -145,17 +143,6 @@ fun PropertiesSheet(
                 InfoRow(stringResource(R.string.common_group), "${ui.group ?: "?"} (${st.gid})", ltr = true)
             }
             ui.statError?.let { InfoRow(stringResource(R.string.props_info), it) }
-
-            val mediaSections = mediaSections
-            mediaSections.forEach { section ->
-                HorizontalDivider(Modifier.padding(top = 8.dp))
-                Text(
-                    stringResource(section.title),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-                section.rows.forEach { InfoRow(stringResource(it.label), it.value, ltr = true) }
-            }
 
             ui.message?.let {
                 Text(

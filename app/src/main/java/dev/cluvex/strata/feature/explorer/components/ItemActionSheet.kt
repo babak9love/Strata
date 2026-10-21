@@ -89,6 +89,8 @@ class ItemActions(
     val onJarToDex: () -> Unit = {},
     val onMoveToVault: () -> Unit = {},
     val onRestore: () -> Unit = {},
+    val onAudioInfo: () -> Unit = {},
+    val onVideoInfo: () -> Unit = {},
 )
 
 private class SheetEntry(val icon: ImageVector, @StringRes val label: Int, val onClick: () -> Unit)
@@ -117,6 +119,8 @@ fun ItemActionSheet(
         smaliFolder = smaliFolder,
         symlink = item.isSymlink,
         vault = Vault.isVault(item.path),
+        audio = kind == FileKind.AUDIO,
+        video = kind == FileKind.VIDEO,
     )
     val encrypted = item.name.endsWith(FileCipher.EXTENSION, ignoreCase = true)
     fun entry(a: SheetAction): SheetEntry = when (a) {
@@ -142,6 +146,8 @@ fun ItemActionSheet(
         SheetAction.VAULT -> SheetEntry(a.icon, a.label, actions.onMoveToVault)
         SheetAction.RESTORE -> SheetEntry(a.icon, a.label, actions.onRestore)
         SheetAction.PROPERTIES -> SheetEntry(a.icon, a.label, actions.onProperties)
+        SheetAction.AUDIO_INFO -> SheetEntry(a.icon, a.label, actions.onAudioInfo)
+        SheetAction.VIDEO_INFO -> SheetEntry(a.icon, a.label, actions.onVideoInfo)
     }
     val primary = layout.zones[0].filter { it.available(context) }.map(::entry)
     val groups = SheetGroup.entries.map { g -> g to layout.zones[1].filter { it.group == g && it.available(context) }.map(::entry) }
