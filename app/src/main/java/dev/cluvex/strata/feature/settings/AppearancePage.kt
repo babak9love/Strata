@@ -138,6 +138,7 @@ fun AppearancePage(settings: StrataSettings, act: SettingsActions, onBack: () ->
                 ConnectedChoice(CornerStyle.entries, a.corners, { tr(it.short) }, { c -> act.appearance { it.copy(corners = c) } })
             }
         }
+        val folderTint = rememberFolderTint()
         SettingsGroup(stringResource(R.string.settings_group_file_icons)) {
             switch(
                 tr(R.string.settings_strata_file_icons),
@@ -156,7 +157,6 @@ fun AppearancePage(settings: StrataSettings, act: SettingsActions, onBack: () ->
             )
         }
         SettingsGroup(stringResource(R.string.settings_group_folder_icons)) {
-            val folderTint = rememberFolderTint()
             switch(
                 tr(R.string.settings_strata_golden_folders),
                 a.goldenFolders,
