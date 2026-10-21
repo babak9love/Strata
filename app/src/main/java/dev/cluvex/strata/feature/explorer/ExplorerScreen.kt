@@ -101,6 +101,7 @@ import dev.cluvex.strata.core.bookmarks.Bookmarks
 import dev.cluvex.strata.feature.explorer.components.BookmarksSheet
 import dev.cluvex.strata.feature.explorer.components.BottomBarActions
 import dev.cluvex.strata.feature.explorer.components.ChecksumDialog
+import dev.cluvex.strata.feature.explorer.components.ClipboardQueueDialog
 import dev.cluvex.strata.feature.explorer.components.CreateArchiveDialog
 import dev.cluvex.strata.feature.explorer.components.CreateLinkDialog
 import dev.cluvex.strata.feature.explorer.components.DeleteDialog
@@ -136,6 +137,7 @@ private sealed interface Dialog {
     data object Delete : Dialog
     data object Sort : Dialog
     data object Bookmarks : Dialog
+    data object Clipboard : Dialog
     data class CreateArchive(val pane: Pane, val items: List<FileItem>) : Dialog
     data class BatchRename(val pane: Pane, val items: List<FileItem>) : Dialog
     data class CreateLink(val pane: Pane, val items: List<FileItem>) : Dialog
@@ -175,6 +177,17 @@ fun ExplorerScreen(
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var dialog by remember { mutableStateOf<Dialog>(Dialog.None) }
+    /** Runs one queued copy/cut (or shared-file action) in the active pane's folder. */
+    fun runClip(clip: ClipboardState) {
+        when (clip.shareMode) {
+            ShareMode.EXTRACT -> {
+                clip.items.firstOrNull()?.let { vm.extractArchive(ui.active, it) }
+                vm.dropClip(clip.id)
+            }
+            ShareMode.ARCHIVE -> dialog = Dialog.CreateArchive(ui.active, clip.items)
+            null -> vm.paste(ui.active, clip.id)
+        }
+    }
     var editingBookmark by remember { mutableStateOf<Bookmark?>(null) }
     var overflow by remember { mutableStateOf(false) }
     var lastBackPress by remember { mutableLongStateOf(0L) }
@@ -368,17 +381,8 @@ fun ExplorerScreen(
                     onNewFolder = { dialog = Dialog.NewFolder(ui.active) },
                     onNewFile = { dialog = Dialog.NewFile(ui.active) },
                     onRefresh = { vm.refresh(ui.active) },
-                    onPaste = {
-                        val clip = ui.clipboard
-                        if (clip != null && clip.shareMode == ShareMode.EXTRACT) {
-                            clip.items.firstOrNull()?.let { vm.extractArchive(ui.active, it) }
-                            vm.clearClipboard()
-                        } else if (clip != null && clip.shareMode == ShareMode.ARCHIVE) {
-                            dialog = Dialog.CreateArchive(ui.active, clip.items)
-                        } else {
-                            vm.paste(ui.active)
-                        }
-                    },
+                    onPaste = { ui.clipboard?.let(::runClip) },
+                    onShowClipboard = { dialog = Dialog.Clipboard },
                     onCancelClipboard = vm::clearClipboard,
                     onSelectAll = { vm.selectAll(ui.active, visibleOfActive()) },
                     onClearSelection = { vm.clearSelection(ui.active) },
@@ -502,6 +506,16 @@ fun ExplorerScreen(
             onConfirm = { vm.newFile(d.pane, it); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
+        Dialog.Clipboard -> ClipboardQueueDialog(
+            clips = ui.clipboards,
+            onRun = { clip ->
+                dialog = Dialog.None
+                runClip(clip)
+            },
+            onRemove = { vm.dropClip(it.id) },
+            onClear = { vm.clearClipboard(); dialog = Dialog.None },
+            onDismiss = { dialog = Dialog.None },
+        )
         Dialog.Bookmarks -> BookmarksSheet(
             bookmarks = ui.bookmarks,
             actions = BookmarkActions(
@@ -520,7 +534,7 @@ fun ExplorerScreen(
             defaultName = archiveName(d.items, ui.pane(d.pane).path),
             onConfirm = { name, options, independent ->
                 vm.createArchive(d.pane, d.items, name, options, independent)
-                if (ui.clipboard?.shareMode == ShareMode.ARCHIVE) vm.clearClipboard()
+                vm.dropShareClips(ShareMode.ARCHIVE)
                 dialog = Dialog.None
             },
             onDismiss = { dialog = Dialog.None },

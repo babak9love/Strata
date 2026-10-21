@@ -259,4 +259,15 @@
     <string name="share_archive_to">压缩到…</string>
     <string name="share_pick_extract">打开文件夹并点击“粘贴”即可在此解压</string>
     <string name="share_pick_archive">打开文件夹并点击“粘贴”即可在此压缩</string>
+    <string name="explorer_clipboard_queue">剪贴板队列</string>
+    <string name="explorer_clip_op_copy">复制</string>
+    <string name="explorer_clip_op_cut">剪切</string>
+    <string name="explorer_clip_op_shared">分享的文件</string>
+    <string name="explorer_clip_next">点击“粘贴”时执行</string>
+    <string name="explorer_clip_waiting">等待中</string>
+    <string name="explorer_clip_remove">从队列中移除</string>
+    <string name="explorer_clip_hint">点击条目查看文件。“粘贴”执行最新的条目；▶ 可在当前文件夹执行任意条目。</string>
+    <plurals name="explorer_clip_items">
+        <item quantity="other">%d 项</item>
+    </plurals>
 </resources>

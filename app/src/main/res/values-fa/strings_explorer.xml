@@ -274,4 +274,16 @@
     <string name="share_archive_to">فشرده‌سازی در…</string>
     <string name="share_pick_extract">پوشه‌ای را باز کنید و «جای‌گذاری» را بزنید تا اینجا استخراج شود</string>
     <string name="share_pick_archive">پوشه‌ای را باز کنید و «جای‌گذاری» را بزنید تا اینجا فشرده شود</string>
+    <string name="explorer_clipboard_queue">صف کلیپ‌بورد</string>
+    <string name="explorer_clip_op_copy">کپی</string>
+    <string name="explorer_clip_op_cut">برش</string>
+    <string name="explorer_clip_op_shared">فایل‌های اشتراکی</string>
+    <string name="explorer_clip_next">با «جای‌گذاری» اجرا می‌شود</string>
+    <string name="explorer_clip_waiting">در انتظار</string>
+    <string name="explorer_clip_remove">حذف از صف</string>
+    <string name="explorer_clip_hint">برای دیدن فایل‌ها روی هر مورد بزنید. «جای‌گذاری» جدیدترین مورد را اجرا می‌کند؛ ▶ هر مورد را در پوشه‌ی باز اجرا می‌کند.</string>
+    <plurals name="explorer_clip_items">
+        <item quantity="one">\u200F%d مورد</item>
+        <item quantity="other">\u200F%d مورد</item>
+    </plurals>
 </resources>

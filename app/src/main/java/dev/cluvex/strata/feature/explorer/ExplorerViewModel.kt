@@ -570,7 +570,7 @@ class ExplorerViewModel(
     fun copyItemsToClipboard(items: List<FileItem>, move: Boolean) {
         if (items.isEmpty()) return
         val dir = items.first().parentPath ?: rootPath
-        _state.update { it.copy(clipboard = ClipboardState(items, move, sourceDir = dir, viaRoot = false)) }
+        addClip(ClipboardState(items, move, sourceDir = dir, viaRoot = false))
         UiSounds.play(UiSound.POP)
         postMessage(trPlural(if (move) R.plurals.explorer_clip_cut else R.plurals.explorer_clip_copied, items.size, items.size))
     }
@@ -594,7 +594,7 @@ class ExplorerViewModel(
         val items = selectedItems(pane)
         if (items.isEmpty()) return
         val ps = _state.value.pane(pane)
-        _state.update { it.copy(clipboard = ClipboardState(items, move, sourceDir = ps.path, viaRoot = ps.viaRoot)) }
+        addClip(ClipboardState(items, move, sourceDir = ps.path, viaRoot = ps.viaRoot))
         UiSounds.play(UiSound.POP)
         clearSelection(pane)
         postMessage(trPlural(if (move) R.plurals.explorer_clip_cut else R.plurals.explorer_clip_copied, items.size, items.size))
@@ -605,7 +605,7 @@ class ExplorerViewModel(
         val items = files.map { FileItem.of(it) }
         if (items.isEmpty()) return
         val cut = if (move && archive != null) ArchiveCut(archive, paths) else null
-        _state.update { it.copy(clipboard = ClipboardState(items, move, sourceDir = items.first().parentPath ?: "/", archiveCut = cut)) }
+        addClip(ClipboardState(items, move, sourceDir = items.first().parentPath ?: "/", archiveCut = cut), purgeStaged = "archive-clip")
         UiSounds.play(UiSound.POP)
         postMessage(trPlural(if (move) R.plurals.explorer_clip_cut else R.plurals.explorer_clip_copied, items.size, items.size))
     }
@@ -621,33 +621,51 @@ class ExplorerViewModel(
         }
     }
 
-    fun clearClipboard() = _state.update { it.copy(clipboard = null) }
+    /** Queues a copy/cut. Entries staged in a cache folder that is being rebuilt are dropped, since their files are gone. */
+    private fun addClip(clip: ClipboardState, purgeStaged: String? = null) = _state.update { s ->
+        val stagedRoot = purgeStaged?.let { File(getApplication<Application>().cacheDir, it).path + "/" }
+        val kept = s.clipboards.filterNot { old ->
+            old.sameAs(clip) || (stagedRoot != null && old.items.any { it.path.startsWith(stagedRoot) })
+        }
+        s.copy(clipboards = (kept + clip).takeLast(MAX_CLIPS))
+    }
 
-    fun paste(pane: Pane) {
-        val clip = _state.value.clipboard ?: return
+    /** Clears the whole clipboard queue. */
+    fun clearClipboard() = _state.update { it.copy(clipboards = emptyList()) }
+
+    /** Cancels one queued copy/cut. */
+    fun dropClip(id: Long) = _state.update { s -> s.copy(clipboards = s.clipboards.filterNot { it.id == id }) }
+
+    fun dropShareClips(mode: ShareMode) = _state.update { s -> s.copy(clipboards = s.clipboards.filterNot { it.shareMode == mode }) }
+
+    /** Pastes one queued entry (the newest when [clipId] is null) into [pane]'s folder. */
+    fun paste(pane: Pane, clipId: Long? = null) {
+        val clip = clipOf(clipId) ?: return
         val dst = _state.value.pane(pane)
         val policy = conflictPolicy()
-        if (policy != null || dst.path == clip.sourceDir) return pasteWith(pane, policy ?: Conflict.KEEP_BOTH)
+        if (policy != null || dst.path == clip.sourceDir) return pasteWith(pane, policy ?: Conflict.KEEP_BOTH, clip.id)
         viewModelScope.launch {
             val conflicts = conflictsIn(dst, clip.items.map { it.name })
             if (conflicts.isEmpty()) {
-                pasteWith(pane, Conflict.KEEP_BOTH)
+                pasteWith(pane, Conflict.KEEP_BOTH, clip.id)
             } else {
                 UiSounds.play(UiSound.ATTENTION)
-                _state.update { it.copy(transferPrompt = TransferPrompt(clip.move, clip.items.size, dst.path, conflicts, pastePane = pane)) }
+                _state.update { it.copy(transferPrompt = TransferPrompt(clip.move, clip.items.size, dst.path, conflicts, pastePane = pane, clipId = clip.id)) }
             }
         }
     }
 
-    private fun pasteWith(pane: Pane, conflict: Conflict) {
-        val clip = _state.value.clipboard ?: return
+    private fun clipOf(id: Long?): ClipboardState? = _state.value.let { s -> if (id == null) s.clipboard else s.clipboards.firstOrNull { it.id == id } }
+
+    private fun pasteWith(pane: Pane, conflict: Conflict, clipId: Long? = null) {
+        val clip = clipOf(clipId) ?: return
         val dst = _state.value.pane(pane)
         val title = tr(if (clip.move) R.string.explorer_task_moving else R.string.explorer_task_copying)
         if (RemoteUri.isRemote(clip.sourceDir) || RemoteUri.isRemote(dst.path)) {
             runTask(title, {
                 RemoteTransfers.transfer(clip.items, Place.of(dst.path), clip.move, conflict, sessions, transferTemp())
             }, sound = UiSound.LAND) { done ->
-                _state.update { it.copy(clipboard = null) }
+                dropClip(clip.id)
                 refreshAllRevealing(dst.path, done.created)
                 clip.archiveCut?.let { finishArchiveCut(it, done.created.size, clip.items.size) }
             }
@@ -662,7 +680,7 @@ class ExplorerViewModel(
                 FileOperations.copy(clip.items, dst.path, conflict, from = from, to = to, keepTime = keepTime)
             }
         }, sound = UiSound.LAND) { done ->
-            _state.update { it.copy(clipboard = null) }
+            dropClip(clip.id)
             refreshAllRevealing(dst.path, done.created)
             clip.archiveCut?.let { finishArchiveCut(it, done.created.size, clip.items.size) }
         }
@@ -692,7 +710,7 @@ class ExplorerViewModel(
         _state.update { it.copy(transferPrompt = null) }
         prompt.drop?.let { return moveDropped(it.pane, it.items, it.destination, conflict) }
         val pane = prompt.pastePane
-        if (pane != null) pasteWith(pane, conflict) else transferToOther(prompt.move, conflict)
+        if (pane != null) pasteWith(pane, conflict, prompt.clipId) else transferToOther(prompt.move, conflict)
     }
 
     fun dropInto(fromPane: Pane, items: List<FileItem>, destination: String) {
@@ -1198,7 +1216,7 @@ class ExplorerViewModel(
             return@launch
         }
         val items = files.map { FileItem.of(it) }
-        _state.update { it.copy(clipboard = ClipboardState(items, false, sourceDir = items.first().parentPath ?: "/", shareMode = mode)) }
+        addClip(ClipboardState(items, false, sourceDir = items.first().parentPath ?: "/", shareMode = mode), purgeStaged = "shared")
         UiSounds.play(UiSound.POP)
         postMessage(
             when (mode) {
@@ -1566,6 +1584,9 @@ class ExplorerViewModel(
         }
 
     companion object {
+        /** Most copy/cut operations kept in the clipboard queue; the oldest is dropped beyond this. */
+        private const val MAX_CLIPS = 50
+
         fun factory(app: Application): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T =

@@ -301,4 +301,18 @@
     <string name="share_archive_to">Архивировать в…</string>
     <string name="share_pick_extract">Откройте папку и нажмите «Вставить», чтобы извлечь сюда</string>
     <string name="share_pick_archive">Откройте папку и нажмите «Вставить», чтобы архивировать сюда</string>
+    <string name="explorer_clipboard_queue">Очередь буфера обмена</string>
+    <string name="explorer_clip_op_copy">Копирование</string>
+    <string name="explorer_clip_op_cut">Вырезание</string>
+    <string name="explorer_clip_op_shared">Полученные файлы</string>
+    <string name="explorer_clip_next">Выполнится при вставке</string>
+    <string name="explorer_clip_waiting">Ожидает</string>
+    <string name="explorer_clip_remove">Убрать из очереди</string>
+    <string name="explorer_clip_hint">Нажмите на запись, чтобы увидеть файлы. «Вставить» выполняет самую новую запись; ▶ выполняет любую в открытой папке.</string>
+    <plurals name="explorer_clip_items">
+        <item quantity="one">%d элемент</item>
+        <item quantity="few">%d элемента</item>
+        <item quantity="many">%d элементов</item>
+        <item quantity="other">%d элемента</item>
+    </plurals>
 </resources>

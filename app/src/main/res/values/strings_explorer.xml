@@ -274,4 +274,16 @@
     <string name="share_archive_to">Archive to…</string>
     <string name="share_pick_extract">Open a folder and press Paste to extract here</string>
     <string name="share_pick_archive">Open a folder and press Paste to archive here</string>
+    <string name="explorer_clipboard_queue">Clipboard queue</string>
+    <string name="explorer_clip_op_copy">Copy</string>
+    <string name="explorer_clip_op_cut">Cut</string>
+    <string name="explorer_clip_op_shared">Shared files</string>
+    <string name="explorer_clip_next">Runs next on Paste</string>
+    <string name="explorer_clip_waiting">Waiting</string>
+    <string name="explorer_clip_remove">Remove from queue</string>
+    <string name="explorer_clip_hint">Tap an entry to see its files. Paste runs the newest entry; ▶ runs any entry in the open folder.</string>
+    <plurals name="explorer_clip_items">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
 </resources>

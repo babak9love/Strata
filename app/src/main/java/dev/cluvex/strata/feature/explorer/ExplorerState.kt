@@ -65,6 +65,9 @@ data class ArchiveCut(val archive: String, val paths: Set<String>)
 /** Set when the clipboard holds files shared in from another app: Paste then extracts or archives them in the open folder instead of copying. */
 enum class ShareMode { EXTRACT, ARCHIVE }
 
+private val clipIds = java.util.concurrent.atomic.AtomicLong()
+
+/** One queued copy/cut. The clipboard is a queue of these: Paste runs the newest one, the clipboard panel can run, view or drop any of them. */
 data class ClipboardState(
     val items: List<FileItem>,
     val move: Boolean,
@@ -72,7 +75,12 @@ data class ClipboardState(
     val viaRoot: Boolean = false,
     val archiveCut: ArchiveCut? = null,
     val shareMode: ShareMode? = null,
-)
+    val id: Long = clipIds.incrementAndGet(),
+) {
+    /** Same operation on the same files (ids aside): copying them again replaces the older entry instead of stacking a duplicate. */
+    fun sameAs(other: ClipboardState): Boolean =
+        move == other.move && shareMode == other.shareMode && items.map { it.path }.toSet() == other.items.map { it.path }.toSet()
+}
 
 enum class PasswordPurpose { EXTRACT, DECRYPT }
 
@@ -85,6 +93,7 @@ data class TransferPrompt(
     val conflicts: List<String>,
     val pastePane: Pane? = null,
     val drop: DropRequest? = null,
+    val clipId: Long? = null,
 )
 
 data class DropRequest(val pane: Pane, val items: List<FileItem>, val destination: String)
@@ -119,7 +128,7 @@ data class ExplorerUiState(
     val right: PaneState,
     val active: Pane = Pane.LEFT,
     val settings: StrataSettings = StrataSettings(),
-    val clipboard: ClipboardState? = null,
+    val clipboards: List<ClipboardState> = emptyList(),
     val task: TaskState? = null,
     val build: dev.cluvex.strata.core.build.BuildRun? = null,
     val query: String = "",
@@ -135,6 +144,9 @@ data class ExplorerUiState(
     val undo: MoveUndo? = null,
     val incoming: IncomingCopy? = null,
 ) {
+    /** The entry a short press on Paste runs: the most recently copied or cut one. */
+    val clipboard: ClipboardState? get() = clipboards.lastOrNull()
+
     fun isRemote(pane: Pane): Boolean = RemoteUri.isRemote(pane(pane).path)
 
     fun displayPath(path: String): String = when {

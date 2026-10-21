@@ -9,7 +9,15 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -76,6 +84,7 @@ class BottomBarActions(
     val onRefresh: () -> Unit = {},
     val onPaste: () -> Unit = {},
     val onCancelClipboard: () -> Unit = {},
+    val onShowClipboard: () -> Unit = {},
     val onSelectAll: () -> Unit = {},
     val onClearSelection: () -> Unit = {},
     val onCopyToOther: () -> Unit = {},
@@ -213,7 +222,7 @@ private fun BrowseAction.run(a: BottomBarActions) = when (this) {
     BrowseAction.HIDDEN_FILES -> a.onToggleHidden()
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun BrowseActions(
     canBack: Boolean,
@@ -252,7 +261,21 @@ private fun BrowseActions(
                     // The badge is drawn beside the button, not inside it: IconButton clips its
                     // content to the button shape, which used to cut the badge off.
                     Box {
-                        IconButton(onClick = a.onPaste, shapes = IconButtonDefaults.shapes()) {
+                        val haptic = LocalHapticFeedback.current
+                        Box(
+                            Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .combinedClickable(
+                                    role = Role.Button,
+                                    onClick = a.onPaste,
+                                    onLongClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        a.onShowClipboard()
+                                    },
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
                             Icon(action.icon, contentDescription = action.text(clipboardIsMove, showHidden, projectLabel))
                         }
                         Badge(modifier = Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 0.dp)) {
@@ -292,7 +315,10 @@ private fun BrowseActions(
                 }
             }
             val tools = buildList {
-                if (clipboardCount > 0) add(MenuEntry(stringResource(R.string.explorer_clear_clipboard), Icons.Rounded.LayersClear) { more = false; a.onCancelClipboard() })
+                if (clipboardCount > 0) {
+                    add(MenuEntry(stringResource(R.string.explorer_clipboard_queue), Icons.Rounded.ContentPaste) { more = false; a.onShowClipboard() })
+                    add(MenuEntry(stringResource(R.string.explorer_clear_clipboard), Icons.Rounded.LayersClear) { more = false; a.onCancelClipboard() })
+                }
                 add(MenuEntry(stringResource(R.string.explorer_customize_bar), Icons.Rounded.DashboardCustomize) { more = false; a.onCustomize(ToolbarTab.BROWSE) })
             }
             ExpressiveMenu(expanded = more, onDismiss = { more = false }, groups = listOf(entries, tools))
