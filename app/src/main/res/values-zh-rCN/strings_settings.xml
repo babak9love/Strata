@@ -139,6 +139,7 @@
     <string name="settings_text_size_sample">Strata 让您的文件井井有条</string>
     <string name="settings_corners">圆角</string>
     <string name="settings_corners_summary">卡片、面板和按钮的圆润程度</string>
+    <string name="settings_group_folder_icons">文件夹图标</string>
     <string name="settings_group_file_icons">文件图标</string>
     <string name="settings_colorful_icons">彩色图标</string>
     <string name="settings_colorful_icons_summary">图片、视频、音乐、应用和代码各有专属颜色</string>
@@ -435,9 +436,6 @@
     <string name="settings_kw_icon_shape">饼干 四叶草 圆形 形状</string>
     <string name="settings_icon_shape">图标形状</string>
     <string name="settings_icon_shape_option">图标形状：%1$s</string>
-    <string name="settings_strata_icons">Strata 图标</string>
-    <string name="settings_strata_icons_summary">Strata 经典外观：文件和文件夹显示为所选形状的图块加简单符号，书签显示为字母图块。关闭后使用较新的图标。</string>
-    <string name="settings_kw_strata_icons">经典 旧 文件夹 图标</string>
     <string name="settings_strata_file_icons">自定义文件图标</string>
     <string name="settings_strata_file_icons_summary">为常见文件类型（CSS、PDF、ZIP 等）使用专用图标，其他类型使用带扩展名的彩色图标。文件夹保持经典外观。</string>
     <string name="settings_kw_strata_file_icons">自定义 文件 图标 格式</string>

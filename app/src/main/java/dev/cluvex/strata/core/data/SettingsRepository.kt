@@ -123,10 +123,9 @@ class SettingsRepository(private val context: Context) {
         val TEXT_SCALE = floatPreferencesKey("text_scale")
         val CORNERS = stringPreferencesKey("corner_style")
         val ICON_SHAPE = stringPreferencesKey("icon_shape")
-        val STRATA_ICONS = booleanPreferencesKey("strata_icons")
-        val STRATA_FILE_ICONS = booleanPreferencesKey("strata_file_icons")
-        val STRATA_GOLDEN_FOLDERS = booleanPreferencesKey("strata_golden_folders")
-        val STRATA_GOLDEN_FIXED = booleanPreferencesKey("strata_golden_fixed")
+        val CUSTOM_FILE_ICONS = booleanPreferencesKey("custom_file_icons")
+        val GOLDEN_FOLDERS = booleanPreferencesKey("golden_folders")
+        val GOLDEN_FIXED = booleanPreferencesKey("strata_golden_fixed")
         val COLORFUL_ICONS = booleanPreferencesKey("colorful_icons")
         val MOTION = stringPreferencesKey("motion")
         val HAPTICS = booleanPreferencesKey("haptics")
@@ -202,7 +201,7 @@ class SettingsRepository(private val context: Context) {
         val ACTION_LAYOUT = stringPreferencesKey("action_layout")
 
         val BOOLEANS = listOf(
-            SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, STRATA_ICONS, STRATA_FILE_ICONS, STRATA_GOLDEN_FOLDERS, STRATA_GOLDEN_FIXED, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, APK_ICONS, SHOW_DATE,
+            SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, CUSTOM_FILE_ICONS, GOLDEN_FOLDERS, GOLDEN_FIXED, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, APK_ICONS, SHOW_DATE,
             SHOW_SIZE, USE_24H, WRAP_NAMES, TILE_FRAME, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, KEEP_SCREEN_TASKS, KEEP_MTIME, SECURE_SCREEN,
             DUAL_PANE, TRASH_DEFAULT, ROOT_ACCESS, SHIZUKU_ACCESS, VERIFY_BEFORE_INSTALL, INSTALL_WITH_ROOT, EDITOR_WRAP,
             EDITOR_LINE_NUMBERS, EDITOR_WHITESPACE, EDITOR_SYMBOL_BAR, EDITOR_AUTO_INDENT, EDITOR_AUTO_PAIRS, EDITOR_HIGHLIGHT_LINE,
@@ -416,10 +415,9 @@ class SettingsRepository(private val context: Context) {
             textScale = AppearancePrefs.textScale(p[Keys.TEXT_SCALE] ?: 1f),
             corners = enumOf(p[Keys.CORNERS], CornerStyle.ROUND),
             iconShape = enumOf(p[Keys.ICON_SHAPE], IconShape.ROUNDED),
-            strataIcons = p[Keys.STRATA_ICONS] ?: false,
-            strataFileIcons = p[Keys.STRATA_FILE_ICONS] ?: false,
-            strataGoldenFolders = p[Keys.STRATA_GOLDEN_FOLDERS] ?: false,
-            strataGoldenFixed = p[Keys.STRATA_GOLDEN_FIXED] ?: true,
+            customFileIcons = p[Keys.CUSTOM_FILE_ICONS] ?: true,
+            goldenFolders = p[Keys.GOLDEN_FOLDERS] ?: true,
+            goldenFixed = p[Keys.GOLDEN_FIXED] ?: true,
             colorfulIcons = p[Keys.COLORFUL_ICONS] ?: true,
             motion = enumOf(p[Keys.MOTION], MotionStyle.EXPRESSIVE),
             haptics = p[Keys.HAPTICS] ?: true,
@@ -437,10 +435,9 @@ class SettingsRepository(private val context: Context) {
             p[Keys.TEXT_SCALE] = AppearancePrefs.textScale(a.textScale)
             p[Keys.CORNERS] = a.corners.name
             p[Keys.ICON_SHAPE] = a.iconShape.name
-            p[Keys.STRATA_ICONS] = a.strataIcons
-            p[Keys.STRATA_FILE_ICONS] = a.strataFileIcons
-            p[Keys.STRATA_GOLDEN_FOLDERS] = a.strataGoldenFolders
-            p[Keys.STRATA_GOLDEN_FIXED] = a.strataGoldenFixed
+            p[Keys.CUSTOM_FILE_ICONS] = a.customFileIcons
+            p[Keys.GOLDEN_FOLDERS] = a.goldenFolders
+            p[Keys.GOLDEN_FIXED] = a.goldenFixed
             p[Keys.COLORFUL_ICONS] = a.colorfulIcons
             p[Keys.MOTION] = a.motion.name
             p[Keys.HAPTICS] = a.haptics

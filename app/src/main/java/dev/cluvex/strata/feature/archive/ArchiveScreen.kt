@@ -306,7 +306,27 @@ fun ArchiveScreen(
         is ArchiveDialog.Delete -> AlertDialog(
             onDismissRequest = { dialog = ArchiveDialog.None },
             title = { Text(stringResource(R.string.archive_delete_title)) },
-            text = { Text(pluralStringResource(R.plurals.archive_delete_text, d.paths.size, d.paths.size, s.name)) },
+            text = {
+                val stats = remember(d.paths) { vm.deleteStats(d.paths) }
+                Column {
+                    Text(pluralStringResource(R.plurals.archive_delete_text, d.paths.size, d.paths.size, s.name))
+                    val parts = buildList {
+                        if (stats.folders > 0) add(pluralStringResource(R.plurals.explorer_delete_folders, stats.folders, stats.folders))
+                        if (stats.files > 0) add(pluralStringResource(R.plurals.explorer_delete_files, stats.files, stats.files))
+                    }
+                    if (parts.isNotEmpty()) {
+                        Text(
+                            stringResource(
+                                R.string.explorer_delete_stats,
+                                parts.joinToString(stringResource(R.string.explorer_delete_stats_sep)),
+                                dev.cluvex.strata.core.util.Formatters.size(stats.bytes),
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(onClick = { vm.delete(d.paths); dialog = ArchiveDialog.None }) {
                     Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)

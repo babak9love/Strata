@@ -45,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import dev.cluvex.strata.feature.explorer.components.rememberFolderTint
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -138,32 +139,11 @@ fun AppearancePage(settings: StrataSettings, act: SettingsActions, onBack: () ->
             }
         }
         SettingsGroup(stringResource(R.string.settings_group_file_icons)) {
-            // Two separate, mutually exclusive modes: turning one on turns the other off and greys out its options.
-            switch(
-                tr(R.string.settings_strata_icons),
-                a.classicIcons,
-                { v -> act.appearance { it.copy(strataIcons = v, strataGoldenFolders = if (v) false else it.strataGoldenFolders) } },
-                summary = tr(R.string.settings_strata_icons_summary),
-            )
             switch(
                 tr(R.string.settings_strata_file_icons),
-                a.strataFileIcons,
-                { v -> act.appearance { it.copy(strataFileIcons = v) } },
+                a.customFileIcons,
+                { v -> act.appearance { it.copy(customFileIcons = v) } },
                 summary = tr(R.string.settings_strata_file_icons_summary),
-                enabled = a.classicIcons,
-            )
-            switch(
-                tr(R.string.settings_strata_golden_folders),
-                a.strataGoldenFolders,
-                { v -> act.appearance { it.copy(strataGoldenFolders = v, strataIcons = if (v) false else it.strataIcons) } },
-                summary = tr(R.string.settings_strata_golden_folders_summary),
-            )
-            switch(
-                tr(R.string.settings_strata_golden_fixed),
-                a.strataGoldenFixed,
-                { v -> act.appearance { it.copy(strataGoldenFixed = v) } },
-                summary = tr(R.string.settings_strata_golden_fixed_summary),
-                enabled = a.strataGoldenFolders,
             )
             custom(title = tr(R.string.settings_icon_shape), summary = tr(a.iconShape.label)) {
                 IconShapes(a) { shape -> act.appearance { it.copy(iconShape = shape) } }
@@ -173,6 +153,31 @@ fun AppearancePage(settings: StrataSettings, act: SettingsActions, onBack: () ->
                 a.colorfulIcons,
                 { v -> act.appearance { it.copy(colorfulIcons = v) } },
                 summary = tr(R.string.settings_colorful_icons_summary),
+            )
+        }
+        SettingsGroup(stringResource(R.string.settings_group_folder_icons)) {
+            val folderTint = rememberFolderTint()
+            switch(
+                tr(R.string.settings_strata_golden_folders),
+                a.goldenFolders,
+                { v -> act.appearance { it.copy(goldenFolders = v) } },
+                summary = tr(R.string.settings_strata_golden_folders_summary),
+                leading = {
+                    // Preview of the golden folder, tinted like the real ones when "Fixed folder color" is off.
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(R.drawable.ic_folder),
+                        contentDescription = null,
+                        colorFilter = if (!a.goldenFixed) folderTint else null,
+                        modifier = Modifier.size(width = 40.dp, height = 31.dp),
+                    )
+                },
+            )
+            switch(
+                tr(R.string.settings_strata_golden_fixed),
+                a.goldenFixed,
+                { v -> act.appearance { it.copy(goldenFixed = v) } },
+                summary = tr(R.string.settings_strata_golden_fixed_summary),
+                enabled = a.goldenFolders,
             )
         }
         SettingsGroup(stringResource(R.string.settings_group_motion)) {

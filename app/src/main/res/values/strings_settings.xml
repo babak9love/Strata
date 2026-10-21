@@ -140,6 +140,7 @@
     <string name="settings_text_size_sample">Strata keeps your files in order</string>
     <string name="settings_corners">Corners</string>
     <string name="settings_corners_summary">How round cards, sheets and buttons are</string>
+    <string name="settings_group_folder_icons">Folder icons</string>
     <string name="settings_group_file_icons">File icons</string>
     <string name="settings_colorful_icons">Colorful icons</string>
     <string name="settings_colorful_icons_summary">Pictures, videos, music, apps and code each get their own color</string>
@@ -445,14 +446,11 @@
     <string name="settings_kw_icon_shape">cookie clover circle shapes</string>
     <string name="settings_icon_shape">Icon shape</string>
     <string name="settings_icon_shape_option">%1$s icon shape</string>
-    <string name="settings_strata_icons">Strata icons</string>
-    <string name="settings_strata_icons_summary">Strata\'s classic look: files and folders as a tile in the chosen shape with a simple symbol, and bookmarks as letter tiles. Turn off for the newer icons.</string>
-    <string name="settings_kw_strata_icons">classic old folder icons</string>
     <string name="settings_strata_file_icons">Custom file icons</string>
-    <string name="settings_strata_file_icons_summary">Use the dedicated icons for known file types (CSS, PDF, ZIP…) and the colored extension icon for the rest. Folders keep the classic look.</string>
+    <string name="settings_strata_file_icons_summary">Use the dedicated icons for known file types (CSS, PDF, ZIP…) and the colored extension icon for the rest. Off: a simple tile in the chosen shape.</string>
     <string name="settings_kw_strata_file_icons">custom branded file type icons</string>
     <string name="settings_strata_golden_folders">Golden folders</string>
-    <string name="settings_strata_golden_folders_summary">Show folders as the golden folder shape, with its corner badges, instead of a tile.</string>
+    <string name="settings_strata_golden_folders_summary">Show folders as the golden folder shape, with its corner badges. Off: a simple tile in the chosen shape.</string>
     <string name="settings_kw_strata_golden_folders">golden yellow folder shape</string>
     <string name="settings_strata_golden_fixed">Fixed folder color</string>
     <string name="settings_strata_golden_fixed_summary">On: the folder stays golden. Off: it takes the theme color chosen in the settings.</string>

@@ -71,6 +71,27 @@ class ArchiveTree(entries: List<ArchiveEntry>) {
         return byPath.values.filter { !it.isDirectory && (p.isEmpty() || it.path == p || it.path.startsWith(prefix)) }
     }
 
+    /** Folders, files and total (uncompressed) bytes of the selected entries, folders counted with everything inside them. */
+    fun stats(paths: Set<String>): Stats {
+        val selected = paths.mapTo(HashSet()) { normalize(it) }
+        var folders = 0
+        var files = 0
+        var bytes = 0L
+        for (e in byPath.values) {
+            var p = e.path
+            var hit = false
+            while (p.isNotEmpty()) {
+                if (p in selected) { hit = true; break }
+                p = p.substringBeforeLast('/', "")
+            }
+            if (!hit) continue
+            if (e.isDirectory) folders++ else { files++; bytes += e.size.coerceAtLeast(0) }
+        }
+        return Stats(folders, files, bytes)
+    }
+
+    data class Stats(val folders: Int, val files: Int, val bytes: Long)
+
     fun sizeOf(path: String): Long = files(path).sumOf { it.size.coerceAtLeast(0) }
 
     companion object {

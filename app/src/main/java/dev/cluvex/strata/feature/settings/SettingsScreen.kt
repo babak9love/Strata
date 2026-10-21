@@ -127,7 +127,6 @@ object SettingsIndex {
         SettingEntry(R.string.settings_contrast, SettingsPage.APPEARANCE, R.string.settings_kw_contrast),
         SettingEntry(R.string.settings_text_size, SettingsPage.APPEARANCE, R.string.settings_kw_text_size),
         SettingEntry(R.string.settings_corners, SettingsPage.APPEARANCE, R.string.settings_kw_corners),
-        SettingEntry(R.string.settings_strata_icons, SettingsPage.APPEARANCE, R.string.settings_kw_strata_icons),
         SettingEntry(R.string.settings_strata_file_icons, SettingsPage.APPEARANCE, R.string.settings_kw_strata_file_icons),
         SettingEntry(R.string.settings_strata_golden_folders, SettingsPage.APPEARANCE, R.string.settings_kw_strata_golden_folders),
         SettingEntry(R.string.settings_strata_golden_fixed, SettingsPage.APPEARANCE, R.string.settings_kw_strata_golden_fixed),

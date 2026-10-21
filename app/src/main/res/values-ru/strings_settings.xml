@@ -139,6 +139,7 @@
     <string name="settings_text_size_sample">Strata держит ваши файлы в порядке</string>
     <string name="settings_corners">Углы</string>
     <string name="settings_corners_summary">Насколько скруглены карточки, панели и кнопки</string>
+    <string name="settings_group_folder_icons">Значки папок</string>
     <string name="settings_group_file_icons">Значки файлов</string>
     <string name="settings_colorful_icons">Цветные значки</string>
     <string name="settings_colorful_icons_summary">У изображений, видео, музыки, приложений и кода — свои цвета</string>
@@ -462,9 +463,6 @@
     <string name="settings_kw_icon_shape">печенье клевер круг формы</string>
     <string name="settings_icon_shape">Форма значков</string>
     <string name="settings_icon_shape_option">Форма значков: %1$s</string>
-    <string name="settings_strata_icons">Значки Strata</string>
-    <string name="settings_strata_icons_summary">Классический вид Strata: файлы и папки в виде плитки выбранной формы с простым символом, закладки в виде плиток с буквой. Выключите, чтобы вернуть новые значки.</string>
-    <string name="settings_kw_strata_icons">классические старые значки папок</string>
     <string name="settings_strata_file_icons">Особые значки файлов</string>
     <string name="settings_strata_file_icons_summary">Использовать особые значки для известных типов файлов (CSS, PDF, ZIP…), для остальных — цветной значок с расширением. Папки остаются в классическом виде.</string>
     <string name="settings_kw_strata_file_icons">особые значки файлов форматы</string>

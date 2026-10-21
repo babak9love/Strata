@@ -305,6 +305,8 @@ class ArchiveViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun deleteStats(paths: Set<String>): ArchiveTree.Stats = tree.stats(paths)
+
     fun delete(paths: Set<String>) {
         val s = _state.value
         if (!s.canUpdate || paths.isEmpty()) return

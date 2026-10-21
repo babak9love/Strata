@@ -84,23 +84,18 @@ data class AppearancePrefs(
     val textScale: Float = 1f,
     val corners: CornerStyle = CornerStyle.ROUND,
     val iconShape: IconShape = IconShape.ROUNDED,
-    /** On: Strata's classic look (tile of the chosen shape with a simple symbol, letter tiles for bookmarks). Off: the newer icons. Exclusive with [strataGoldenFolders]. */
-    val strataIcons: Boolean = false,
-    /** Strata icons only: files still use the dedicated (branded / extension) icons; folders keep the classic tile. */
-    val strataFileIcons: Boolean = false,
-    /** Golden folders mode: folders use the golden folder shape (with its corner badges). Exclusive with [strataIcons]; wins if both are stored. */
-    val strataGoldenFolders: Boolean = false,
+    /** On: files use the dedicated (branded / extension) icons. Off: the classic tile of the chosen shape with a simple symbol. */
+    val customFileIcons: Boolean = true,
+    /** On: folders use the golden folder shape (with its corner badges). Off: the classic folder tile of the chosen shape. */
+    val goldenFolders: Boolean = true,
     /** Golden folders only: on keeps the fixed golden colour, off tints the folder with the theme colour. */
-    val strataGoldenFixed: Boolean = true,
+    val goldenFixed: Boolean = true,
     val colorfulIcons: Boolean = true,
     val motion: MotionStyle = MotionStyle.EXPRESSIVE,
     val haptics: Boolean = true,
     val sounds: Boolean = false,
     val soundsInSilent: Boolean = true,
 ) {
-    /** The classic Strata look is really active only when golden folders mode is off (the two are exclusive). */
-    val classicIcons: Boolean get() = strataIcons && !strataGoldenFolders
-
     companion object {
         const val MIN_TEXT_SCALE = 0.85f
         const val MAX_TEXT_SCALE = 1.3f

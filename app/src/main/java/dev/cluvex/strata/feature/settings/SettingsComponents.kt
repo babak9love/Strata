@@ -189,6 +189,7 @@ fun SettingsGroupScope.switch(
     icon: ImageVector? = null,
     tint: Tint = Tint.SECONDARY,
     enabled: Boolean = true,
+    leading: (@Composable () -> Unit)? = null,
 ) = item { shapes ->
     SegmentedListItem(
         checked = checked,
@@ -196,7 +197,7 @@ fun SettingsGroupScope.switch(
         shapes = shapes,
         enabled = enabled,
         colors = settingColors(),
-        leadingContent = icon?.let { { SettingIcon(it, tint) } },
+        leadingContent = leading ?: icon?.let { { SettingIcon(it, tint) } },
         supportingContent = summary?.let { { Text(it) } },
         trailingContent = {
             Switch(

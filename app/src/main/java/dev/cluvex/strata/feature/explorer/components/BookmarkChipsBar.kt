@@ -73,9 +73,9 @@ fun BookmarkChipsBar(
     // Classic Strata look: each chip starts with a tile holding the first letter of the bookmark, like the drawer.
     val look = LocalSettings.current.appearance
     // Letter tile only while folders are not golden; with golden folders the chip shows the golden folder like every folder.
-    val classic = look.classicIcons
+    val classic = !look.goldenFolders
     // "Fixed folder color" off: the golden folder takes the theme colour, bookmarks included.
-    val tintFolder = look.strataGoldenFolders && !look.strataGoldenFixed
+    val tintFolder = look.goldenFolders && !look.goldenFixed
     val folderTint = rememberFolderTint()
     // The classic chip is the drawer's: a filled pill, no outline.
     val shape = if (classic) CircleShape else RoundedCornerShape(20.dp)
