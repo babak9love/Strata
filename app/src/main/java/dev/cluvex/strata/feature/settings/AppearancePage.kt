@@ -181,7 +181,9 @@ fun AppearancePage(settings: StrataSettings, act: SettingsActions, onBack: () ->
                 enabled = a.folderShaped,
             )
             if (a.folderShaped) {
-                FolderStyles(a, folderTint) { style -> act.appearance { it.copy(folderStyle = style) } }
+                custom {
+                    FolderStyles(a, folderTint) { style -> act.appearance { it.copy(folderStyle = style) } }
+                }
             }
         }
         SettingsGroup(stringResource(R.string.settings_group_motion)) {
