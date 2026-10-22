@@ -65,11 +65,42 @@ object LanScanner {
         return out
     }
 
+    /**
+     * True only if the host really speaks SMB: connect to 445, send an SMB2 NEGOTIATE and check the reply signature.
+     * A bare TCP connect is not enough - with a VPN / transparent proxy active every address "accepts" connections.
+     */
     private fun isSmbOpen(ip: String): Boolean = try {
-        Socket().use { it.connect(InetSocketAddress(ip, SMB_PORT), CONNECT_TIMEOUT_MS) }
-        true
+        Socket().use { s ->
+            s.connect(InetSocketAddress(ip, SMB_PORT), CONNECT_TIMEOUT_MS)
+            s.soTimeout = 1500
+            s.tcpNoDelay = true
+            s.getOutputStream().apply { write(SMB2_NEGOTIATE); flush() }
+            val head = ByteArray(8)
+            var n = 0
+            val input = s.getInputStream()
+            while (n < head.size) {
+                val r = input.read(head, n, head.size - n)
+                if (r < 0) break
+                n += r
+            }
+            n == head.size && (head[4].toInt() and 0xFF) in intArrayOf(0xFE, 0xFF) &&
+                head[5] == 'S'.code.toByte() && head[6] == 'M'.code.toByte() && head[7] == 'B'.code.toByte()
+        }
     } catch (_: Exception) {
         false
+    }
+
+    /** NetBIOS session header + SMB2 header + NEGOTIATE offering dialect 2.0.2 (102 bytes of SMB, 106 on the wire). */
+    private val SMB2_NEGOTIATE: ByteArray = ByteArray(106).also { m ->
+        m[3] = 102                                            // NetBIOS length (3 bytes, big endian)
+        m[4] = 0xFE.toByte(); m[5] = 'S'.code.toByte(); m[6] = 'M'.code.toByte(); m[7] = 'B'.code.toByte()
+        m[8] = 64                                             // header StructureSize
+        // command (bytes 16-17) stays 0 = NEGOTIATE; flags (bytes 20-23) stay 0 = client request
+        m[18] = 1                                             // credit request
+        m[68] = 36                                            // body StructureSize
+        m[70] = 1                                             // one dialect
+        m[72] = 1                                             // signing enabled
+        m[104] = 0x02; m[105] = 0x02                          // dialect 0x0202
     }
 
     /** NetBIOS node-status query; returns the machine's unique name or null if it does not answer. */
