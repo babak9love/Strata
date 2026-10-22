@@ -190,7 +190,7 @@ fun MusicPlayerSheet(
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                PlaybackSpeedToggleButton(c)
+                SpeedButton(c)
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
             }

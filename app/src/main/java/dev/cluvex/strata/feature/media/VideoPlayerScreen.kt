@@ -316,7 +316,7 @@ fun VideoPlayerScreen(
                                     )
                                 }
                                 CompositionLocalProvider(LocalContentColor provides Color.White) {
-                                    PlaybackSpeedToggleButton(p, colors = ButtonDefaults.textButtonColors(contentColor = Color.White))
+                                    SpeedButton(p, Color.White)
                                     RepeatButton(p)
                                 }
                                 IconButton(onClick = rotate) {
