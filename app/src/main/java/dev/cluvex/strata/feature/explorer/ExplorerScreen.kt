@@ -401,6 +401,7 @@ fun ExplorerScreen(
                     onCopyPath = {
                         textClipboard.setText(selection.joinToString("\n") { it.path })
                         vm.notifyPathsCopied(selection.size)
+                        vm.clearSelection(ui.active)
                     },
                     onInvert = { vm.invertSelection(ui.active, visibleOfActive()) },
                     onBookmarks = { dialog = Dialog.Bookmarks },

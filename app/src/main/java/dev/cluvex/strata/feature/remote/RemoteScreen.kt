@@ -15,6 +15,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlin.math.cos
+import kotlin.math.sin
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -36,7 +45,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -522,14 +530,29 @@ private fun ConnectionEditorDialog(
                                 }
                             },
                         ) {
-                            Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                            val orbit = rememberInfiniteTransition(label = "scan-orbit")
+                            val angle by orbit.animateFloat(
+                                initialValue = 0f,
+                                targetValue = 360f,
+                                animationSpec = infiniteRepeatable(tween(1100, easing = LinearEasing), RepeatMode.Restart),
+                                label = "scan-angle",
+                            )
+                            Icon(
+                                Icons.Rounded.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp).graphicsLayer {
+                                    if (scanning) {
+                                        val r = 3.dp.toPx()
+                                        val a = Math.toRadians(angle.toDouble())
+                                        translationX = (r * cos(a)).toFloat()
+                                        translationY = (r * sin(a)).toFloat()
+                                    }
+                                },
+                            )
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.remote_scan_network))
                         }
-                        if (scanning) {
-                            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                            Text(stringResource(R.string.remote_scanning), style = MaterialTheme.typography.bodySmall)
-                        } else if (scanDone && found.isEmpty()) {
+                        if (!scanning && scanDone && found.isEmpty()) {
                             Text(stringResource(R.string.remote_scan_none), style = MaterialTheme.typography.bodySmall)
                         }
                     }
