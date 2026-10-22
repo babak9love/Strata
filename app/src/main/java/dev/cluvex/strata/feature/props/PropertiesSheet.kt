@@ -1,5 +1,7 @@
 package dev.cluvex.strata.feature.props
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -15,6 +17,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.AlertDialog
@@ -59,6 +63,7 @@ import dev.cluvex.strata.ui.isolated
 import dev.cluvex.strata.ui.rememberTextClipboard
 import java.text.NumberFormat
 import dev.cluvex.strata.core.media.MediaInfoReader
+import dev.cluvex.strata.core.media.MediaSection
 import dev.cluvex.strata.core.util.FileKind
 import dev.cluvex.strata.core.util.FileKinds
 import kotlinx.coroutines.Dispatchers
@@ -99,15 +104,45 @@ fun PropertiesSheet(
 
             if (single != null) {
                 InfoRow(stringResource(R.string.props_location), single.parentPath ?: "/", ltr = true)
-                InfoRow(
-                    stringResource(R.string.common_type),
-                    when {
-                        single.isSymlink -> stringResource(R.string.props_symlink)
-                        single.isDirectory -> stringResource(R.string.common_folder)
-                        single.extension.isNotEmpty() -> stringResource(R.string.props_ext_file, single.extension.uppercase())
-                        else -> stringResource(R.string.common_file)
-                    },
-                )
+                val typeText = when {
+                    single.isSymlink -> stringResource(R.string.props_symlink)
+                    single.isDirectory -> stringResource(R.string.common_folder)
+                    single.extension.isNotEmpty() -> stringResource(R.string.props_ext_file, single.extension.uppercase())
+                    else -> stringResource(R.string.common_file)
+                }
+                val mediaKind = if (single.isDirectory || single.isSymlink) null else FileKinds.of(single)
+                    .takeIf { it == FileKind.AUDIO || it == FileKind.VIDEO }
+                if (mediaKind != null) {
+                    var expanded by remember(single.path) { mutableStateOf(false) }
+                    var sections by remember(single.path) { mutableStateOf<List<MediaSection>?>(null) }
+                    LaunchedEffect(single.path, expanded) {
+                        if (expanded && sections == null) {
+                            sections = withContext(Dispatchers.IO) { MediaInfoReader.read(single.path) }
+                                .filter { mediaKind == FileKind.VIDEO || it.title != R.string.media_section_video }
+                        }
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().clickable { expanded = !expanded },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
+                            Text(
+                                stringResource(if (mediaKind == FileKind.VIDEO) R.string.model_sheet_video_info else R.string.model_sheet_audio_info),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Text(typeText, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Icon(
+                            if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    AnimatedVisibility(expanded) { MediaInfoBody(sections) }
+                } else {
+                    InfoRow(stringResource(R.string.common_type), typeText)
+                }
                 val imagePath = single.path.takeIf { !single.isDirectory && !single.isSymlink && FileKinds.of(single) == FileKind.IMAGE }
                 var resolution by remember(imagePath) { mutableStateOf<String?>(null) }
                 LaunchedEffect(imagePath) {

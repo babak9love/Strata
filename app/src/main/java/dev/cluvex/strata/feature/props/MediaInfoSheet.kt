@@ -67,24 +67,32 @@ fun MediaInfoSheet(item: FileItem, kind: MediaInfoKind, onDismiss: () -> Unit) {
                 modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
             )
             HorizontalDivider()
-            val list = sections
-            if (list == null) {
-                Row(Modifier.padding(vertical = 24.dp), verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                }
-            } else {
-                list.forEachIndexed { i, section ->
-                    if (i > 0) HorizontalDivider(Modifier.padding(top = 8.dp))
-                    Text(
-                        stringResource(section.title),
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(top = 10.dp),
-                    )
-                    section.rows.forEach { row ->
-                        Column(Modifier.padding(vertical = 6.dp)) {
-                            Text(stringResource(row.label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                            SelectionContainer { Text(row.value, style = MaterialTheme.typography.bodyMedium.asPath()) }
-                        }
+            MediaInfoBody(sections)
+        }
+    }
+}
+
+/** Sections of media details; shows a spinner while [sections] is null. */
+@Composable
+fun MediaInfoBody(sections: List<MediaSection>?) {
+    Column {
+        val list = sections
+        if (list == null) {
+            Row(Modifier.padding(vertical = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+            }
+        } else {
+            list.forEachIndexed { i, section ->
+                if (i > 0) HorizontalDivider(Modifier.padding(top = 8.dp))
+                Text(
+                    stringResource(section.title),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
+                section.rows.forEach { row ->
+                    Column(Modifier.padding(vertical = 6.dp)) {
+                        Text(stringResource(row.label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        SelectionContainer { Text(row.value, style = MaterialTheme.typography.bodyMedium.asPath()) }
                     }
                 }
             }
