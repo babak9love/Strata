@@ -502,11 +502,13 @@ fun ExplorerScreen(
         Dialog.None -> Unit
         is Dialog.NewFolder -> InputDialog(
             title = stringResource(R.string.common_new_folder), label = stringResource(R.string.explorer_folder_name),
+            initial = "New folder", select = InputSelection.ALL,
             onConfirm = { vm.newFolder(d.pane, it); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
         is Dialog.NewFile -> InputDialog(
             title = stringResource(R.string.common_new_file), label = stringResource(R.string.explorer_file_name),
+            initial = "New file.txt", select = InputSelection.ALL,
             onConfirm = { vm.newFile(d.pane, it); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
