@@ -115,6 +115,7 @@
     <string name="media_cover">Cover</string>
     <string name="media_fit_screen">Fit to screen</string>
     <string name="media_fill_screen">Fill the screen</string>
+    <string name="media_rotate_screen">Rotate screen</string>
     <string name="media_font_unreadable">Can\'t read this font: %1$s</string>
     <string name="media_sample_text">Sample text</string>
     <string name="media_font_sample">The quick brown fox jumps over the lazy dog</string>

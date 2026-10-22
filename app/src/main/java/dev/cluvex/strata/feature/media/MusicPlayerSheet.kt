@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -69,7 +70,10 @@ import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.MediaSiblings
 import dev.cluvex.strata.core.media.PlaybackPositions
 import dev.cluvex.strata.core.media.ResumeKind
+import dev.cluvex.strata.core.model.FileItem
 import dev.cluvex.strata.core.util.FileKind
+import dev.cluvex.strata.feature.props.MediaInfoKind
+import dev.cluvex.strata.feature.props.MediaInfoSheet
 import dev.cluvex.strata.ui.rememberSheetState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -103,6 +107,8 @@ fun MusicPlayerSheet(
 ) {
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
+    var info by remember { mutableStateOf<String?>(null) }
+    val direction = LocalLayoutDirection.current
     val controller = rememberMediaController()
     var metadata by remember { mutableStateOf(MediaMetadata.EMPTY) }
     var artwork by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -135,6 +141,7 @@ fun MusicPlayerSheet(
         sheetState = rememberSheetState(),
         modifier = Modifier.testTag("music-player"),
     ) {
+        Box(Modifier.fillMaxWidth()) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -184,11 +191,26 @@ fun MusicPlayerSheet(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PlaybackSpeedToggleButton(c)
-                Box {
-                    IconButton(onClick = { menu = true }) {
-                        Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more))
-                    }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = { c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
+            }
+        }
+        // Menu pinned to the physical top-right corner of the sheet (regardless of language direction).
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(Modifier.align(Alignment.TopEnd).padding(end = 8.dp)) {
+                IconButton(onClick = { menu = true }) {
+                    Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more))
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.model_sheet_audio_info)) },
+                            leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
+                            onClick = {
+                                menu = false
+                                info = controller?.currentMediaItem?.mediaId ?: path
+                            },
+                        )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.media_resume_playback)) },
                             trailingIcon = { Switch(checked = resume, onCheckedChange = null) },
@@ -196,11 +218,11 @@ fun MusicPlayerSheet(
                         )
                     }
                 }
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = { c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
             }
         }
+        }
     }
+    info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.AUDIO, onDismiss = { info = null }) }
 }
 
 private fun songItem(file: File): MediaItem = MediaItem.Builder()

@@ -111,6 +111,7 @@
     <string name="media_cover">تصویر جلد</string>
     <string name="media_fit_screen">متناسب با صفحه‌نمایش</string>
     <string name="media_fill_screen">پر کردن صفحه‌نمایش</string>
+    <string name="media_rotate_screen">چرخاندن صفحه</string>
     <string name="media_font_unreadable">این فونت خوانده نشد: \u2068%1$s\u2069</string>
     <string name="media_sample_text">متن نمونه</string>
     <string name="media_font_sample">بیژن جوان با صدای خوش و ضرب ظریف، غزلی از حافظ را ثبت کرد؛ پس ژاله با عشق، چای گرم، قند لذیذ و طالبی آورد</string>

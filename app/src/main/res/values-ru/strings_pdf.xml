@@ -117,6 +117,7 @@
     <string name="media_cover">Обложка</string>
     <string name="media_fit_screen">Вписать в экран</string>
     <string name="media_fill_screen">Заполнить экран</string>
+    <string name="media_rotate_screen">Повернуть экран</string>
     <string name="media_font_unreadable">Не удаётся прочитать шрифт: %1$s</string>
     <string name="media_sample_text">Образец текста</string>
     <string name="media_font_sample">Съешь же ещё этих мягких французских булок, да выпей чаю</string>

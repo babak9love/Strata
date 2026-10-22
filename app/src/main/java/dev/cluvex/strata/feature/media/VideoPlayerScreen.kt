@@ -2,6 +2,10 @@ package dev.cluvex.strata.feature.media
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -40,7 +44,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Crop
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.ScreenRotation
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Switch
@@ -94,6 +100,9 @@ import dev.cluvex.strata.core.media.MediaSiblings
 import dev.cluvex.strata.core.media.PlaybackPositions
 import dev.cluvex.strata.core.media.ResumeKind
 import dev.cluvex.strata.core.media.ResumeListener
+import dev.cluvex.strata.core.model.FileItem
+import dev.cluvex.strata.feature.props.MediaInfoKind
+import dev.cluvex.strata.feature.props.MediaInfoSheet
 import dev.cluvex.strata.core.util.FileKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -180,6 +189,8 @@ fun VideoPlayerScreen(
     var controls by remember { mutableStateOf(true) }
     var fill by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
+    var info by remember { mutableStateOf<String?>(null) }
+    val rotate = rememberRotateAction()
     val player = vm.player
     BackHandler(onBack = onBack)
 
@@ -221,6 +232,9 @@ fun VideoPlayerScreen(
                                     PlaybackSpeedToggleButton(p, colors = ButtonDefaults.textButtonColors(contentColor = Color.White))
                                     RepeatButton(p)
                                 }
+                                IconButton(onClick = rotate) {
+                                    Icon(Icons.Rounded.ScreenRotation, contentDescription = stringResource(R.string.media_rotate_screen), tint = Color.White)
+                                }
                                 IconButton(onClick = { fill = !fill }) {
                                     Icon(
                                         if (fill) Icons.Rounded.AspectRatio else Icons.Rounded.Crop,
@@ -233,6 +247,14 @@ fun VideoPlayerScreen(
                                         Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more), tint = Color.White)
                                     }
                                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.model_sheet_video_info)) },
+                                            leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
+                                            onClick = {
+                                                menu = false
+                                                info = p?.currentMediaItem?.mediaId ?: path
+                                            },
+                                        )
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.media_auto_hide_controls)) },
                                             trailingIcon = { Switch(checked = autoHide, onCheckedChange = null) },
@@ -273,7 +295,34 @@ fun VideoPlayerScreen(
                 },
             )
         }
+        info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.VIDEO, onDismiss = { info = null }) }
     }
+}
+
+/** Toggles the screen between landscape and portrait; the original orientation is restored when the player closes. */
+@Composable
+private fun rememberRotateAction(): () -> Unit {
+    val view = LocalView.current
+    val activity = remember(view) { view.context.findActivity() }
+    DisposableEffect(activity) {
+        val original = activity?.requestedOrientation
+        onDispose { if (activity != null && original != null) activity.requestedOrientation = original }
+    }
+    return {
+        activity?.let {
+            val landscape = it.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+            it.requestedOrientation = if (landscape) ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        }
+    }
+}
+
+private fun Context.findActivity(): Activity? {
+    var c: Context? = this
+    while (c is ContextWrapper) {
+        if (c is Activity) return c
+        c = c.baseContext
+    }
+    return null
 }
 
 // Real-size vector icons (no scaling), so they stay sharp.
