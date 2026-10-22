@@ -521,8 +521,8 @@ private fun ConnectionEditorDialog(
                 if (protocol == RemoteProtocol.SMB) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         FilledTonalButton(
-                            enabled = !scanning,
                             onClick = {
+                                if (scanning) return@FilledTonalButton
                                 found.clear(); scanDone = false; scanning = true
                                 scanJob?.cancel()
                                 scanJob = scope.launch {
