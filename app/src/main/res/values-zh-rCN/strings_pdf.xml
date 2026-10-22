@@ -111,6 +111,9 @@
     <string name="media_rotate_screen">旋转屏幕</string>
     <string name="media_speed">速度</string>
     <string name="media_speed_reset">重置</string>
+    <string name="media_audio_tracks">音轨</string>
+    <string name="media_audio_track_disable">禁用</string>
+    <string name="media_audio_track_n">音轨 %1$d</string>
     <string name="media_font_unreadable">无法读取此字体：%1$s</string>
     <string name="media_sample_text">示例文本</string>
     <string name="media_font_sample">敏捷的棕色狐狸跳过了懒狗</string>

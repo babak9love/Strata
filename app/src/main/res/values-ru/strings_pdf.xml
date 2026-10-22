@@ -120,6 +120,9 @@
     <string name="media_rotate_screen">Повернуть экран</string>
     <string name="media_speed">Скорость</string>
     <string name="media_speed_reset">Сбросить</string>
+    <string name="media_audio_tracks">Звуковые дорожки</string>
+    <string name="media_audio_track_disable">Отключить</string>
+    <string name="media_audio_track_n">Дорожка %1$d</string>
     <string name="media_font_unreadable">Не удаётся прочитать шрифт: %1$s</string>
     <string name="media_sample_text">Образец текста</string>
     <string name="media_font_sample">Съешь же ещё этих мягких французских булок, да выпей чаю</string>

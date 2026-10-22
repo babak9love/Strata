@@ -118,6 +118,9 @@
     <string name="media_rotate_screen">Rotate screen</string>
     <string name="media_speed">Speed</string>
     <string name="media_speed_reset">Reset</string>
+    <string name="media_audio_tracks">Audio tracks</string>
+    <string name="media_audio_track_disable">Disable</string>
+    <string name="media_audio_track_n">Track %1$d</string>
     <string name="media_font_unreadable">Can\'t read this font: %1$s</string>
     <string name="media_sample_text">Sample text</string>
     <string name="media_font_sample">The quick brown fox jumps over the lazy dog</string>

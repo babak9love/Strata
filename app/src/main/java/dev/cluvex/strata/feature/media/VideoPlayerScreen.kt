@@ -63,6 +63,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Crop
+import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.ScreenRotation
@@ -210,6 +211,7 @@ fun VideoPlayerScreen(
     var menu by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
     var titleExpanded by remember { mutableStateOf(false) }
+    var audioTracks by remember { mutableStateOf(false) }
     val rotate = rememberRotateAction()
     val view = LocalView.current
     val context = LocalContext.current
@@ -343,6 +345,14 @@ fun VideoPlayerScreen(
                                             },
                                         )
                                         DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.media_audio_tracks)) },
+                                            leadingIcon = { Icon(Icons.Rounded.Audiotrack, contentDescription = null) },
+                                            onClick = {
+                                                menu = false
+                                                audioTracks = true
+                                            },
+                                        )
+                                        DropdownMenuItem(
                                             text = { Text(stringResource(R.string.media_auto_hide_controls)) },
                                             trailingIcon = { Switch(checked = autoHide, onCheckedChange = null) },
                                             onClick = { onAutoHideChange(!autoHide) },
@@ -394,6 +404,7 @@ fun VideoPlayerScreen(
                 }
             }
         }
+        if (audioTracks && player != null) AudioTracksDialog(player) { audioTracks = false }
         info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.VIDEO, onDismiss = { info = null }) }
     }
 }
