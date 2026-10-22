@@ -197,16 +197,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     fun handOffToBackground() {
         val p = player ?: return
         if (handedOff || !p.playWhenReady) return
-        val items = (0 until p.mediaItemCount).map { i ->
-            val item = p.getMediaItemAt(i)
-            item.buildUpon()
-                .setMediaMetadata(
-                    item.mediaMetadata.buildUpon()
-                        .setExtras(android.os.Bundle().apply { putBoolean(PlaybackService.EXTRA_FROM_VIDEO, true) })
-                        .build(),
-                )
-                .build()
-        }
+        val items = backgroundItems(p)
         val index = p.currentMediaItemIndex
         val position = p.currentPosition
         resume?.saveNow()
@@ -226,6 +217,42 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             c.setMediaItems(items, index, position)
             c.prepare()
             c.play()
+        }, ContextCompat.getMainExecutor(app))
+    }
+
+    private fun backgroundItems(p: ExoPlayer): List<MediaItem> = (0 until p.mediaItemCount).map { i ->
+        val item = p.getMediaItemAt(i)
+        item.buildUpon()
+            .setMediaMetadata(
+                item.mediaMetadata.buildUpon()
+                    .setExtras(android.os.Bundle().apply { putBoolean(PlaybackService.EXTRA_FROM_VIDEO, true) })
+                    .build(),
+            )
+            .build()
+    }
+
+    /**
+     * The video screen is being closed (Back) while playing: leave the audio playing in the media service,
+     * like the music player does when its sheet is dismissed. Nothing to take back afterwards.
+     */
+    fun handOffAndClose() {
+        val p = player ?: return
+        if (!p.playWhenReady) return
+        val items = backgroundItems(p)
+        val index = p.currentMediaItemIndex
+        val position = p.currentPosition
+        resume?.saveNow()
+        p.pause()
+        val app = getApplication<Application>()
+        val future = MediaController.Builder(app, SessionToken(app, ComponentName(app, PlaybackService::class.java))).buildAsync()
+        future.addListener({
+            val c = runCatching { future.get() }.getOrNull() ?: return@addListener
+            c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build()
+            c.setMediaItems(items, index, position)
+            c.prepare()
+            c.play()
+            // The service keeps playing without this controller.
+            MediaController.releaseFuture(future)
         }, ContextCompat.getMainExecutor(app))
     }
 
@@ -327,7 +354,11 @@ fun VideoPlayerScreen(
         }
     }
     val player = vm.player
-    BackHandler(onBack = onBack)
+    val exit = {
+        if (backgroundPlayNow) vm.handOffAndClose()
+        onBack()
+    }
+    BackHandler(onBack = exit)
     val backToListNow by androidx.compose.runtime.rememberUpdatedState(backToList)
     val onBackNow by androidx.compose.runtime.rememberUpdatedState(onBack)
     DisposableEffect(player) {
@@ -405,7 +436,7 @@ fun VideoPlayerScreen(
                                     .padding(horizontal = 4.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White) }
+                                IconButton(onClick = exit) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White) }
                                 Row(
                                     Modifier
                                         .weight(1f)

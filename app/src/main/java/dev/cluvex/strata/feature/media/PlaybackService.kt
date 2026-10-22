@@ -2,7 +2,9 @@ package dev.cluvex.strata.feature.media
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.OptIn
@@ -94,10 +96,13 @@ class PlaybackService : MediaSessionService() {
     @OptIn(UnstableApi::class)
     override fun onTaskRemoved(rootIntent: Intent?) {
         // Swiping the app out of Recents keeps playing when Background Play is on for what is playing.
-        val fromVideo = session?.player?.currentMediaItem?.mediaMetadata?.extras?.getBoolean(EXTRA_FROM_VIDEO) == true
-        val keepPlaying = if (fromVideo) backgroundVideo else backgroundAudio
+        val keepPlaying = if (isPlayingVideoAudio()) backgroundVideo else backgroundAudio
         if (!keepPlaying) pauseAllPlayersAndStopSelf()
     }
+
+    /** True while the media service is playing the audio of a video handed over from the video player. */
+    private fun isPlayingVideoAudio(): Boolean =
+        session?.player?.currentMediaItem?.mediaMetadata?.extras?.getBoolean(EXTRA_FROM_VIDEO) == true
 
     @OptIn(UnstableApi::class)
     private fun exitPlayback() {
@@ -141,6 +146,25 @@ class PlaybackService : MediaSessionService() {
                 .remove(Player.COMMAND_CHANGE_MEDIA_ITEMS)
                 .build()
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller).setAvailablePlayerCommands(commands).build()
+        }
+
+        /**
+         * Swiping the notification away sends a "stop" media key. For video audio in the background that must not
+         * end playback: ignore it and post the notification again, so only the notification's X (or Background Play
+         * being switched off) stops it.
+         */
+        @OptIn(UnstableApi::class)
+        override fun onMediaButtonEvent(session: MediaSession, controllerInfo: MediaSession.ControllerInfo, intent: Intent): Boolean {
+            val key = if (Build.VERSION.SDK_INT >= 33) {
+                intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
+            } else {
+                @Suppress("DEPRECATION") intent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
+            }
+            if (key?.keyCode == KeyEvent.KEYCODE_MEDIA_STOP && isPlayingVideoAudio() && backgroundVideo) {
+                handler.postDelayed({ this@PlaybackService.triggerNotificationUpdate() }, 300)
+                return true
+            }
+            return false
         }
 
         @OptIn(UnstableApi::class)
