@@ -2,6 +2,25 @@ package dev.cluvex.strata.feature.media
 
 import android.app.Activity
 import android.app.Application
+import android.media.AudioManager
+import android.provider.Settings
+import android.view.WindowManager
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.ui.draw.rotate
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.rounded.BrightnessMedium
+import androidx.compose.material.icons.rounded.VolumeOff
+import androidx.compose.material.icons.rounded.VolumeUp
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import kotlin.math.roundToInt
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
@@ -190,11 +209,33 @@ fun VideoPlayerScreen(
     var fill by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
+    var titleExpanded by remember { mutableStateOf(false) }
     val rotate = rememberRotateAction()
+    val view = LocalView.current
+    val context = LocalContext.current
+    val activity = remember(view) { view.context.findActivity() }
+    val audio = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
+    var hud by remember { mutableStateOf(Hud(volume = true, fraction = 0f)) }
+    var hudVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(hud) {
+        if (hudVisible) {
+            delay(800)
+            hudVisible = false
+        }
+    }
+    // Brightness set by the swipe gesture only lasts while the player is open.
+    DisposableEffect(activity) {
+        val original = activity?.window?.attributes?.screenBrightness
+        onDispose {
+            activity?.window?.let { w ->
+                w.attributes = w.attributes.also { it.screenBrightness = original ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE }
+            }
+        }
+    }
     val player = vm.player
     BackHandler(onBack = onBack)
 
-    if (player != null) AutoHideControls(player, controls && autoHide && !menu) { controls = false }
+    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !titleExpanded) { controls = false }
     ImmersiveWhile(!controls)
     LightSystemBarIcons()
 
@@ -205,7 +246,39 @@ fun VideoPlayerScreen(
                 player = player,
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { controls = !controls },
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { controls = !controls }
+                    .pointerInput(Unit) {
+                        // Vertical swipe: left half = brightness, right half = volume.
+                        var volume = true
+                        var fraction = 0f
+                        detectVerticalDragGestures(
+                            onDragStart = { offset ->
+                                volume = offset.x >= size.width / 2f
+                                fraction = if (volume) {
+                                    val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+                                    audio.getStreamVolume(AudioManager.STREAM_MUSIC) / max.toFloat()
+                                } else {
+                                    currentBrightness(activity, context)
+                                }
+                                hud = Hud(volume, fraction)
+                                hudVisible = true
+                            },
+                            onVerticalDrag = { change, dy ->
+                                change.consume()
+                                fraction = (fraction - dy / (size.height * 0.6f)).coerceIn(0f, 1f)
+                                if (volume) {
+                                    val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+                                    runCatching { audio.setStreamVolume(AudioManager.STREAM_MUSIC, (fraction * max).roundToInt(), 0) }
+                                } else {
+                                    activity?.window?.let { w ->
+                                        w.attributes = w.attributes.also { it.screenBrightness = fraction.coerceAtLeast(0.01f) }
+                                    }
+                                }
+                                hud = Hud(volume, fraction)
+                                hudVisible = true
+                            },
+                        )
+                    },
                 contentScale = if (fill) ContentScale.Crop else ContentScale.Fit,
                 showControls = controls,
                 topControls = { p, visible ->
@@ -220,14 +293,28 @@ fun VideoPlayerScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White) }
-                                Text(
-                                    vm.title,
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f),
-                                )
+                                Row(
+                                    Modifier
+                                        .weight(1f)
+                                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { titleExpanded = !titleExpanded }
+                                        .animateContentSize(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        vm.title,
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        maxLines = if (titleExpanded) Int.MAX_VALUE else 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false),
+                                    )
+                                    Icon(
+                                        Icons.Rounded.KeyboardArrowDown,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.rotate(if (titleExpanded) 180f else 0f),
+                                    )
+                                }
                                 CompositionLocalProvider(LocalContentColor provides Color.White) {
                                     PlaybackSpeedToggleButton(p, colors = ButtonDefaults.textButtonColors(contentColor = Color.White))
                                     RepeatButton(p)
@@ -295,8 +382,49 @@ fun VideoPlayerScreen(
                 },
             )
         }
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
+                AnimatedVisibility(
+                    visible = hudVisible,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                    modifier = Modifier.align(if (hud.volume) Alignment.CenterEnd else Alignment.CenterStart),
+                ) {
+                    GestureHud(hud)
+                }
+            }
+        }
         info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.VIDEO, onDismiss = { info = null }) }
     }
+}
+
+private data class Hud(val volume: Boolean, val fraction: Float)
+
+@Composable
+private fun GestureHud(hud: Hud) {
+    val icon = when {
+        !hud.volume -> Icons.Rounded.BrightnessMedium
+        hud.fraction <= 0f -> Icons.Rounded.VolumeOff
+        else -> Icons.Rounded.VolumeUp
+    }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+        Spacer(Modifier.height(8.dp))
+        Box(
+            Modifier.width(5.dp).height(140.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            Box(Modifier.fillMaxHeight(hud.fraction.coerceIn(0f, 1f)).width(5.dp).background(Color.White))
+        }
+    }
+}
+
+private fun currentBrightness(activity: Activity?, context: Context): Float {
+    val window = activity?.window?.attributes?.screenBrightness ?: -1f
+    if (window >= 0f) return window
+    return runCatching { Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255f }
+        .getOrDefault(0.5f)
+        .coerceIn(0f, 1f)
 }
 
 /** Toggles the screen between landscape and portrait; the original orientation is restored when the player closes. */
