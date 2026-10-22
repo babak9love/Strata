@@ -408,16 +408,18 @@ private fun IconShapes(a: AppearancePrefs, onShape: (IconShape) -> Unit) {
 private fun FolderStyles(a: AppearancePrefs, folderTint: androidx.compose.ui.graphics.ColorFilter, onStyle: (FolderStyle) -> Unit) {
     val colors = MaterialTheme.colorScheme
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        maxItemsInEachRow = 4,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         FolderStyle.entries.forEach { style ->
             val selected = a.folderStyle == style
             val description = stringResource(style.label)
             Box(
                 Modifier
-                    .size(width = 72.dp, height = 60.dp)
+                    .weight(1f)
+                    .height(60.dp)
                     .clip(MaterialTheme.shapes.medium)
                     .background(if (selected) colors.secondaryContainer else Color.Transparent)
                     .border(1.dp, if (selected) colors.primary else colors.outlineVariant, MaterialTheme.shapes.medium)
@@ -433,5 +435,7 @@ private fun FolderStyles(a: AppearancePrefs, folderTint: androidx.compose.ui.gra
                 )
             }
         }
+        // Fill the last row so its tiles keep the same width as the others.
+        repeat((4 - FolderStyle.entries.size % 4) % 4) { androidx.compose.foundation.layout.Spacer(Modifier.weight(1f)) }
     }
 }
