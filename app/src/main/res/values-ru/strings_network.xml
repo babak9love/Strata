@@ -306,4 +306,7 @@
     <string name="termux_couldnt_run">Termux не смог выполнить команду</string>
     <string name="termux_no_result">Termux не прислал результат</string>
     <string name="termux_unreachable">Не удалось связаться с Termux</string>
+    <string name="remote_scan_network">Сканировать сеть</string>
+    <string name="remote_scanning">Сканирование…</string>
+    <string name="remote_scan_none">SMB-серверы не найдены</string>
 </resources>

@@ -300,4 +300,7 @@
     <string name="termux_couldnt_run">\u200FTermux نتوانست فرمان را اجرا کند</string>
     <string name="termux_no_result">\u200FTermux نتیجه‌ای نفرستاد</string>
     <string name="termux_unreachable">ارتباط با Termux برقرار نشد</string>
+    <string name="remote_scan_network">اسکن شبکه</string>
+    <string name="remote_scanning">در حال اسکن…</string>
+    <string name="remote_scan_none">سرور SMB پیدا نشد</string>
 </resources>

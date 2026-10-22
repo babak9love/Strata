@@ -33,6 +33,8 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -56,7 +58,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,7 +82,11 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.cluvex.strata.R
+import dev.cluvex.strata.core.remote.LanHost
+import dev.cluvex.strata.core.remote.LanScanner
 import dev.cluvex.strata.core.remote.RemoteConnection
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import dev.cluvex.strata.core.remote.RemoteEntry
 import dev.cluvex.strata.core.remote.RemotePaths
 import dev.cluvex.strata.core.remote.RemoteProtocol
@@ -471,6 +480,12 @@ private fun ConnectionEditorDialog(
     var anonymous by remember { mutableStateOf(existing?.anonymous ?: false) }
     var savePassword by remember { mutableStateOf(existing?.savePassword ?: true) }
     var folder by remember { mutableStateOf(existing?.initialPath?.takeIf { it != "/" } ?: "") }
+    var scanning by remember { mutableStateOf(false) }
+    var scanDone by remember { mutableStateOf(false) }
+    val found = remember { mutableStateListOf<LanHost>() }
+    var scanJob by remember { mutableStateOf<Job?>(null) }
+    val scope = rememberCoroutineScope()
+    DisposableEffect(Unit) { onDispose { scanJob?.cancel() } }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -492,6 +507,39 @@ private fun ConnectionEditorDialog(
                     }
                 }
                 val ltr = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr)
+                if (protocol == RemoteProtocol.SMB) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TextButton(
+                            enabled = !scanning,
+                            onClick = {
+                                found.clear(); scanDone = false; scanning = true
+                                scanJob?.cancel()
+                                scanJob = scope.launch {
+                                    try { LanScanner.scan().collect { found += it } } finally { scanning = false; scanDone = true }
+                                }
+                            },
+                        ) { Text(stringResource(R.string.remote_scan_network)) }
+                        if (scanning) {
+                            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                            Text(stringResource(R.string.remote_scanning), style = MaterialTheme.typography.bodySmall)
+                        } else if (scanDone && found.isEmpty()) {
+                            Text(stringResource(R.string.remote_scan_none), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    if (found.isNotEmpty()) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            found.sortedBy { h -> h.ip.substringAfterLast('.').toIntOrNull() ?: 0 }.forEach { h ->
+                                AssistChip(
+                                    onClick = {
+                                        host = h.ip
+                                        if (name.isBlank()) name = h.name ?: h.ip
+                                    },
+                                    label = { Text(if (h.name != null) "${h.name} · ${h.ip}" else h.ip) },
+                                )
+                            }
+                        }
+                    }
+                }
                 OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.common_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth().testTag("storage-name"))
                 OutlinedTextField(host, { host = it }, label = { Text(stringResource(R.string.remote_host)) }, singleLine = true, textStyle = ltr, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(

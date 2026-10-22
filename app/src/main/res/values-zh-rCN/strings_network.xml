@@ -297,4 +297,7 @@
     <string name="termux_couldnt_run">Termux 无法运行该命令</string>
     <string name="termux_no_result">Termux 未返回结果</string>
     <string name="termux_unreachable">无法连接 Termux</string>
+    <string name="remote_scan_network">扫描网络</string>
+    <string name="remote_scanning">正在扫描…</string>
+    <string name="remote_scan_none">未找到 SMB 服务器</string>
 </resources>

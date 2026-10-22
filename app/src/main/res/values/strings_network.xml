@@ -300,4 +300,7 @@
     <string name="termux_couldnt_run">Termux couldn\'t run the command</string>
     <string name="termux_no_result">Termux sent no result</string>
     <string name="termux_unreachable">Couldn\'t reach Termux</string>
+    <string name="remote_scan_network">Scan network</string>
+    <string name="remote_scanning">Scanning…</string>
+    <string name="remote_scan_none">No SMB servers found</string>
 </resources>
