@@ -502,13 +502,13 @@ fun ExplorerScreen(
         Dialog.None -> Unit
         is Dialog.NewFolder -> InputDialog(
             title = stringResource(R.string.common_new_folder), label = stringResource(R.string.explorer_folder_name),
-            initial = "New folder", select = InputSelection.ALL,
+            initial = remember(d) { numberedName("New folder", "", ui.pane(d.pane).items) }, select = InputSelection.ALL,
             onConfirm = { vm.newFolder(d.pane, it); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
         is Dialog.NewFile -> InputDialog(
             title = stringResource(R.string.common_new_file), label = stringResource(R.string.explorer_file_name),
-            initial = "New file.txt", select = InputSelection.ALL,
+            initial = remember(d) { numberedName("New file", ".txt", ui.pane(d.pane).items) }, select = InputSelection.ALL,
             onConfirm = { vm.newFile(d.pane, it); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
@@ -819,4 +819,16 @@ private fun FilterBar(query: String, onQuery: (String) -> Unit, onClose: () -> U
             )
         },
     )
+}
+
+/** "New folder", then "New folder 1", "New folder 2"… — the first name no item in the folder already has. */
+private fun numberedName(base: String, ext: String, existing: List<FileItem>): String {
+    val taken = existing.mapTo(HashSet()) { it.name.lowercase() }
+    var name = base + ext
+    var i = 1
+    while (name.lowercase() in taken) {
+        name = "$base $i$ext"
+        i++
+    }
+    return name
 }

@@ -97,6 +97,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.widthIn
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -298,15 +307,14 @@ fun VideoPlayerScreen(
                                 Row(
                                     Modifier
                                         .weight(1f)
-                                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { titleExpanded = !titleExpanded }
-                                        .animateContentSize(),
+                                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { titleExpanded = !titleExpanded },
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
                                         vm.title,
                                         color = Color.White,
                                         style = MaterialTheme.typography.titleMedium,
-                                        maxLines = if (titleExpanded) Int.MAX_VALUE else 1,
+                                        maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.weight(1f, fill = false),
                                     )
@@ -316,6 +324,26 @@ fun VideoPlayerScreen(
                                         tint = Color.White,
                                         modifier = Modifier.rotate(if (titleExpanded) 180f else 0f),
                                     )
+                                    if (titleExpanded) {
+                                        // Full file name in a popup under the title, so the other top-bar buttons never move.
+                                        val maxWidth = (LocalConfiguration.current.screenWidthDp - 24).dp
+                                        Popup(
+                                            popupPositionProvider = remember { TitlePopupPositionProvider() },
+                                            onDismissRequest = { titleExpanded = false },
+                                            properties = PopupProperties(focusable = true),
+                                        ) {
+                                            CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                                                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xF22B2629)) {
+                                                    Text(
+                                                        vm.title,
+                                                        color = Color.White,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        modifier = Modifier.widthIn(max = maxWidth).padding(horizontal = 14.dp, vertical = 12.dp),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                                 CompositionLocalProvider(LocalContentColor provides Color.White) {
                                     SpeedButton(p, Color.White)
@@ -406,6 +434,15 @@ fun VideoPlayerScreen(
         }
         if (audioTracks && player != null) AudioTracksDialog(player) { audioTracks = false }
         info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.VIDEO, onDismiss = { info = null }) }
+    }
+}
+
+/** Places the popup just below the title row, kept inside the window horizontally. */
+private class TitlePopupPositionProvider : PopupPositionProvider {
+    override fun calculatePosition(anchorBounds: IntRect, windowSize: IntSize, layoutDirection: LayoutDirection, popupContentSize: IntSize): IntOffset {
+        val margin = 12
+        val x = anchorBounds.left.coerceAtMost(windowSize.width - popupContentSize.width - margin).coerceAtLeast(margin)
+        return IntOffset(x, anchorBounds.bottom)
     }
 }
 
