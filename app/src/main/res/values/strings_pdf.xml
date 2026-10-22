@@ -144,4 +144,6 @@
     <string name="media_resume_playback">Resume where you left off</string>
     <string name="media_back_to_list">Back to list</string>
     <string name="media_back_to_list_desc">Return to the list after playback is completed.</string>
+    <string name="media_background_play">Background Play</string>
+    <string name="media_exit">Exit</string>
 </resources>

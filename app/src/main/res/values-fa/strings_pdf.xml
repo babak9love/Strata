@@ -140,4 +140,6 @@
     <string name="media_resume_playback">ادامه پخش از آخرین موقعیت</string>
     <string name="media_back_to_list">بازگشت به لیست</string>
     <string name="media_back_to_list_desc">پس از پایان پخش، به لیست فایل‌ها برگردد.</string>
+    <string name="media_background_play">پخش در پس‌زمینه</string>
+    <string name="media_exit">خروج</string>
 </resources>

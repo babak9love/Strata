@@ -148,4 +148,6 @@
     <string name="media_resume_playback">Продолжать с места остановки</string>
     <string name="media_back_to_list">Назад к списку</string>
     <string name="media_back_to_list_desc">Возвращаться к списку после окончания воспроизведения.</string>
+    <string name="media_background_play">Фоновое воспроизведение</string>
+    <string name="media_exit">Выйти</string>
 </resources>

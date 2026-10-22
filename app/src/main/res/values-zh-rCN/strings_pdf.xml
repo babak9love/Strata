@@ -136,4 +136,6 @@
     <string name="media_resume_playback">从上次位置继续播放</string>
     <string name="media_back_to_list">返回列表</string>
     <string name="media_back_to_list_desc">播放结束后返回列表。</string>
+    <string name="media_background_play">后台播放</string>
+    <string name="media_exit">退出</string>
 </resources>

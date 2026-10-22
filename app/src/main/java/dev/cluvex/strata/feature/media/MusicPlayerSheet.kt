@@ -77,12 +77,18 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 @Composable
-fun rememberMediaController(): MediaController? {
+fun rememberMediaController(onDisconnected: () -> Unit = {}): MediaController? {
     val context = LocalContext.current
     var controller by remember { mutableStateOf<MediaController?>(null) }
+    val disconnected by androidx.compose.runtime.rememberUpdatedState(onDisconnected)
     DisposableEffect(Unit) {
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
-        val future = MediaController.Builder(context, token).buildAsync()
+        val future = MediaController.Builder(context, token)
+            .setListener(object : MediaController.Listener {
+                // The service went away (e.g. the notification's X): let the UI close with it.
+                override fun onDisconnected(controller: MediaController) = disconnected()
+            })
+            .buildAsync()
         future.addListener({ controller = runCatching { future.get() }.getOrNull() }, ContextCompat.getMainExecutor(context))
         onDispose {
             controller = null
@@ -102,6 +108,8 @@ fun MusicPlayerSheet(
     onResumeChange: (Boolean) -> Unit = {},
     backToList: Boolean = true,
     onBackToListChange: (Boolean) -> Unit = {},
+    backgroundPlay: Boolean = true,
+    onBackgroundPlayChange: (Boolean) -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     val backToListNow by androidx.compose.runtime.rememberUpdatedState(backToList)
@@ -110,7 +118,7 @@ fun MusicPlayerSheet(
     var menu by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
     val direction = LocalLayoutDirection.current
-    val controller = rememberMediaController()
+    val controller = rememberMediaController(onDisconnected = { onDismissNow() })
     var metadata by remember { mutableStateOf(MediaMetadata.EMPTY) }
     var artwork by remember { mutableStateOf<ImageBitmap?>(null) }
 
@@ -237,6 +245,11 @@ fun MusicPlayerSheet(
                             },
                             trailingIcon = { Switch(checked = backToList, onCheckedChange = null) },
                             onClick = { onBackToListChange(!backToList) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.media_background_play)) },
+                            trailingIcon = { Switch(checked = backgroundPlay, onCheckedChange = null) },
+                            onClick = { onBackgroundPlayChange(!backgroundPlay) },
                         )
                     }
                 }

@@ -490,6 +490,8 @@ fun AppShell(
             },
             backToList = settings.behavior.backToListAudio,
             onBackToListChange = { v -> scope.launch { settingsRepo.editBehavior { it.copy(backToListAudio = v) } } },
+            backgroundPlay = settings.behavior.backgroundAudio,
+            onBackgroundPlayChange = { v -> scope.launch { settingsRepo.editBehavior { it.copy(backgroundAudio = v) } } },
             onDismiss = { openDialog = null },
         )
         is OpenDialog.SignApk -> SignApkDialog(
@@ -611,6 +613,8 @@ private fun Screen(
                 },
                 backToList = settings.behavior.backToListVideo,
                 onBackToListChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(backToListVideo = v) } } },
+                backgroundPlay = settings.behavior.backgroundVideo,
+                onBackgroundPlayChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(backgroundVideo = v) } } },
             )
         }
         is Route.Font -> FontViewerScreen(path = r.path, onBack = actions.pop)

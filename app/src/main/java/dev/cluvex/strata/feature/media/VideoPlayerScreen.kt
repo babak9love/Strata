@@ -114,7 +114,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.content.ComponentName
+import androidx.core.content.ContextCompat
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import com.google.common.util.concurrent.ListenableFuture
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.ExperimentalApi
@@ -182,7 +188,74 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         resume?.saveNow()
     }
 
+    // ---- Background play: the audio of the video keeps going in PlaybackService while the app is hidden.
+    private var bgFuture: ListenableFuture<MediaController>? = null
+    private var bgController: MediaController? = null
+    private var handedOff = false
+
+    /** App went to the background while playing: move playback (audio only) to the media service. */
+    fun handOffToBackground() {
+        val p = player ?: return
+        if (handedOff || !p.playWhenReady) return
+        val items = (0 until p.mediaItemCount).map { i ->
+            val item = p.getMediaItemAt(i)
+            item.buildUpon()
+                .setMediaMetadata(
+                    item.mediaMetadata.buildUpon()
+                        .setExtras(android.os.Bundle().apply { putBoolean(PlaybackService.EXTRA_FROM_VIDEO, true) })
+                        .build(),
+                )
+                .build()
+        }
+        val index = p.currentMediaItemIndex
+        val position = p.currentPosition
+        resume?.saveNow()
+        p.pause()
+        handedOff = true
+        val app = getApplication<Application>()
+        val future = MediaController.Builder(app, SessionToken(app, ComponentName(app, PlaybackService::class.java))).buildAsync()
+        bgFuture = future
+        future.addListener({
+            val c = runCatching { future.get() }.getOrNull() ?: return@addListener
+            if (!handedOff) {
+                releaseBackground()
+                return@addListener
+            }
+            bgController = c
+            c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build()
+            c.setMediaItems(items, index, position)
+            c.prepare()
+            c.play()
+        }, ContextCompat.getMainExecutor(app))
+    }
+
+    /** App is visible again: take playback back from the service, at wherever it got to. */
+    fun reclaimFromBackground() {
+        if (!handedOff) return
+        handedOff = false
+        val c = bgController
+        val p = player
+        if (c != null && c.isConnected && p != null && c.mediaItemCount > 0) {
+            val index = c.currentMediaItemIndex
+            val position = c.currentPosition
+            val playing = c.playWhenReady
+            c.pause()
+            c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false).build()
+            c.clearMediaItems()
+            p.seekTo(index, position)
+            p.playWhenReady = playing
+        }
+        releaseBackground()
+    }
+
+    private fun releaseBackground() {
+        bgFuture?.let { MediaController.releaseFuture(it) }
+        bgFuture = null
+        bgController = null
+    }
+
     override fun onCleared() {
+        releaseBackground()
         saveJob?.cancel()
         resume?.saveNow()
         player?.release()
@@ -212,11 +285,17 @@ fun VideoPlayerScreen(
     onResumeChange: (Boolean) -> Unit = {},
     backToList: Boolean = true,
     onBackToListChange: (Boolean) -> Unit = {},
+    backgroundPlay: Boolean = true,
+    onBackgroundPlayChange: (Boolean) -> Unit = {},
     vm: VideoPlayerViewModel = viewModel(),
 ) {
     SideEffect { vm.resumeEnabled = resume }
     LaunchedEffect(path) { vm.open(path, showHidden) }
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.player?.pause() }
+    val backgroundPlayNow by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        if (backgroundPlayNow) vm.handOffToBackground() else vm.player?.pause()
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { vm.reclaimFromBackground() }
     DisposableEffect(Unit) { onDispose { vm.savePosition() } }
     var controls by remember { mutableStateOf(true) }
     var fill by remember { mutableStateOf(false) }
@@ -426,6 +505,11 @@ fun VideoPlayerScreen(
                                             trailingIcon = { Switch(checked = backToList, onCheckedChange = null) },
                                             onClick = { onBackToListChange(!backToList) },
                                         )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.media_background_play)) },
+                                            trailingIcon = { Switch(checked = backgroundPlay, onCheckedChange = null) },
+                                            onClick = { onBackgroundPlayChange(!backgroundPlay) },
+                                        )
                                     }
                                 }
                             }
@@ -457,7 +541,7 @@ fun VideoPlayerScreen(
                             SeekBar(
                                 p,
                                 Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                                activeColor = Color.White,
+                                activeColor = MaterialTheme.colorScheme.primary,
                                 inactiveColor = Color.White.copy(alpha = 0.3f),
                                 textColor = Color.White,
                                 onSeekingChange = { seeking = it },

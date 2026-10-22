@@ -2,6 +2,7 @@ package dev.cluvex.strata.feature.media
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.OptIn
@@ -10,8 +11,14 @@ import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import dev.cluvex.strata.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,6 +36,8 @@ class PlaybackService : MediaSessionService() {
     private var session: MediaSession? = null
     private var resume: ResumeListener? = null
     @Volatile private var resumeEnabled = true
+    @Volatile private var backgroundAudio = true
+    @Volatile private var backgroundVideo = true
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val handler = Handler(Looper.getMainLooper())
     private val saveTick = object : Runnable {
@@ -39,6 +48,7 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
+    @OptIn(UnstableApi::class)
     override fun onCreate() {
         super.onCreate()
         val player = ExoPlayer.Builder(this)
@@ -52,6 +62,13 @@ class PlaybackService : MediaSessionService() {
             SettingsRepository(applicationContext).settings.map { it.behavior.resumeAudio }.distinctUntilChanged()
                 .collect { resumeEnabled = it }
         }
+        scope.launch {
+            SettingsRepository(applicationContext).settings.map { it.behavior.backgroundAudio to it.behavior.backgroundVideo }.distinctUntilChanged()
+                .collect { (audio, video) ->
+                    backgroundAudio = audio
+                    backgroundVideo = video
+                }
+        }
         resume = ResumeListener(this, ResumeKind.AUDIO, player) { resumeEnabled }.also { player.addListener(it) }
         handler.postDelayed(saveTick, SAVE_INTERVAL_MS)
         val openApp = PendingIntent.getActivity(
@@ -63,12 +80,28 @@ class PlaybackService : MediaSessionService() {
             .setSessionActivity(openApp)
             .setCallback(RestrictedCallback())
             .build()
+        // The "X" in the media notification: the only way to stop background playback once the app is gone.
+        val exitButton = CommandButton.Builder(CommandButton.ICON_UNDEFINED)
+            .setCustomIconResId(R.drawable.ic_notif_close)
+            .setDisplayName(getString(R.string.media_exit))
+            .setSessionCommand(SessionCommand(ACTION_EXIT, Bundle.EMPTY))
+            .build()
+        session?.setMediaButtonPreferences(listOf(exitButton))
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
 
     @OptIn(UnstableApi::class)
     override fun onTaskRemoved(rootIntent: Intent?) {
+        // Swiping the app out of Recents keeps playing when Background Play is on for what is playing.
+        val fromVideo = session?.player?.currentMediaItem?.mediaMetadata?.extras?.getBoolean(EXTRA_FROM_VIDEO) == true
+        val keepPlaying = if (fromVideo) backgroundVideo else backgroundAudio
+        if (!keepPlaying) pauseAllPlayersAndStopSelf()
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun exitPlayback() {
+        resume?.saveNow()
         pauseAllPlayersAndStopSelf()
     }
 
@@ -85,21 +118,43 @@ class PlaybackService : MediaSessionService() {
         super.onDestroy()
     }
 
-    private companion object {
-        const val SAVE_INTERVAL_MS = 5_000L
+    companion object {
+        private const val SAVE_INTERVAL_MS = 5_000L
+        const val ACTION_EXIT = "dev.cluvex.strata.media.EXIT"
+        /** Marks media items that were handed over from the video player, so the video setting applies to them. */
+        const val EXTRA_FROM_VIDEO = "strata_from_video"
     }
 
     private inner class RestrictedCallback : MediaSession.Callback {
         @OptIn(UnstableApi::class)
         override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
             if (controller.packageName == packageName || controller.isTrusted) {
-                return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller).build()
+                val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
+                    .add(SessionCommand(ACTION_EXIT, Bundle.EMPTY))
+                    .build()
+                return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
+                    .setAvailableSessionCommands(sessionCommands)
+                    .build()
             }
             val commands = MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
                 .remove(Player.COMMAND_SET_MEDIA_ITEM)
                 .remove(Player.COMMAND_CHANGE_MEDIA_ITEMS)
                 .build()
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller).setAvailablePlayerCommands(commands).build()
+        }
+
+        @OptIn(UnstableApi::class)
+        override fun onCustomCommand(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            customCommand: SessionCommand,
+            args: Bundle,
+        ): ListenableFuture<SessionResult> {
+            if (customCommand.customAction == ACTION_EXIT) {
+                exitPlayback()
+                return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            }
+            return super.onCustomCommand(session, controller, customCommand, args)
         }
     }
 }
