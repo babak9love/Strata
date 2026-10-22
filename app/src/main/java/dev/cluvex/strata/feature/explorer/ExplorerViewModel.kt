@@ -824,7 +824,10 @@ class ExplorerViewModel(
                 is WrongPasswordException -> true.also { askPassword(pane, item, PasswordPurpose.EXTRACT, wrong = true) }
                 else -> false
             }
-        }, onFinally = { password?.fill('\u0000') }, sound = UiSound.LAND) { done -> refreshAllRevealing(destParent, done.created) }
+        }, onFinally = { password?.fill('\u0000') }, sound = UiSound.LAND) { done ->
+            clearSelection(pane)
+            refreshAllRevealing(destParent, done.created)
+        }
     }
 
     fun createArchive(pane: Pane, items: List<FileItem>, name: String, options: ArchiveOptions, independent: Boolean) {
@@ -877,6 +880,7 @@ class ExplorerViewModel(
                 ArchiveCreator.create(items, dest.absolutePath, options, from, to)
             }
         }, onFinally = { options.password?.fill('\u0000') }, sound = UiSound.SUCCESS) { done ->
+            clearSelection(_state.value.active)
             refreshAllRevealing(dir, done.created)
         }
     }
@@ -987,7 +991,10 @@ class ExplorerViewModel(
             val to = access(dir, write = true, viaRoot = ps.viaRoot)
             val out = FsUtil.uniqueSibling(to.child(to.file(dir), FileCipher.encryptedName(item.name)), isDirectory = false, access = to)
             FileCipher.encrypt(item.path, out.absolutePath, password, from, to)
-        }, onFinally = { password.fill('\u0000') }, sound = UiSound.LOCK) { done -> refreshAllRevealing(dir, done.created) }
+        }, onFinally = { password.fill('\u0000') }, sound = UiSound.LOCK) { done ->
+            clearSelection(pane)
+            refreshAllRevealing(dir, done.created)
+        }
     }
 
     fun decryptFile(pane: Pane, item: FileItem, password: CharArray) {
@@ -1001,7 +1008,10 @@ class ExplorerViewModel(
             FileCipher.decrypt(item.path, out.absolutePath, password, from, to)
         }, onError = { e ->
             (e is IncorrectPasswordException).also { wrong -> if (wrong) askPassword(pane, item, PasswordPurpose.DECRYPT, wrong = true) }
-        }, onFinally = { password.fill('\u0000') }, sound = UiSound.UNLOCK) { done -> refreshAllRevealing(dir, done.created) }
+        }, onFinally = { password.fill('\u0000') }, sound = UiSound.UNLOCK) { done ->
+            clearSelection(pane)
+            refreshAllRevealing(dir, done.created)
+        }
     }
 
     fun splitFile(pane: Pane, item: FileItem, method: SplitMethod, pattern: String) {
@@ -1012,7 +1022,10 @@ class ExplorerViewModel(
             val from = access(dir, write = false, viaRoot = ps.viaRoot)
             val to = access(dir, write = true, viaRoot = ps.viaRoot)
             FileSplitter.split(item.path, dir, method, pattern, from, to)
-        }, sound = UiSound.SUCCESS) { done -> refreshAllRevealing(dir, done.created) }
+        }, sound = UiSound.SUCCESS) { done ->
+            clearSelection(pane)
+            refreshAllRevealing(dir, done.created)
+        }
     }
 
     fun mergeFiles(pane: Pane, parts: List<FileItem>, outputName: String, pdf: Boolean = false) {
