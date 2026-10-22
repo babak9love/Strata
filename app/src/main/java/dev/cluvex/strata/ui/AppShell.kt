@@ -488,6 +488,8 @@ fun AppShell(
                 if (!v) PlaybackPositions.clearAll(context, ResumeKind.AUDIO)
                 scope.launch { settingsRepo.editBehavior { it.copy(resumeAudio = v) } }
             },
+            backToList = settings.behavior.backToListAudio,
+            onBackToListChange = { v -> scope.launch { settingsRepo.editBehavior { it.copy(backToListAudio = v) } } },
             onDismiss = { openDialog = null },
         )
         is OpenDialog.SignApk -> SignApkDialog(
@@ -607,6 +609,8 @@ private fun Screen(
                     if (!v) PlaybackPositions.clearAll(videoContext, ResumeKind.VIDEO)
                     videoScope.launch { settingsRepo.editBehavior { it.copy(resumeVideo = v) } }
                 },
+                backToList = settings.behavior.backToListVideo,
+                onBackToListChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(backToListVideo = v) } } },
             )
         }
         is Route.Font -> FontViewerScreen(path = r.path, onBack = actions.pop)

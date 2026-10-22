@@ -146,4 +146,6 @@
     <string name="media_font_otc">Коллекция OpenType (CFF)</string>
     <string name="media_auto_hide_controls">Автоскрытие кнопок и полосы перемотки</string>
     <string name="media_resume_playback">Продолжать с места остановки</string>
+    <string name="media_back_to_list">Назад к списку</string>
+    <string name="media_back_to_list_desc">Возвращаться к списку после окончания воспроизведения.</string>
 </resources>

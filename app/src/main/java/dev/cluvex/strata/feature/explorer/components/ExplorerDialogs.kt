@@ -68,17 +68,19 @@ fun InputDialog(
     confirmText: String = stringResource(R.string.common_ok),
     select: InputSelection = InputSelection.END,
     ltr: Boolean = false,
+    validate: ((String) -> String?)? = null,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var value by remember { mutableStateOf(TextFieldValue(initial, selection = selectionFor(initial, select))) }
+    val error = validate?.invoke(value.text.trim())
     val focus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(Unit) {
         focus.requestFocus()
         keyboard?.show()
     }
-    val confirm = { if (value.text.isNotBlank()) onConfirm(value.text.trim()) }
+    val confirm = { if (value.text.isNotBlank() && error == null) onConfirm(value.text.trim()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -88,6 +90,8 @@ fun InputDialog(
                 onValueChange = { value = it },
                 label = { Text(label) },
                 singleLine = true,
+                isError = error != null,
+                supportingText = error?.let { msg -> { Text(msg) } },
                 textStyle = if (ltr) LocalTextStyle.current.copy(textDirection = TextDirection.Ltr) else LocalTextStyle.current.copy(textDirection = TextDirection.Content),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { confirm() }),
@@ -95,7 +99,7 @@ fun InputDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = confirm, enabled = value.text.isNotBlank()) { Text(confirmText) }
+            TextButton(onClick = confirm, enabled = value.text.isNotBlank() && error == null) { Text(confirmText) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )

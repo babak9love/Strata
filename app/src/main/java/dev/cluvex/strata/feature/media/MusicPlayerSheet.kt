@@ -63,9 +63,6 @@ import androidx.media3.ui.compose.material3.buttons.PlaybackSpeedToggleButton
 import androidx.media3.ui.compose.material3.buttons.PreviousButton
 import androidx.media3.ui.compose.material3.buttons.RepeatButton
 import androidx.media3.ui.compose.material3.buttons.ShuffleButton
-import androidx.media3.ui.compose.material3.indicator.DurationText
-import androidx.media3.ui.compose.material3.indicator.PositionText
-import androidx.media3.ui.compose.material3.indicator.ProgressSlider
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.MediaSiblings
 import dev.cluvex.strata.core.media.PlaybackPositions
@@ -103,8 +100,12 @@ fun MusicPlayerSheet(
     showHidden: Boolean,
     resume: Boolean = true,
     onResumeChange: (Boolean) -> Unit = {},
+    backToList: Boolean = true,
+    onBackToListChange: (Boolean) -> Unit = {},
     onDismiss: () -> Unit,
 ) {
+    val backToListNow by androidx.compose.runtime.rememberUpdatedState(backToList)
+    val onDismissNow by androidx.compose.runtime.rememberUpdatedState(onDismiss)
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
@@ -129,6 +130,18 @@ fun MusicPlayerSheet(
                 artwork = mediaMetadata.artworkData?.let { bytes ->
                     runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }.getOrNull()
                 }
+            }
+
+            // A track finished: either it moved on to the next one on its own, or it was the last.
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && backToListNow) {
+                    c?.pause()
+                    onDismissNow()
+                }
+            }
+
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state == Player.STATE_ENDED && backToListNow) onDismissNow()
             }
         }
         c?.addListener(listener)
@@ -175,12 +188,7 @@ fun MusicPlayerSheet(
                 Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                ProgressSlider(c, Modifier.fillMaxWidth())
-                Row(Modifier.fillMaxWidth()) {
-                    PositionText(c)
-                    Spacer(Modifier.weight(1f))
-                    DurationText(c)
-                }
+                SeekBar(c, Modifier.fillMaxWidth())
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     ShuffleButton(c)
                     PreviousButton(c)
@@ -215,6 +223,20 @@ fun MusicPlayerSheet(
                             text = { Text(stringResource(R.string.media_resume_playback)) },
                             trailingIcon = { Switch(checked = resume, onCheckedChange = null) },
                             onClick = { onResumeChange(!resume) },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(stringResource(R.string.media_back_to_list))
+                                    Text(
+                                        stringResource(R.string.media_back_to_list_desc),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            },
+                            trailingIcon = { Switch(checked = backToList, onCheckedChange = null) },
+                            onClick = { onBackToListChange(!backToList) },
                         )
                     }
                 }

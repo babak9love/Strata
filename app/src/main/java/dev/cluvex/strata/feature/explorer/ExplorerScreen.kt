@@ -209,7 +209,9 @@ fun ExplorerScreen(
     LaunchedEffect(ui.message) {
         ui.message?.let {
             vm.consumeMessage()
-            (appSnackbar ?: snackbar).showSnackbar(it)
+            // Launched in `scope`, not this effect: consumeMessage() changes the key, which would
+            // cancel this coroutine and dismiss the snackbar a frame after it appeared.
+            scope.launch { (appSnackbar ?: snackbar).showSnackbar(it) }
         }
     }
 
@@ -503,12 +505,14 @@ fun ExplorerScreen(
         is Dialog.NewFolder -> InputDialog(
             title = stringResource(R.string.common_new_folder), label = stringResource(R.string.explorer_folder_name),
             initial = remember(d) { numberedName("New folder", "", ui.pane(d.pane).items) }, select = InputSelection.ALL,
+            validate = nameTakenCheck(ui.pane(d.pane).items, stringResource(R.string.files_item_exists)),
             onConfirm = { vm.newFolder(d.pane, it); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
         is Dialog.NewFile -> InputDialog(
             title = stringResource(R.string.common_new_file), label = stringResource(R.string.explorer_file_name),
             initial = remember(d) { numberedName("New file", ".txt", ui.pane(d.pane).items) }, select = InputSelection.ALL,
+            validate = nameTakenCheck(ui.pane(d.pane).items, stringResource(R.string.files_item_exists)),
             onConfirm = { vm.newFile(d.pane, it); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
@@ -819,6 +823,12 @@ private fun FilterBar(query: String, onQuery: (String) -> Unit, onClose: () -> U
             )
         },
     )
+}
+
+/** Inline validator for name dialogs: flags names already used in this folder (case-insensitive). */
+private fun nameTakenCheck(existing: List<FileItem>, message: String): (String) -> String? {
+    val taken = existing.mapTo(HashSet()) { it.name.lowercase() }
+    return { name -> if (name.lowercase() in taken) message else null }
 }
 
 /** "New folder", then "New folder 1", "New folder 2"… — the first name no item in the folder already has. */

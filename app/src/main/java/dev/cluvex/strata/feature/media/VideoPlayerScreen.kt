@@ -123,6 +123,7 @@ import androidx.media3.ui.compose.material3.Player as PlayerView
 import androidx.media3.ui.compose.material3.PlayerDefaults
 import androidx.media3.ui.compose.material3.buttons.PlaybackSpeedToggleButton
 import androidx.media3.ui.compose.material3.buttons.RepeatButton
+import androidx.media3.ui.compose.material3.buttons.ShuffleButton
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.MediaSiblings
@@ -209,6 +210,8 @@ fun VideoPlayerScreen(
     onAutoHideChange: (Boolean) -> Unit = {},
     resume: Boolean = true,
     onResumeChange: (Boolean) -> Unit = {},
+    backToList: Boolean = true,
+    onBackToListChange: (Boolean) -> Unit = {},
     vm: VideoPlayerViewModel = viewModel(),
 ) {
     SideEffect { vm.resumeEnabled = resume }
@@ -218,6 +221,7 @@ fun VideoPlayerScreen(
     var controls by remember { mutableStateOf(true) }
     var fill by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
+    var seeking by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
     var titleExpanded by remember { mutableStateOf(false) }
     var audioTracks by remember { mutableStateOf(false) }
@@ -245,8 +249,27 @@ fun VideoPlayerScreen(
     }
     val player = vm.player
     BackHandler(onBack = onBack)
+    val backToListNow by androidx.compose.runtime.rememberUpdatedState(backToList)
+    val onBackNow by androidx.compose.runtime.rememberUpdatedState(onBack)
+    DisposableEffect(player) {
+        val listener = object : Player.Listener {
+            // A video finished: either it moved on to the next one on its own, or it was the last.
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && backToListNow) {
+                    player?.pause()
+                    onBackNow()
+                }
+            }
 
-    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !titleExpanded) { controls = false }
+            override fun onPlaybackStateChanged(state: Int) {
+                if (state == Player.STATE_ENDED && backToListNow) onBackNow()
+            }
+        }
+        player?.addListener(listener)
+        onDispose { player?.removeListener(listener) }
+    }
+
+    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !titleExpanded && !seeking) { controls = false }
     ImmersiveWhile(!controls)
     LightSystemBarIcons()
 
@@ -347,7 +370,6 @@ fun VideoPlayerScreen(
                                 }
                                 CompositionLocalProvider(LocalContentColor provides Color.White) {
                                     SpeedButton(p, Color.White)
-                                    RepeatButton(p)
                                 }
                                 IconButton(onClick = rotate) {
                                     Icon(Icons.Rounded.ScreenRotation, contentDescription = stringResource(R.string.media_rotate_screen), tint = Color.White)
@@ -390,6 +412,20 @@ fun VideoPlayerScreen(
                                             trailingIcon = { Switch(checked = resume, onCheckedChange = null) },
                                             onClick = { onResumeChange(!resume) },
                                         )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(stringResource(R.string.media_back_to_list))
+                                                    Text(
+                                                        stringResource(R.string.media_back_to_list_desc),
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    )
+                                                }
+                                            },
+                                            trailingIcon = { Switch(checked = backToList, onCheckedChange = null) },
+                                            onClick = { onBackToListChange(!backToList) },
+                                        )
                                     }
                                 }
                             }
@@ -405,6 +441,7 @@ fun VideoPlayerScreen(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
+                                CompositionLocalProvider(LocalContentColor provides Color.White) { ShuffleButton(p, Modifier.size(40.dp)) }
                                 CrispButton(40.dp, { p?.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
                                 CrispButton(40.dp, { p?.seekBack() }) { SeekIcon(p?.seekBackIncrement ?: 0L, mirrored = false) }
                                 val play = rememberPlayPauseButtonState(p)
@@ -413,9 +450,19 @@ fun VideoPlayerScreen(
                                 }
                                 CrispButton(40.dp, { p?.seekForward() }) { SeekIcon(p?.seekForwardIncrement ?: 0L, mirrored = true) }
                                 CrispButton(40.dp, { p?.seekToNext() }) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
+                                CompositionLocalProvider(LocalContentColor provides Color.White) { RepeatButton(p, Modifier.size(40.dp)) }
                             }
                         }
-                        PlayerDefaults.BottomControls(p, visible)
+                        AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
+                            SeekBar(
+                                p,
+                                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                activeColor = Color.White,
+                                inactiveColor = Color.White.copy(alpha = 0.3f),
+                                textColor = Color.White,
+                                onSeekingChange = { seeking = it },
+                            )
+                        }
                     }
                 },
             )
