@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -41,6 +43,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -492,7 +495,7 @@ private fun ConnectionEditorDialog(
         properties = DialogProperties(dismissOnClickOutside = false),
         title = { Text(if (existing == null) stringResource(R.string.remote_add_storage) else stringResource(R.string.remote_edit_storage)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     protocols.forEach { p ->
                         FilterChip(
@@ -509,7 +512,7 @@ private fun ConnectionEditorDialog(
                 val ltr = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr)
                 if (protocol == RemoteProtocol.SMB) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        TextButton(
+                        FilledTonalButton(
                             enabled = !scanning,
                             onClick = {
                                 found.clear(); scanDone = false; scanning = true
@@ -518,7 +521,11 @@ private fun ConnectionEditorDialog(
                                     try { LanScanner.scan().collect { found += it } } finally { scanning = false; scanDone = true }
                                 }
                             },
-                        ) { Text(stringResource(R.string.remote_scan_network)) }
+                        ) {
+                            Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.remote_scan_network))
+                        }
                         if (scanning) {
                             CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                             Text(stringResource(R.string.remote_scanning), style = MaterialTheme.typography.bodySmall)
