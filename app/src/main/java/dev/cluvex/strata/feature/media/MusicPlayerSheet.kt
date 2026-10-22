@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -205,7 +205,7 @@ fun MusicPlayerSheet(
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.model_sheet_audio_info)) },
-                            leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
+                            leadingIcon = { Icon(Icons.Rounded.Audiotrack, contentDescription = null) },
                             onClick = {
                                 menu = false
                                 info = controller?.currentMediaItem?.mediaId ?: path

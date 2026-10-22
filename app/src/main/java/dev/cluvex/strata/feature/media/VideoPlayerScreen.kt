@@ -44,7 +44,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Crop
-import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.ScreenRotation
 import androidx.compose.material3.DropdownMenu
@@ -249,7 +249,7 @@ fun VideoPlayerScreen(
                                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.model_sheet_video_info)) },
-                                            leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
+                                            leadingIcon = { Icon(Icons.Rounded.Movie, contentDescription = null) },
                                             onClick = {
                                                 menu = false
                                                 info = p?.currentMediaItem?.mediaId ?: path

@@ -29,6 +29,7 @@ import dev.cluvex.strata.core.media.MediaSection
 import dev.cluvex.strata.core.model.FileItem
 import dev.cluvex.strata.ui.asPath
 import dev.cluvex.strata.ui.isolated
+import dev.cluvex.strata.ui.rememberSheetState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -44,7 +45,7 @@ fun MediaInfoSheet(item: FileItem, kind: MediaInfoKind, onDismiss: () -> Unit) {
             .filter { kind == MediaInfoKind.VIDEO || it.title != R.string.media_section_video }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberSheetState()) {
         Column(
             Modifier
                 .verticalScroll(rememberScrollState())
