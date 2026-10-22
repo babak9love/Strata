@@ -52,6 +52,20 @@ enum class FolderStyle(@StringRes val label: Int, @DrawableRes val drawable: Int
     CLASSIC(R.string.model_folder_style_classic, R.drawable.ic_folder_classic),
     FLAT(R.string.model_folder_style_flat, R.drawable.ic_folder_flat),
     PAPERS(R.string.model_folder_style_papers, R.drawable.ic_folder_papers),
+    GOLD(R.string.model_folder_style_gold, R.drawable.ic_folder_gold),
+    AURORA(R.string.model_folder_style_aurora, R.drawable.ic_folder_aurora),
+    CREAM(R.string.model_folder_style_cream, R.drawable.ic_folder_cream),
+    VIOLET(R.string.model_folder_style_violet, R.drawable.ic_folder_violet),
+    CORAL(R.string.model_folder_style_coral, R.drawable.ic_folder_coral),
+    AMBER(R.string.model_folder_style_amber, R.drawable.ic_folder_amber),
+    TAN(R.string.model_folder_style_tan, R.drawable.ic_folder_tan),
+    NEON(R.string.model_folder_style_neon, R.drawable.ic_folder_neon),
+    NEBULA(R.string.model_folder_style_nebula, R.drawable.ic_folder_nebula),
+    SUNSET(R.string.model_folder_style_sunset, R.drawable.ic_folder_sunset),
+    DOCS(R.string.model_folder_style_docs, R.drawable.ic_folder_docs),
+    BURST(R.string.model_folder_style_burst, R.drawable.ic_folder_burst),
+    CRIMSON(R.string.model_folder_style_crimson, R.drawable.ic_folder_crimson),
+    ROSE(R.string.model_folder_style_rose, R.drawable.ic_folder_rose),
 }
 
 enum class MotionStyle(@StringRes val label: Int) {

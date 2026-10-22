@@ -190,4 +190,18 @@
     <string name="model_folder_style_papers">文件</string>
     <string name="model_sheet_audio_info">音频信息</string>
     <string name="model_sheet_video_info">视频信息</string>
+    <string name="model_folder_style_gold">金色</string>
+    <string name="model_folder_style_aurora">极光</string>
+    <string name="model_folder_style_cream">奶油</string>
+    <string name="model_folder_style_violet">紫罗兰</string>
+    <string name="model_folder_style_coral">珊瑚</string>
+    <string name="model_folder_style_amber">琥珀</string>
+    <string name="model_folder_style_tan">驼色</string>
+    <string name="model_folder_style_neon">霓虹</string>
+    <string name="model_folder_style_nebula">星云</string>
+    <string name="model_folder_style_sunset">日落</string>
+    <string name="model_folder_style_docs">文档</string>
+    <string name="model_folder_style_burst">光爆</string>
+    <string name="model_folder_style_crimson">深红</string>
+    <string name="model_folder_style_rose">玫瑰</string>
 </resources>

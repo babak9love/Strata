@@ -204,4 +204,18 @@
     <string name="model_folder_style_papers">Papers</string>
     <string name="model_sheet_audio_info">Audio info</string>
     <string name="model_sheet_video_info">Video info</string>
+    <string name="model_folder_style_gold">Gold</string>
+    <string name="model_folder_style_aurora">Aurora</string>
+    <string name="model_folder_style_cream">Cream</string>
+    <string name="model_folder_style_violet">Violet</string>
+    <string name="model_folder_style_coral">Coral</string>
+    <string name="model_folder_style_amber">Amber</string>
+    <string name="model_folder_style_tan">Tan</string>
+    <string name="model_folder_style_neon">Neon</string>
+    <string name="model_folder_style_nebula">Nebula</string>
+    <string name="model_folder_style_sunset">Sunset</string>
+    <string name="model_folder_style_docs">Docs</string>
+    <string name="model_folder_style_burst">Burst</string>
+    <string name="model_folder_style_crimson">Crimson</string>
+    <string name="model_folder_style_rose">Rose</string>
 </resources>

@@ -190,4 +190,18 @@
     <string name="model_folder_style_papers">С бумагами</string>
     <string name="model_sheet_audio_info">Сведения об аудио</string>
     <string name="model_sheet_video_info">Сведения о видео</string>
+    <string name="model_folder_style_gold">Золото</string>
+    <string name="model_folder_style_aurora">Аврора</string>
+    <string name="model_folder_style_cream">Кремовая</string>
+    <string name="model_folder_style_violet">Фиолетовая</string>
+    <string name="model_folder_style_coral">Коралл</string>
+    <string name="model_folder_style_amber">Янтарь</string>
+    <string name="model_folder_style_tan">Бежевая</string>
+    <string name="model_folder_style_neon">Неон</string>
+    <string name="model_folder_style_nebula">Туманность</string>
+    <string name="model_folder_style_sunset">Закат</string>
+    <string name="model_folder_style_docs">Документы</string>
+    <string name="model_folder_style_burst">Вспышка</string>
+    <string name="model_folder_style_crimson">Багровая</string>
+    <string name="model_folder_style_rose">Роза</string>
 </resources>

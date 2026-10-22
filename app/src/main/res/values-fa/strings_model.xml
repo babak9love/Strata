@@ -190,4 +190,18 @@
     <string name="model_folder_style_papers">اوراق</string>
     <string name="model_sheet_audio_info">اطلاعات صدا</string>
     <string name="model_sheet_video_info">اطلاعات ویدیو</string>
+    <string name="model_folder_style_gold">طلایی</string>
+    <string name="model_folder_style_aurora">شفق</string>
+    <string name="model_folder_style_cream">کرم</string>
+    <string name="model_folder_style_violet">بنفش</string>
+    <string name="model_folder_style_coral">مرجانی</string>
+    <string name="model_folder_style_amber">کهربایی</string>
+    <string name="model_folder_style_tan">قهوه‌ای روشن</string>
+    <string name="model_folder_style_neon">نئون</string>
+    <string name="model_folder_style_nebula">سحابی</string>
+    <string name="model_folder_style_sunset">غروب</string>
+    <string name="model_folder_style_docs">اسناد</string>
+    <string name="model_folder_style_burst">انفجار نور</string>
+    <string name="model_folder_style_crimson">زرشکی</string>
+    <string name="model_folder_style_rose">رز</string>
 </resources>
