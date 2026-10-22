@@ -139,4 +139,5 @@
     <string name="media_font_ttc">Коллекция TrueType</string>
     <string name="media_font_otc">Коллекция OpenType (CFF)</string>
     <string name="media_auto_hide_controls">Автоскрытие кнопок и полосы перемотки</string>
+    <string name="media_resume_playback">Продолжать с места остановки</string>
 </resources>

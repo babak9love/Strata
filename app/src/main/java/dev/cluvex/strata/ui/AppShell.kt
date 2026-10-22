@@ -114,6 +114,8 @@ import dev.cluvex.strata.feature.media.FontViewerScreen
 import dev.cluvex.strata.feature.pdf.PdfReaderScreen
 import dev.cluvex.strata.feature.pdf.ReaderSource
 import dev.cluvex.strata.feature.media.ImageViewerScreen
+import dev.cluvex.strata.core.media.PlaybackPositions
+import dev.cluvex.strata.core.media.ResumeKind
 import dev.cluvex.strata.feature.media.MusicPlayerSheet
 import dev.cluvex.strata.feature.media.VideoPlayerScreen
 import dev.cluvex.strata.feature.ninepatch.NinePatchScreen
@@ -481,6 +483,11 @@ fun AppShell(
         is OpenDialog.Music -> MusicPlayerSheet(
             path = d.path,
             showHidden = settings.showHidden,
+            resume = settings.behavior.resumeAudio,
+            onResumeChange = { v ->
+                if (!v) PlaybackPositions.clearAll(context, ResumeKind.AUDIO)
+                scope.launch { settingsRepo.editBehavior { it.copy(resumeAudio = v) } }
+            },
             onDismiss = { openDialog = null },
         )
         is OpenDialog.SignApk -> SignApkDialog(
@@ -588,12 +595,18 @@ private fun Screen(
         )
         is Route.Video -> {
             val videoScope = rememberCoroutineScope()
+            val videoContext = LocalContext.current
             VideoPlayerScreen(
                 path = r.path,
                 showHidden = settings.showHidden,
                 onBack = actions.pop,
                 autoHide = settings.behavior.videoAutoHide,
                 onAutoHideChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(videoAutoHide = v) } } },
+                resume = settings.behavior.resumeVideo,
+                onResumeChange = { v ->
+                    if (!v) PlaybackPositions.clearAll(videoContext, ResumeKind.VIDEO)
+                    videoScope.launch { settingsRepo.editBehavior { it.copy(resumeVideo = v) } }
+                },
             )
         }
         is Route.Font -> FontViewerScreen(path = r.path, onBack = actions.pop)

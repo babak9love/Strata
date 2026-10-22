@@ -127,4 +127,5 @@
     <string name="media_font_ttc">TrueType 字体集</string>
     <string name="media_font_otc">OpenType 字体集（CFF）</string>
     <string name="media_auto_hide_controls">自动隐藏按钮和进度条</string>
+    <string name="media_resume_playback">从上次位置继续播放</string>
 </resources>

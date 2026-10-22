@@ -54,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -90,6 +91,9 @@ import androidx.media3.ui.compose.material3.buttons.RepeatButton
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.MediaSiblings
+import dev.cluvex.strata.core.media.PlaybackPositions
+import dev.cluvex.strata.core.media.ResumeKind
+import dev.cluvex.strata.core.media.ResumeListener
 import dev.cluvex.strata.core.util.FileKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -104,6 +108,9 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     var title by mutableStateOf("")
         private set
     private var opened: String? = null
+    private var resume: ResumeListener? = null
+    @Volatile var resumeEnabled = true
+    private var saveJob: kotlinx.coroutines.Job? = null
 
     fun open(path: String, showHidden: Boolean) {
         if (opened == path) return
@@ -116,20 +123,36 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
                     title = mediaItem?.mediaMetadata?.displayTitle?.toString().orEmpty()
                 }
             })
-            p.setMediaItems(list.files.map(::mediaItem), list.start, 0L)
+            resume = ResumeListener(getApplication(), ResumeKind.VIDEO, p) { resumeEnabled }.also { p.addListener(it) }
+            p.setMediaItems(list.files.map(::mediaItem), list.start, if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
             p.prepare()
             p.playWhenReady = true
             title = list.current.name
             player = p
+            saveJob?.cancel()
+            saveJob = viewModelScope.launch {
+                while (true) {
+                    delay(SAVE_INTERVAL_MS)
+                    if (p.isPlaying) resume?.saveNow()
+                }
+            }
         }
     }
 
+    fun savePosition() {
+        resume?.saveNow()
+    }
+
     override fun onCleared() {
+        saveJob?.cancel()
+        resume?.saveNow()
         player?.release()
         player = null
     }
 
     companion object {
+        private const val SAVE_INTERVAL_MS = 5_000L
+
         fun mediaItem(file: File): MediaItem = MediaItem.Builder()
             .setUri(Uri.fromFile(file))
             .setMediaId(file.path)
@@ -146,10 +169,14 @@ fun VideoPlayerScreen(
     onBack: () -> Unit,
     autoHide: Boolean = true,
     onAutoHideChange: (Boolean) -> Unit = {},
+    resume: Boolean = true,
+    onResumeChange: (Boolean) -> Unit = {},
     vm: VideoPlayerViewModel = viewModel(),
 ) {
+    SideEffect { vm.resumeEnabled = resume }
     LaunchedEffect(path) { vm.open(path, showHidden) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.player?.pause() }
+    DisposableEffect(Unit) { onDispose { vm.savePosition() } }
     var controls by remember { mutableStateOf(true) }
     var fill by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
@@ -210,6 +237,11 @@ fun VideoPlayerScreen(
                                             text = { Text(stringResource(R.string.media_auto_hide_controls)) },
                                             trailingIcon = { Switch(checked = autoHide, onCheckedChange = null) },
                                             onClick = { onAutoHideChange(!autoHide) },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.media_resume_playback)) },
+                                            trailingIcon = { Switch(checked = resume, onCheckedChange = null) },
+                                            onClick = { onResumeChange(!resume) },
                                         )
                                     }
                                 }

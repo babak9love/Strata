@@ -16,6 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
@@ -62,6 +67,8 @@ import androidx.media3.ui.compose.material3.indicator.PositionText
 import androidx.media3.ui.compose.material3.indicator.ProgressSlider
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.MediaSiblings
+import dev.cluvex.strata.core.media.PlaybackPositions
+import dev.cluvex.strata.core.media.ResumeKind
 import dev.cluvex.strata.core.util.FileKind
 import dev.cluvex.strata.ui.rememberSheetState
 import kotlinx.coroutines.Dispatchers
@@ -87,7 +94,15 @@ fun rememberMediaController(): MediaController? {
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
-fun MusicPlayerSheet(path: String, showHidden: Boolean, onDismiss: () -> Unit) {
+fun MusicPlayerSheet(
+    path: String,
+    showHidden: Boolean,
+    resume: Boolean = true,
+    onResumeChange: (Boolean) -> Unit = {},
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    var menu by remember { mutableStateOf(false) }
     val controller = rememberMediaController()
     var metadata by remember { mutableStateOf(MediaMetadata.EMPTY) }
     var artwork by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -96,7 +111,7 @@ fun MusicPlayerSheet(path: String, showHidden: Boolean, onDismiss: () -> Unit) {
         val c = controller ?: return@LaunchedEffect
         if (c.currentMediaItem?.mediaId == path) return@LaunchedEffect
         val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.AUDIO, showHidden) }
-        c.setMediaItems(list.files.map(::songItem), list.start, 0L)
+        c.setMediaItems(list.files.map(::songItem), list.start, if (resume) PlaybackPositions.get(context, ResumeKind.AUDIO, path) else 0L)
         c.prepare()
         c.play()
     }
@@ -169,6 +184,18 @@ fun MusicPlayerSheet(path: String, showHidden: Boolean, onDismiss: () -> Unit) {
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PlaybackSpeedToggleButton(c)
+                Box {
+                    IconButton(onClick = { menu = true }) {
+                        Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more))
+                    }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.media_resume_playback)) },
+                            trailingIcon = { Switch(checked = resume, onCheckedChange = null) },
+                            onClick = { onResumeChange(!resume) },
+                        )
+                    }
+                }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
             }

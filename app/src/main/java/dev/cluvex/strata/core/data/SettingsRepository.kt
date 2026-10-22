@@ -151,6 +151,8 @@ class SettingsRepository(private val context: Context) {
         val META_SCALE = intPreferencesKey("meta_scale")
         val SHOW_PARENT_ENTRY = booleanPreferencesKey("show_parent_entry")
         val VIDEO_AUTO_HIDE = booleanPreferencesKey("video_auto_hide")
+        val RESUME_AUDIO = booleanPreferencesKey("resume_audio")
+        val RESUME_VIDEO = booleanPreferencesKey("resume_video")
         val SHOW_EXTENSIONS = booleanPreferencesKey("show_extensions")
         val START_FOLDER = stringPreferencesKey("start_folder")
         val START_PATH = stringPreferencesKey("start_path")
@@ -211,7 +213,7 @@ class SettingsRepository(private val context: Context) {
             EDITOR_LINE_NUMBERS, EDITOR_WHITESPACE, EDITOR_SYMBOL_BAR, EDITOR_AUTO_INDENT, EDITOR_AUTO_PAIRS, EDITOR_HIGHLIGHT_LINE,
             EDITOR_HIGHLIGHT_BRACKETS, EDITOR_PINCH_ZOOM, EDITOR_STICKY_SCROLL, EDITOR_INDENT_GUIDES, EDITOR_PIN_LINE_NUMBERS,
             EDITOR_CURSOR_ANIMATION, EDITOR_KEEP_SCREEN_ON, READER_KEEP_SCREEN, APP_LOCK, PERSIAN_CALENDAR,
-            SHOW_PARENT_ENTRY, VIDEO_AUTO_HIDE,
+            SHOW_PARENT_ENTRY, VIDEO_AUTO_HIDE, RESUME_AUDIO, RESUME_VIDEO,
         )
         val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, FOLDER_SCALE, NAME_SCALE, META_SCALE)
         val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE)
@@ -500,6 +502,8 @@ class SettingsRepository(private val context: Context) {
             iconTapSelects = p[Keys.ICON_SELECTS] ?: true,
             keepScreenOnTasks = p[Keys.KEEP_SCREEN_TASKS] ?: false,
             videoAutoHide = p[Keys.VIDEO_AUTO_HIDE] ?: true,
+            resumeAudio = p[Keys.RESUME_AUDIO] ?: true,
+            resumeVideo = p[Keys.RESUME_VIDEO] ?: true,
         )
 
         private fun writeBehavior(p: MutablePreferences, b: BehaviorPrefs) {
@@ -509,6 +513,8 @@ class SettingsRepository(private val context: Context) {
             p[Keys.ICON_SELECTS] = b.iconTapSelects
             p[Keys.KEEP_SCREEN_TASKS] = b.keepScreenOnTasks
             p[Keys.VIDEO_AUTO_HIDE] = b.videoAutoHide
+            p[Keys.RESUME_AUDIO] = b.resumeAudio
+            p[Keys.RESUME_VIDEO] = b.resumeVideo
         }
 
         internal fun readOperations(p: Preferences) = OperationPrefs(

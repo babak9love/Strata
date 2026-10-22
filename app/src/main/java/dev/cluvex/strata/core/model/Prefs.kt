@@ -69,6 +69,8 @@ data class BehaviorPrefs(
     val iconTapSelects: Boolean = true,
     val keepScreenOnTasks: Boolean = false,
     val videoAutoHide: Boolean = true,
+    val resumeAudio: Boolean = true,
+    val resumeVideo: Boolean = true,
 )
 
 enum class ConflictChoice(@StringRes val label: Int) {
