@@ -49,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -330,6 +331,18 @@ fun AppShell(
         vm.openPath(vm.state.value.active, path)
         scope.launch { drawerState.close() }
         stack.clear()
+    }
+
+    // The drawer is only for the file list. When the window changes size (entering or leaving the floating
+    // video window), the drawer's open/closed anchors are recalculated and it can end up open over a screen
+    // other than the file list; so it is closed again right away while another screen is showing.
+    val onOtherScreen = route != Route.Files
+    LaunchedEffect(onOtherScreen) {
+        if (onOtherScreen) {
+            snapshotFlow { drawerState.targetValue }.collect { target ->
+                if (target == DrawerValue.Open) drawerState.snapTo(DrawerValue.Closed)
+            }
+        }
     }
 
     ModalNavigationDrawer(

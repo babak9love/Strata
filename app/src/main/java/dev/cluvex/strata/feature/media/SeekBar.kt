@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -16,6 +17,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import android.os.SystemClock
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -24,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -31,6 +34,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.C
 import androidx.media3.common.Player
@@ -79,16 +84,22 @@ fun SeekBar(
     val shownMs = if (dragFraction != null) (fraction * duration).toLong() else position
 
     Column(modifier) {
-        // Times sit above the bar so they stay readable near the bottom edge of the screen.
-        Row(Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
-            val labelStyle = MaterialTheme.typography.labelLarge
-            Text(formatTime(shownMs), color = textColor, style = labelStyle)
-            Spacer(Modifier.weight(1f))
-            Text(formatTime(duration), color = textColor, style = labelStyle)
+        val labelStyle = MaterialTheme.typography.labelLarge
+        if (!compact) {
+            // Times sit above the bar so they stay readable near the bottom edge of the screen.
+            Row(Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
+                Text(formatTime(shownMs), color = textColor, style = labelStyle)
+                Spacer(Modifier.weight(1f))
+                Text(formatTime(duration), color = textColor, style = labelStyle)
+            }
         }
         if (compact) {
-            // Inset on both sides so the bar is shorter than the time labels row above it.
-            Box(Modifier.fillMaxWidth().padding(horizontal = 40.dp)) {
+            // Compact: elapsed time, bar and total time on one row, with a tight 6dp gap between them.
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(formatTime(shownMs), color = textColor, style = labelStyle)
+            Spacer(Modifier.width(6.dp))
+            Box(Modifier.weight(1f)) {
             CompactBar(
                 fraction = fraction,
                 enabled = player != null && duration > 0,
@@ -128,6 +139,10 @@ fun SeekBar(
                     onSeekingChange(false)
                 },
             )
+            }
+            Spacer(Modifier.width(6.dp))
+            Text(formatTime(duration), color = textColor, style = labelStyle)
+            }
             }
             return@Column
         }
