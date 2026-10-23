@@ -572,7 +572,6 @@ class ExplorerViewModel(
         val dir = items.first().parentPath ?: rootPath
         addClip(ClipboardState(items, move, sourceDir = dir, viaRoot = false))
         UiSounds.play(UiSound.POP)
-        postMessage(trPlural(if (move) R.plurals.explorer_clip_cut else R.plurals.explorer_clip_copied, items.size, items.size))
     }
 
     fun renameItem(item: FileItem, newName: String, onDone: (FileItem) -> Unit) = viewModelScope.launch {
@@ -597,7 +596,6 @@ class ExplorerViewModel(
         addClip(ClipboardState(items, move, sourceDir = ps.path, viaRoot = ps.viaRoot))
         UiSounds.play(UiSound.POP)
         clearSelection(pane)
-        postMessage(trPlural(if (move) R.plurals.explorer_clip_cut else R.plurals.explorer_clip_copied, items.size, items.size))
     }
 
     /** Files staged from an archive go on the clipboard; a cut also removes the entries from the archive after a full paste. */
@@ -607,7 +605,6 @@ class ExplorerViewModel(
         val cut = if (move && archive != null) ArchiveCut(archive, paths) else null
         addClip(ClipboardState(items, move, sourceDir = items.first().parentPath ?: "/", archiveCut = cut), purgeStaged = "archive-clip")
         UiSounds.play(UiSound.POP)
-        postMessage(trPlural(if (move) R.plurals.explorer_clip_cut else R.plurals.explorer_clip_copied, items.size, items.size))
     }
 
     private fun finishArchiveCut(cut: ArchiveCut, moved: Int, total: Int) {
@@ -1231,13 +1228,6 @@ class ExplorerViewModel(
         val items = files.map { FileItem.of(it) }
         addClip(ClipboardState(items, false, sourceDir = items.first().parentPath ?: "/", shareMode = mode), purgeStaged = "shared")
         UiSounds.play(UiSound.POP)
-        postMessage(
-            when (mode) {
-                ShareMode.EXTRACT -> tr(R.string.share_pick_extract)
-                ShareMode.ARCHIVE -> tr(R.string.share_pick_archive)
-                null -> trPlural(R.plurals.explorer_clip_copied, items.size, items.size)
-            },
-        )
     }
 
     fun consumeIncoming(seq: Int) = _state.update { if (it.incoming?.seq == seq) it.copy(incoming = null) else it }

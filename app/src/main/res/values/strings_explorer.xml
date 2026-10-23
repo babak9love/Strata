@@ -56,14 +56,6 @@
     <string name="explorer_task_failed">Failed %1$d: %2$s</string>
     <string name="explorer_task_skipped">Skipped %1$d</string>
     <string name="explorer_task_error">%1$s failed: %2$s</string>
-    <plurals name="explorer_clip_copied">
-        <item quantity="one">%d item(s) copied — open a folder and tap Paste</item>
-        <item quantity="other">%d item(s) copied — open a folder and tap Paste</item>
-    </plurals>
-    <plurals name="explorer_clip_cut">
-        <item quantity="one">%d item(s) cut — open a folder and tap Paste</item>
-        <item quantity="other">%d item(s) cut — open a folder and tap Paste</item>
-    </plurals>
     <string name="explorer_moved_one">Moved %1$s to %2$s</string>
     <plurals name="explorer_moved_many">
         <item quantity="one">Moved %1$d item to %2$s</item>
@@ -272,8 +264,6 @@
     <string name="share_copy_to">Copy to…</string>
     <string name="share_extract_to">Extract to…</string>
     <string name="share_archive_to">Archive to…</string>
-    <string name="share_pick_extract">Open a folder and press Paste to extract here</string>
-    <string name="share_pick_archive">Open a folder and press Paste to archive here</string>
     <string name="explorer_clipboard_queue">Clipboard queue</string>
     <string name="explorer_clip_op_copy">Copy</string>
     <string name="explorer_clip_op_cut">Cut</string>

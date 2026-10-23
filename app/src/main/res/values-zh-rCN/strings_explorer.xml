@@ -55,12 +55,6 @@
     <string name="explorer_task_failed">失败 %1$d 项：%2$s</string>
     <string name="explorer_task_skipped">跳过 %1$d 项</string>
     <string name="explorer_task_error">%1$s时出错：%2$s</string>
-    <plurals name="explorer_clip_copied">
-        <item quantity="other">已复制 %d 项，打开文件夹后点按“粘贴”</item>
-    </plurals>
-    <plurals name="explorer_clip_cut">
-        <item quantity="other">已剪切 %d 项，打开文件夹后点按“粘贴”</item>
-    </plurals>
     <string name="explorer_moved_one">已将 %1$s 移至 %2$s</string>
     <plurals name="explorer_moved_many">
         <item quantity="other">已将 %1$d 项移至 %2$s</item>
@@ -257,8 +251,6 @@
     <string name="share_copy_to">复制到…</string>
     <string name="share_extract_to">解压到…</string>
     <string name="share_archive_to">压缩到…</string>
-    <string name="share_pick_extract">打开文件夹并点击“粘贴”即可在此解压</string>
-    <string name="share_pick_archive">打开文件夹并点击“粘贴”即可在此压缩</string>
     <string name="explorer_clipboard_queue">剪贴板队列</string>
     <string name="explorer_clip_op_copy">复制</string>
     <string name="explorer_clip_op_cut">剪切</string>

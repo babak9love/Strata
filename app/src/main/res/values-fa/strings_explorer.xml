@@ -56,14 +56,6 @@
     <string name="explorer_task_failed">\u200F%1$d مورد ناموفق: \u2068%2$s\u2069</string>
     <string name="explorer_task_skipped">\u200F%1$d مورد رد شد</string>
     <string name="explorer_task_error">\u200F\u2068%1$s\u2069 — خطا: \u2068%2$s\u2069</string>
-    <plurals name="explorer_clip_copied">
-        <item quantity="one">\u200F%d مورد کپی شد — پوشه‌ای را باز کنید و «جای‌گذاری» را بزنید</item>
-        <item quantity="other">\u200F%d مورد کپی شد — پوشه‌ای را باز کنید و «جای‌گذاری» را بزنید</item>
-    </plurals>
-    <plurals name="explorer_clip_cut">
-        <item quantity="one">\u200F%d مورد برش داده شد — پوشه‌ای را باز کنید و «جای‌گذاری» را بزنید</item>
-        <item quantity="other">\u200F%d مورد برش داده شد — پوشه‌ای را باز کنید و «جای‌گذاری» را بزنید</item>
-    </plurals>
     <string name="explorer_moved_one">\u200F\u2068%1$s\u2069 به \u2068%2$s\u2069 منتقل شد</string>
     <plurals name="explorer_moved_many">
         <item quantity="one">\u200F%1$d مورد به \u2068%2$s\u2069 منتقل شد</item>
@@ -272,8 +264,6 @@
     <string name="share_copy_to">کپی در…</string>
     <string name="share_extract_to">استخراج در…</string>
     <string name="share_archive_to">فشرده‌سازی در…</string>
-    <string name="share_pick_extract">پوشه‌ای را باز کنید و «جای‌گذاری» را بزنید تا اینجا استخراج شود</string>
-    <string name="share_pick_archive">پوشه‌ای را باز کنید و «جای‌گذاری» را بزنید تا اینجا فشرده شود</string>
     <string name="explorer_clipboard_queue">صف کلیپ‌بورد</string>
     <string name="explorer_clip_op_copy">کپی</string>
     <string name="explorer_clip_op_cut">برش</string>
