@@ -10,6 +10,7 @@ import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -82,13 +83,10 @@ class PlaybackService : MediaSessionService() {
             .setSessionActivity(openApp)
             .setCallback(RestrictedCallback())
             .build()
-        // The "X" in the media notification: the only way to stop background playback once the app is gone.
-        val exitButton = CommandButton.Builder(CommandButton.ICON_UNDEFINED)
-            .setCustomIconResId(R.drawable.ic_notif_close)
-            .setDisplayName(getString(R.string.media_exit))
-            .setSessionCommand(SessionCommand(ACTION_EXIT, Bundle.EMPTY))
-            .build()
-        session?.setMediaButtonPreferences(listOf(exitButton))
+        player.addListener(object : Player.Listener {
+            override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) = updateNotificationButtons()
+        })
+        updateNotificationButtons()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
@@ -98,6 +96,39 @@ class PlaybackService : MediaSessionService() {
         // Swiping the app out of Recents keeps playing when Background Play is on for what is playing.
         val keepPlaying = if (isPlayingVideoAudio()) backgroundVideo else backgroundAudio
         if (!keepPlaying) pauseAllPlayersAndStopSelf()
+    }
+
+    /**
+     * Extra notification buttons around previous / play / next: Speed on the left, and the X (exit) on the right.
+     * Speed steps through the presets; the X is the only way to stop background playback once the app is gone.
+     */
+    @OptIn(UnstableApi::class)
+    private fun updateNotificationButtons() {
+        val current = session ?: return
+        val speed = current.player.playbackParameters.speed
+        val speedButton = CommandButton.Builder(CommandButton.ICON_UNDEFINED)
+            .setCustomIconResId(speedIcon(speed))
+            .setDisplayName(getString(R.string.media_speed) + " " + (Math.round(speed * 100) / 100f) + "x")
+            .setSessionCommand(SessionCommand(ACTION_SPEED, Bundle.EMPTY))
+            .build()
+        val exitButton = CommandButton.Builder(CommandButton.ICON_UNDEFINED)
+            .setCustomIconResId(R.drawable.ic_notif_close)
+            .setDisplayName(getString(R.string.media_exit))
+            .setSessionCommand(SessionCommand(ACTION_EXIT, Bundle.EMPTY))
+            .build()
+        current.setMediaButtonPreferences(listOf(speedButton, exitButton))
+    }
+
+    /** Icon showing the speed as a number, picked by the nearest 0.05 step between 0.5x and 2x. */
+    private fun speedIcon(speed: Float): Int {
+        val step = Math.round((speed - 0.5f) / 0.05f).coerceIn(0, SPEED_ICONS.size - 1)
+        return SPEED_ICONS[step]
+    }
+
+    private fun cycleSpeed() {
+        val player = session?.player ?: return
+        val current = player.playbackParameters.speed
+        player.setPlaybackSpeed(SPEEDS.firstOrNull { it > current + 0.01f } ?: SPEEDS.first())
     }
 
     /** True while the media service is playing the audio of a video handed over from the video player. */
@@ -126,6 +157,41 @@ class PlaybackService : MediaSessionService() {
     companion object {
         private const val SAVE_INTERVAL_MS = 5_000L
         const val ACTION_EXIT = "dev.cluvex.strata.media.EXIT"
+        private const val ACTION_SPEED = "dev.cluvex.strata.media.SPEED"
+        private val SPEED_ICONS = intArrayOf(
+            R.drawable.ic_notif_speed_050,
+            R.drawable.ic_notif_speed_055,
+            R.drawable.ic_notif_speed_060,
+            R.drawable.ic_notif_speed_065,
+            R.drawable.ic_notif_speed_070,
+            R.drawable.ic_notif_speed_075,
+            R.drawable.ic_notif_speed_080,
+            R.drawable.ic_notif_speed_085,
+            R.drawable.ic_notif_speed_090,
+            R.drawable.ic_notif_speed_095,
+            R.drawable.ic_notif_speed_100,
+            R.drawable.ic_notif_speed_105,
+            R.drawable.ic_notif_speed_110,
+            R.drawable.ic_notif_speed_115,
+            R.drawable.ic_notif_speed_120,
+            R.drawable.ic_notif_speed_125,
+            R.drawable.ic_notif_speed_130,
+            R.drawable.ic_notif_speed_135,
+            R.drawable.ic_notif_speed_140,
+            R.drawable.ic_notif_speed_145,
+            R.drawable.ic_notif_speed_150,
+            R.drawable.ic_notif_speed_155,
+            R.drawable.ic_notif_speed_160,
+            R.drawable.ic_notif_speed_165,
+            R.drawable.ic_notif_speed_170,
+            R.drawable.ic_notif_speed_175,
+            R.drawable.ic_notif_speed_180,
+            R.drawable.ic_notif_speed_185,
+            R.drawable.ic_notif_speed_190,
+            R.drawable.ic_notif_speed_195,
+            R.drawable.ic_notif_speed_200,
+        )
+        private val SPEEDS = floatArrayOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
         /** Marks media items that were handed over from the video player, so the video setting applies to them. */
         const val EXTRA_FROM_VIDEO = "strata_from_video"
     }
@@ -136,6 +202,7 @@ class PlaybackService : MediaSessionService() {
             if (controller.packageName == packageName || controller.isTrusted) {
                 val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
                     .add(SessionCommand(ACTION_EXIT, Bundle.EMPTY))
+                    .add(SessionCommand(ACTION_SPEED, Bundle.EMPTY))
                     .build()
                 return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
                     .setAvailableSessionCommands(sessionCommands)
@@ -176,6 +243,10 @@ class PlaybackService : MediaSessionService() {
         ): ListenableFuture<SessionResult> {
             if (customCommand.customAction == ACTION_EXIT) {
                 exitPlayback()
+                return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            }
+            if (customCommand.customAction == ACTION_SPEED) {
+                cycleSpeed()
                 return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
             }
             return super.onCustomCommand(session, controller, customCommand, args)
