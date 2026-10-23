@@ -383,6 +383,36 @@ fun VideoPlayerScreen(
             onDispose { player.removeListener(pipListener) }
         }
     }
+    // Play/pause button inside the floating window: the system sends a broadcast, the player toggles,
+    // and the button's icon is refreshed whenever the playing state changes.
+    DisposableEffect(player, activity) {
+        if (player == null || activity == null) {
+            onDispose { }
+        } else {
+            val receiver = object : android.content.BroadcastReceiver() {
+                override fun onReceive(c: Context?, intent: android.content.Intent?) {
+                    if (intent?.action != VideoPip.ACTION_TOGGLE) return
+                    if (player.playWhenReady) player.pause() else player.play()
+                }
+            }
+            androidx.core.content.ContextCompat.registerReceiver(
+                activity,
+                receiver,
+                android.content.IntentFilter(VideoPip.ACTION_TOGGLE),
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
+            )
+            val stateListener = object : Player.Listener {
+                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                    VideoPip.refresh(activity, playWhenReady)
+                }
+            }
+            player.addListener(stateListener)
+            onDispose {
+                player.removeListener(stateListener)
+                runCatching { activity.unregisterReceiver(receiver) }
+            }
+        }
+    }
     // In the floating window only the picture is shown, fitted to the window.
     var modeBeforePip by remember { mutableStateOf<VideoScaleMode?>(null) }
     LaunchedEffect(inPip) {
@@ -544,7 +574,7 @@ fun VideoPlayerScreen(
                                     SpeedButton(p, Color.White)
                                 }
                                 if (activity != null && VideoPip.isSupported(activity)) {
-                                    IconButton(onClick = { VideoPip.enter(activity) }) {
+                                    IconButton(onClick = { VideoPip.enter(activity, p?.playWhenReady == true) }) {
                                         Icon(Icons.Rounded.PictureInPictureAlt, contentDescription = stringResource(R.string.media_pip), tint = Color.White)
                                     }
                                 }

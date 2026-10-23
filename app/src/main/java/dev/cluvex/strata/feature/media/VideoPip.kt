@@ -1,8 +1,12 @@
 package dev.cluvex.strata.feature.media
 
 import android.app.Activity
+import android.app.PendingIntent
 import android.app.PictureInPictureParams
+import android.app.RemoteAction
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.Rational
 import androidx.media3.common.VideoSize
@@ -29,11 +33,35 @@ object VideoPip {
         }
     }
 
-    fun enter(activity: Activity) {
+    /** Broadcast action sent by the play/pause button inside the floating window. */
+    const val ACTION_TOGGLE = "dev.cluvex.strata.PIP_TOGGLE_PLAYBACK"
+
+    fun enter(activity: Activity, playing: Boolean) {
         if (!isSupported(activity)) return
-        runCatching { activity.enterPictureInPictureMode(buildParams()) }
+        runCatching { activity.enterPictureInPictureMode(buildParams(activity, playing)) }
     }
 
-    private fun buildParams(): PictureInPictureParams =
-        PictureInPictureParams.Builder().setAspectRatio(aspect).build()
+    /** Swaps the play/pause icon of the floating window to match the player. */
+    fun refresh(activity: Activity, playing: Boolean) {
+        if (!isSupported(activity)) return
+        runCatching { activity.setPictureInPictureParams(buildParams(activity, playing)) }
+    }
+
+    private fun buildParams(activity: Activity, playing: Boolean): PictureInPictureParams {
+        val title = if (playing) "Pause" else "Play"
+        val icon = Icon.createWithResource(
+            activity,
+            if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
+        )
+        val intent = PendingIntent.getBroadcast(
+            activity,
+            0,
+            Intent(ACTION_TOGGLE).setPackage(activity.packageName),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        return PictureInPictureParams.Builder()
+            .setAspectRatio(aspect)
+            .setActions(listOf(RemoteAction(icon, title, title, intent)))
+            .build()
+    }
 }

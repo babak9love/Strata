@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -26,7 +26,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -94,12 +93,15 @@ fun SeekBar(
             }
         }
         if (compact) {
-            // Compact: elapsed time, bar and total time on one row, with a tight 6dp gap between them.
+            // Compact: times sit just above the two ends of the bar, which is inset 40dp on both sides.
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(formatTime(shownMs), color = textColor, style = labelStyle)
-            Spacer(Modifier.width(6.dp))
-            Box(Modifier.weight(1f)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 40.dp)) {
+                Text(formatTime(shownMs), color = textColor, style = labelStyle)
+                Spacer(Modifier.weight(1f))
+                Text(formatTime(duration), color = textColor, style = labelStyle)
+            }
+            // The canvas is 40dp tall with the 8dp track centred, so lift it to leave about 8dp between text and track.
+            Box(Modifier.fillMaxWidth().padding(horizontal = 40.dp).offset(y = (-8).dp)) {
             CompactBar(
                 fraction = fraction,
                 enabled = player != null && duration > 0,
@@ -139,9 +141,6 @@ fun SeekBar(
                     onSeekingChange(false)
                 },
             )
-            }
-            Spacer(Modifier.width(6.dp))
-            Text(formatTime(duration), color = textColor, style = labelStyle)
             }
             }
             return@Column
@@ -223,6 +222,8 @@ private fun CompactBar(
         val thumbW = 4.dp.toPx()
         val thumbH = 28.dp.toPx()
         val cy = size.height / 2f
+        // In the tiny picture-in-picture window the bar can be narrower than the thumb; coerceIn would throw on an empty range.
+        if (size.width <= thumbW) return@Canvas
         val cx = (fraction.coerceIn(0f, 1f) * size.width).coerceIn(thumbW / 2f, size.width - thumbW / 2f)
         val radius = CornerRadius(trackH / 2f, trackH / 2f)
         val activeEnd = cx - gap
