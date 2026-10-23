@@ -628,6 +628,10 @@ private fun Screen(
                 onBackToListChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(backToListVideo = v) } } },
                 backgroundPlay = settings.behavior.backgroundVideo,
                 onBackgroundPlayChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(backgroundVideo = v) } } },
+                seekBackSeconds = settings.behavior.seekBackSeconds,
+                onSeekBackChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(seekBackSeconds = v.coerceIn(1, 60)) } } },
+                seekForwardSeconds = settings.behavior.seekForwardSeconds,
+                onSeekForwardChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(seekForwardSeconds = v.coerceIn(1, 60)) } } },
             )
         }
         is Route.Font -> FontViewerScreen(path = r.path, onBack = actions.pop)

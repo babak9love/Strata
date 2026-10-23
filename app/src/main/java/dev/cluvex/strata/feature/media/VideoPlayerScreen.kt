@@ -29,6 +29,8 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -146,6 +148,7 @@ import dev.cluvex.strata.feature.props.MediaInfoSheet
 import dev.cluvex.strata.core.util.FileKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -168,7 +171,11 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         PlaybackService.stopPlayback()
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.VIDEO, showHidden) }
-            val p = ExoPlayer.Builder(getApplication()).build()
+            val skip = dev.cluvex.strata.core.data.SettingsRepository(getApplication()).settings.first().behavior
+            val p = ExoPlayer.Builder(getApplication())
+                .setSeekBackIncrementMs(skip.seekBackSeconds * 1000L)
+                .setSeekForwardIncrementMs(skip.seekForwardSeconds * 1000L)
+                .build()
             p.addListener(object : Player.Listener {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     title = mediaItem?.mediaMetadata?.displayTitle?.toString().orEmpty()
@@ -320,6 +327,10 @@ fun VideoPlayerScreen(
     onBackToListChange: (Boolean) -> Unit = {},
     backgroundPlay: Boolean = true,
     onBackgroundPlayChange: (Boolean) -> Unit = {},
+    seekBackSeconds: Int = 5,
+    onSeekBackChange: (Int) -> Unit = {},
+    seekForwardSeconds: Int = 15,
+    onSeekForwardChange: (Int) -> Unit = {},
     vm: VideoPlayerViewModel = viewModel(),
 ) {
     SideEffect { vm.resumeEnabled = resume }
@@ -335,6 +346,8 @@ fun VideoPlayerScreen(
     var info by remember { mutableStateOf<String?>(null) }
     var titleExpanded by remember { mutableStateOf(false) }
     var audioTracks by remember { mutableStateOf(false) }
+    // Which skip button is being adjusted by a long press: false = rewind, true = forward, null = none.
+    var seekDialog by remember { mutableStateOf<Boolean?>(null) }
     val rotate = rememberRotateAction()
     val view = LocalView.current
     val context = LocalContext.current
@@ -430,6 +443,17 @@ fun VideoPlayerScreen(
         onBack()
     }
     BackHandler(onBack = exit)
+    seekDialog?.let { forward ->
+        SkipLengthDialog(
+            title = stringResource(if (forward) R.string.media_seek_forward_title else R.string.media_seek_back_title),
+            seconds = if (forward) seekForwardSeconds else seekBackSeconds,
+            onDismiss = { seekDialog = null },
+            onSave = { v ->
+                if (forward) onSeekForwardChange(v) else onSeekBackChange(v)
+                seekDialog = null
+            },
+        )
+    }
     val backToListNow by androidx.compose.runtime.rememberUpdatedState(backToList)
     val onBackNow by androidx.compose.runtime.rememberUpdatedState(onBack)
     DisposableEffect(player) {
@@ -678,12 +702,24 @@ fun VideoPlayerScreen(
                             ) {
                                 CompositionLocalProvider(LocalContentColor provides Color.White) { ShuffleButton(p, Modifier.size(40.dp)) }
                                 CrispButton(40.dp, { p?.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
-                                CrispButton(40.dp, { p?.seekBack() }) { SeekIcon(p?.seekBackIncrement ?: 0L, mirrored = false) }
+                                SkipButton(
+                                    onClick = { p?.let { it.seekTo((it.currentPosition - seekBackSeconds * 1000L).coerceAtLeast(0L)) } },
+                                    onLongClick = { seekDialog = false },
+                                ) { SeekIcon(seekBackSeconds * 1000L, mirrored = false) }
                                 val play = rememberPlayPauseButtonState(p)
                                 CrispButton(80.dp, { play.onClick() }) {
                                     Icon(if (play.showPlay) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, null, Modifier.size(80.dp))
                                 }
-                                CrispButton(40.dp, { p?.seekForward() }) { SeekIcon(p?.seekForwardIncrement ?: 0L, mirrored = true) }
+                                SkipButton(
+                                    onClick = {
+                                        p?.let {
+                                            val target = it.currentPosition + seekForwardSeconds * 1000L
+                                            val end = it.duration
+                                            it.seekTo(if (end != androidx.media3.common.C.TIME_UNSET) target.coerceAtMost(end) else target)
+                                        }
+                                    },
+                                    onLongClick = { seekDialog = true },
+                                ) { SeekIcon(seekForwardSeconds * 1000L, mirrored = true) }
                                 CrispButton(40.dp, { p?.seekToNext() }) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
                                 CompositionLocalProvider(LocalContentColor provides Color.White) { RepeatButton(p, Modifier.size(40.dp)) }
                             }
@@ -801,6 +837,59 @@ private fun Context.findActivity(): Activity? {
         c = c.baseContext
     }
     return null
+}
+
+/** A 40dp skip button that also reacts to a long press (used to change the skip length). */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun SkipButton(onClick: () -> Unit, onLongClick: () -> Unit, content: @Composable () -> Unit) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    Box(
+        Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .combinedClickable(
+                role = androidx.compose.ui.semantics.Role.Button,
+                onClick = onClick,
+                onLongClick = {
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    onLongClick()
+                },
+            ),
+        contentAlignment = Alignment.Center,
+    ) { content() }
+}
+
+/** Slider from 1 second to 1 minute for the length of one skip. */
+@Composable
+private fun SkipLengthDialog(title: String, seconds: Int, onDismiss: () -> Unit, onSave: (Int) -> Unit) {
+    var value by remember(seconds) { androidx.compose.runtime.mutableFloatStateOf(seconds.toFloat()) }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                Text(
+                    stringResource(R.string.media_seek_seconds, value.roundToInt()),
+                    style = MaterialTheme.typography.headlineSmall,
+                )
+                androidx.compose.material3.Slider(
+                    value = value,
+                    onValueChange = { value = it },
+                    valueRange = 1f..60f,
+                    steps = 58,
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = { onSave(value.roundToInt().coerceIn(1, 60)) }) {
+                Text(stringResource(R.string.common_save))
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    )
 }
 
 // Real-size vector icons (no scaling), so they stay sharp.

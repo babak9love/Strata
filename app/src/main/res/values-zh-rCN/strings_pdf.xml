@@ -145,4 +145,7 @@
     <string name="media_back_to_list_desc">播放结束后返回列表。</string>
     <string name="media_background_play">后台播放</string>
     <string name="media_exit">退出</string>
+    <string name="media_seek_back_title">后退步长</string>
+    <string name="media_seek_forward_title">快进步长</string>
+    <string name="media_seek_seconds">%1$d 秒</string>
 </resources>

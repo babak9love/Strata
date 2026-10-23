@@ -157,4 +157,7 @@
     <string name="media_back_to_list_desc">Возвращаться к списку после окончания воспроизведения.</string>
     <string name="media_background_play">Фоновое воспроизведение</string>
     <string name="media_exit">Выйти</string>
+    <string name="media_seek_back_title">Шаг перемотки назад</string>
+    <string name="media_seek_forward_title">Шаг перемотки вперёд</string>
+    <string name="media_seek_seconds">%1$d с</string>
 </resources>

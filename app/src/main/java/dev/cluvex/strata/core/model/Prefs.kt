@@ -75,6 +75,8 @@ data class BehaviorPrefs(
     val backToListVideo: Boolean = true,
     val backgroundAudio: Boolean = true,
     val backgroundVideo: Boolean = true,
+    val seekBackSeconds: Int = 5,
+    val seekForwardSeconds: Int = 15,
 )
 
 enum class ConflictChoice(@StringRes val label: Int) {

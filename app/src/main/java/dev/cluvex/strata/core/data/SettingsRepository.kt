@@ -157,6 +157,8 @@ class SettingsRepository(private val context: Context) {
         val BACK_TO_LIST_VIDEO = booleanPreferencesKey("back_to_list_video")
         val BACKGROUND_AUDIO = booleanPreferencesKey("background_audio")
         val BACKGROUND_VIDEO = booleanPreferencesKey("background_video")
+        val SEEK_BACK_SECONDS = intPreferencesKey("seek_back_seconds")
+        val SEEK_FORWARD_SECONDS = intPreferencesKey("seek_forward_seconds")
         val SHOW_EXTENSIONS = booleanPreferencesKey("show_extensions")
         val START_FOLDER = stringPreferencesKey("start_folder")
         val START_PATH = stringPreferencesKey("start_path")
@@ -219,7 +221,7 @@ class SettingsRepository(private val context: Context) {
             EDITOR_CURSOR_ANIMATION, EDITOR_KEEP_SCREEN_ON, READER_KEEP_SCREEN, APP_LOCK, PERSIAN_CALENDAR,
             SHOW_PARENT_ENTRY, VIDEO_AUTO_HIDE, RESUME_AUDIO, RESUME_VIDEO, BACK_TO_LIST_AUDIO, BACK_TO_LIST_VIDEO, BACKGROUND_AUDIO, BACKGROUND_VIDEO,
         )
-        val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, FOLDER_SCALE, NAME_SCALE, META_SCALE)
+        val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, FOLDER_SCALE, NAME_SCALE, META_SCALE, SEEK_BACK_SECONDS, SEEK_FORWARD_SECONDS)
         val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE)
         val STRINGS = listOf(
             SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, FOLDER_STYLE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
@@ -512,6 +514,8 @@ class SettingsRepository(private val context: Context) {
             backToListVideo = p[Keys.BACK_TO_LIST_VIDEO] ?: true,
             backgroundAudio = p[Keys.BACKGROUND_AUDIO] ?: true,
             backgroundVideo = p[Keys.BACKGROUND_VIDEO] ?: true,
+            seekBackSeconds = (p[Keys.SEEK_BACK_SECONDS] ?: 5).coerceIn(1, 60),
+            seekForwardSeconds = (p[Keys.SEEK_FORWARD_SECONDS] ?: 15).coerceIn(1, 60),
         )
 
         private fun writeBehavior(p: MutablePreferences, b: BehaviorPrefs) {
@@ -527,6 +531,8 @@ class SettingsRepository(private val context: Context) {
             p[Keys.BACK_TO_LIST_VIDEO] = b.backToListVideo
             p[Keys.BACKGROUND_AUDIO] = b.backgroundAudio
             p[Keys.BACKGROUND_VIDEO] = b.backgroundVideo
+            p[Keys.SEEK_BACK_SECONDS] = b.seekBackSeconds.coerceIn(1, 60)
+            p[Keys.SEEK_FORWARD_SECONDS] = b.seekForwardSeconds.coerceIn(1, 60)
         }
 
         internal fun readOperations(p: Preferences) = OperationPrefs(

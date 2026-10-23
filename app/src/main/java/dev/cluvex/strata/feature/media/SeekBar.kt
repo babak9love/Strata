@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -70,15 +71,21 @@ fun SeekBar(
     val shownMs = if (dragFraction != null) (fraction * duration).toLong() else position
 
     Column(modifier) {
-        // Times sit above the bar, at the edges, so they stay readable near the bottom edge of the screen.
-        Row(Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
+        // Times sit above the bar. Compact (video): the bar is inset 40dp on both sides and each time stands
+        // right above its end of the bar. Otherwise (audio): times at the edges of the full-width bar.
+        val inset = if (compact) 40.dp else 0.dp
+        Row(Modifier.fillMaxWidth().padding(horizontal = inset).padding(bottom = 2.dp)) {
             val labelStyle = MaterialTheme.typography.labelLarge
             Text(formatTime(shownMs), color = textColor, style = labelStyle)
             Spacer(Modifier.weight(1f))
             Text(formatTime(duration), color = textColor, style = labelStyle)
         }
-        // Same Slider in both players; compact only insets it from the left and right.
-        Box(Modifier.fillMaxWidth().padding(horizontal = if (compact) 40.dp else 0.dp).onSizeChanged { trackWidth = it.width }) {
+        // The Slider is taller than its track; in compact it is lifted a little so the times sit closer to the track.
+        Box(
+            Modifier.fillMaxWidth().padding(horizontal = inset)
+                .offset(y = if (compact) (-4).dp else 0.dp)
+                .onSizeChanged { trackWidth = it.width },
+        ) {
             Slider(
                 value = fraction,
                 onValueChange = {

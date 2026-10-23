@@ -10,6 +10,7 @@ import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -41,6 +42,8 @@ class PlaybackService : MediaSessionService() {
     @Volatile private var resumeEnabled = true
     @Volatile private var backgroundAudio = true
     @Volatile private var backgroundVideo = true
+    @Volatile private var seekBackMs = 5_000L
+    @Volatile private var seekForwardMs = 15_000L
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val handler = Handler(Looper.getMainLooper())
     private val saveTick = object : Runnable {
@@ -73,6 +76,13 @@ class PlaybackService : MediaSessionService() {
                     backgroundVideo = video
                 }
         }
+        scope.launch {
+            SettingsRepository(applicationContext).settings.map { it.behavior.seekBackSeconds to it.behavior.seekForwardSeconds }.distinctUntilChanged()
+                .collect { (back, forward) ->
+                    seekBackMs = back * 1000L
+                    seekForwardMs = forward * 1000L
+                }
+        }
         resume = ResumeListener(this, ResumeKind.AUDIO, player) { resumeEnabled }.also { player.addListener(it) }
         handler.postDelayed(saveTick, SAVE_INTERVAL_MS)
         val openApp = PendingIntent.getActivity(
@@ -80,7 +90,7 @@ class PlaybackService : MediaSessionService() {
             Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        session = MediaSession.Builder(this, player)
+        session = MediaSession.Builder(this, SkipLengthPlayer(player))
             .setSessionActivity(openApp)
             .setCallback(RestrictedCallback())
             .build()
@@ -88,6 +98,20 @@ class PlaybackService : MediaSessionService() {
             override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) = updateNotificationButtons()
         })
         updateNotificationButtons()
+    }
+
+    /** Media keys, headset buttons and the notification skip by the lengths chosen in the video player. */
+    private inner class SkipLengthPlayer(wrapped: Player) : ForwardingPlayer(wrapped) {
+        override fun getSeekBackIncrement(): Long = seekBackMs
+        override fun getSeekForwardIncrement(): Long = seekForwardMs
+        override fun seekBack() {
+            seekTo((currentPosition - seekBackMs).coerceAtLeast(0L))
+        }
+        override fun seekForward() {
+            val end = duration
+            val target = currentPosition + seekForwardMs
+            seekTo(if (end != C.TIME_UNSET) target.coerceAtMost(end) else target)
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session

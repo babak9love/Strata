@@ -153,4 +153,7 @@
     <string name="media_back_to_list_desc">Return to the list after playback is completed.</string>
     <string name="media_background_play">Background Play</string>
     <string name="media_exit">Exit</string>
+    <string name="media_seek_back_title">Rewind step</string>
+    <string name="media_seek_forward_title">Forward step</string>
+    <string name="media_seek_seconds">%1$d s</string>
 </resources>
