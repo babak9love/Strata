@@ -132,7 +132,14 @@ fun MusicPlayerSheet(
     }
     DisposableEffect(controller) {
         val c = controller
+        var hadItems = false
         val listener = object : Player.Listener {
+            // The playlist was emptied from outside (the notification's X): close the sheet too.
+            override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) {
+                if (!timeline.isEmpty) hadItems = true
+                else if (hadItems && reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) onDismissNow()
+            }
+
             override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
                 metadata = mediaMetadata
                 artwork = mediaMetadata.artworkData?.let { bytes ->

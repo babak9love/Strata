@@ -138,6 +138,13 @@ class PlaybackService : MediaSessionService() {
     @OptIn(UnstableApi::class)
     private fun exitPlayback() {
         resume?.saveNow()
+        // Stop and empty the player first: stopSelf() alone does nothing while the app still holds a controller
+        // bound to the service, which left the notification on screen.
+        session?.player?.run {
+            pause()
+            stop()
+            clearMediaItems()
+        }
         pauseAllPlayersAndStopSelf()
     }
 
