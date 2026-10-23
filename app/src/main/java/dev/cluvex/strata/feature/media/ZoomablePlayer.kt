@@ -1,5 +1,7 @@
 package dev.cluvex.strata.feature.media
 
+import android.view.SurfaceView
+import android.widget.FrameLayout
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -29,21 +31,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.ui.compose.ContentFrame
-import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
-import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -186,33 +184,48 @@ fun ZoomablePlayer(
                     }
                 },
         ) {
-            // The surface keeps one fixed size; zoom and pan are drawn with a graphics layer, which is
-            // redrawn without re-measuring. A texture surface follows that layer exactly, so the picture
-            // does not shake while pinching. A SurfaceView is cheaper (and keeps HDR/DRM intact) but cannot
-            // follow a graphics layer or be clipped, so it is used only while the picture is neither zoomed
-            // nor larger than the screen (e.g. FILL / ORIGINAL), and TextureView takes over otherwise.
-            val needsTexture = state.zoomed || base.width > cw + 1f || base.height > ch + 1f
+            // The video is always shown on a SurfaceView, which keeps playback cheap and keeps HDR/DRM intact.
+            // The surface keeps one fixed size (baseW x baseH); zoom and pan are applied as scale and
+            // translation on the SurfaceView itself, so the system compositor moves the picture and
+            // nothing is redrawn by the app. The wrapper does not clip, so a picture larger than the
+            // screen (FILL, ORIGINAL, zoomed) is cut only by the screen edge.
             val baseW = base.width.roundToInt().coerceAtLeast(1)
             val baseH = base.height.roundToInt().coerceAtLeast(1)
-            ContentFrame(
-                player = player,
-                modifier = Modifier
-                    .layout { measurable, c ->
-                        val placeable = measurable.measure(Constraints.fixed(baseW, baseH))
-                        layout(c.maxWidth, c.maxHeight) {
-                            placeable.place((c.maxWidth - baseW) / 2, (c.maxHeight - baseH) / 2)
-                        }
+            var surfaceView by remember { mutableStateOf<SurfaceView?>(null) }
+            DisposableEffect(player, surfaceView) {
+                val sv = surfaceView
+                if (player != null && sv != null) {
+                    player.setVideoSurfaceView(sv)
+                    onDispose { player.clearVideoSurfaceView(sv) }
+                } else {
+                    onDispose { }
+                }
+            }
+            AndroidView(
+                factory = { ctx ->
+                    FrameLayout(ctx).apply {
+                        clipChildren = false
+                        clipToPadding = false
+                        val sv = SurfaceView(ctx)
+                        addView(sv, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+                        surfaceView = sv
                     }
-                    .graphicsLayer {
-                        val zoom = state.zoom
-                        val pan = clampPan(state.pan, zoom)
-                        scaleX = zoom
-                        scaleY = zoom
-                        translationX = pan.x
-                        translationY = pan.y
-                    },
-                surfaceType = if (needsTexture) SURFACE_TYPE_TEXTURE_VIEW else SURFACE_TYPE_SURFACE_VIEW,
-                contentScale = ContentScale.FillBounds,
+                },
+                modifier = Modifier.layout { measurable, c ->
+                    val placeable = measurable.measure(Constraints.fixed(baseW, baseH))
+                    layout(c.maxWidth, c.maxHeight) {
+                        placeable.place((c.maxWidth - baseW) / 2, (c.maxHeight - baseH) / 2)
+                    }
+                },
+                update = { frame ->
+                    val sv = frame.getChildAt(0)
+                    val zoom = state.zoom
+                    val pan = clampPan(state.pan, zoom)
+                    sv.scaleX = zoom
+                    sv.scaleY = zoom
+                    sv.translationX = pan.x
+                    sv.translationY = pan.y
+                },
             )
 
             AnimatedVisibility(
