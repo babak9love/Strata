@@ -73,6 +73,7 @@ import dev.cluvex.strata.feature.props.MediaInfoKind
 import dev.cluvex.strata.feature.props.MediaInfoSheet
 import dev.cluvex.strata.ui.rememberSheetState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -110,6 +111,8 @@ fun MusicPlayerSheet(
     onBackToListChange: (Boolean) -> Unit = {},
     backgroundPlay: Boolean = true,
     onBackgroundPlayChange: (Boolean) -> Unit = {},
+    saveSpeed: Boolean = false,
+    onSaveSpeedChange: (enabled: Boolean, speed: Float) -> Unit = { _, _ -> },
     onDismiss: () -> Unit,
 ) {
     val backToListNow by androidx.compose.runtime.rememberUpdatedState(backToList)
@@ -126,6 +129,8 @@ fun MusicPlayerSheet(
         val c = controller ?: return@LaunchedEffect
         if (c.currentMediaItem?.mediaId == path) return@LaunchedEffect
         val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.AUDIO, showHidden) }
+        val behavior = dev.cluvex.strata.core.data.SettingsRepository(context).settings.first().behavior
+        if (behavior.saveSpeedAudio) c.setPlaybackSpeed(behavior.speedAudio)
         c.setMediaItems(list.files.map(::songItem), list.start, if (resume) PlaybackPositions.get(context, ResumeKind.AUDIO, path) else 0L)
         c.prepare()
         c.play()
@@ -213,7 +218,7 @@ fun MusicPlayerSheet(
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                SpeedButton(c)
+                SpeedButton(c, save = SpeedSave(saveSpeed, onSaveSpeedChange))
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
             }

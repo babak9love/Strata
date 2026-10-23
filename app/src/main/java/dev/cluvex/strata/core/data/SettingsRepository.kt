@@ -159,6 +159,10 @@ class SettingsRepository(private val context: Context) {
         val BACKGROUND_VIDEO = booleanPreferencesKey("background_video")
         val SEEK_BACK_SECONDS = intPreferencesKey("seek_back_seconds")
         val SEEK_FORWARD_SECONDS = intPreferencesKey("seek_forward_seconds")
+        val SAVE_SPEED_VIDEO = booleanPreferencesKey("save_speed_video")
+        val SPEED_VIDEO = floatPreferencesKey("speed_video")
+        val SAVE_SPEED_AUDIO = booleanPreferencesKey("save_speed_audio")
+        val SPEED_AUDIO = floatPreferencesKey("speed_audio")
         val SHOW_EXTENSIONS = booleanPreferencesKey("show_extensions")
         val START_FOLDER = stringPreferencesKey("start_folder")
         val START_PATH = stringPreferencesKey("start_path")
@@ -220,9 +224,10 @@ class SettingsRepository(private val context: Context) {
             EDITOR_HIGHLIGHT_BRACKETS, EDITOR_PINCH_ZOOM, EDITOR_STICKY_SCROLL, EDITOR_INDENT_GUIDES, EDITOR_PIN_LINE_NUMBERS,
             EDITOR_CURSOR_ANIMATION, EDITOR_KEEP_SCREEN_ON, READER_KEEP_SCREEN, APP_LOCK, PERSIAN_CALENDAR,
             SHOW_PARENT_ENTRY, VIDEO_AUTO_HIDE, RESUME_AUDIO, RESUME_VIDEO, BACK_TO_LIST_AUDIO, BACK_TO_LIST_VIDEO, BACKGROUND_AUDIO, BACKGROUND_VIDEO,
+            SAVE_SPEED_VIDEO, SAVE_SPEED_AUDIO,
         )
         val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, FOLDER_SCALE, NAME_SCALE, META_SCALE, SEEK_BACK_SECONDS, SEEK_FORWARD_SECONDS)
-        val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE)
+        val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE, SPEED_VIDEO, SPEED_AUDIO)
         val STRINGS = listOf(
             SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, FOLDER_STYLE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
             START_FOLDER, START_PATH, CONFLICT, UI_DENSITY, OPEN_DEFAULTS, EDITOR_THEME, APK_EXTRACT_DIR, APK_NAME_PATTERN,
@@ -516,6 +521,10 @@ class SettingsRepository(private val context: Context) {
             backgroundVideo = p[Keys.BACKGROUND_VIDEO] ?: true,
             seekBackSeconds = (p[Keys.SEEK_BACK_SECONDS] ?: 5).coerceIn(1, 60),
             seekForwardSeconds = (p[Keys.SEEK_FORWARD_SECONDS] ?: 15).coerceIn(1, 60),
+            saveSpeedVideo = p[Keys.SAVE_SPEED_VIDEO] ?: false,
+            speedVideo = (p[Keys.SPEED_VIDEO] ?: 1f).coerceIn(0.5f, 2f),
+            saveSpeedAudio = p[Keys.SAVE_SPEED_AUDIO] ?: false,
+            speedAudio = (p[Keys.SPEED_AUDIO] ?: 1f).coerceIn(0.5f, 2f),
         )
 
         private fun writeBehavior(p: MutablePreferences, b: BehaviorPrefs) {
@@ -533,6 +542,10 @@ class SettingsRepository(private val context: Context) {
             p[Keys.BACKGROUND_VIDEO] = b.backgroundVideo
             p[Keys.SEEK_BACK_SECONDS] = b.seekBackSeconds.coerceIn(1, 60)
             p[Keys.SEEK_FORWARD_SECONDS] = b.seekForwardSeconds.coerceIn(1, 60)
+            p[Keys.SAVE_SPEED_VIDEO] = b.saveSpeedVideo
+            p[Keys.SPEED_VIDEO] = b.speedVideo.coerceIn(0.5f, 2f)
+            p[Keys.SAVE_SPEED_AUDIO] = b.saveSpeedAudio
+            p[Keys.SPEED_AUDIO] = b.speedAudio.coerceIn(0.5f, 2f)
         }
 
         internal fun readOperations(p: Preferences) = OperationPrefs(

@@ -119,8 +119,16 @@
     <string name="media_original_size">اندازه‌ی اصلی (۱۰۰٪)</string>
     <string name="media_rotate_screen">چرخاندن صفحه</string>
     <string name="media_pip">تصویر در تصویر</string>
+    <string name="media_pip_previous">قبلی</string>
+    <string name="media_pip_next">بعدی</string>
+    <string name="media_pip_play">پخش</string>
+    <string name="media_pip_pause">توقف</string>
+    <string name="media_pip_audio_only">فقط صدا (پخش در پس‌زمینه)</string>
     <string name="media_speed">سرعت</string>
     <string name="media_speed_reset">بازنشانی</string>
+    <string name="media_speed_save">ذخیره</string>
+    <string name="media_mute">قطع صدا</string>
+    <string name="media_unmute">وصل صدا</string>
     <string name="media_audio_tracks">آهنگ‌های صوتی</string>
     <string name="media_audio_track_disable">غیرفعال</string>
     <string name="media_audio_track_n">ترک %1$d</string>

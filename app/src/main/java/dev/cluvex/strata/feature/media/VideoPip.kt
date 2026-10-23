@@ -9,6 +9,8 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.Rational
+import dev.cluvex.strata.R
+import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 
 /**
@@ -33,35 +35,65 @@ object VideoPip {
         }
     }
 
-    /** Broadcast action sent by the play/pause button inside the floating window. */
+    /** Broadcast actions sent by the buttons inside the floating window. */
     const val ACTION_TOGGLE = "dev.cluvex.strata.PIP_TOGGLE_PLAYBACK"
+    const val ACTION_PREVIOUS = "dev.cluvex.strata.PIP_PREVIOUS"
+    const val ACTION_NEXT = "dev.cluvex.strata.PIP_NEXT"
 
-    fun enter(activity: Activity, playing: Boolean) {
+    /** Headphones button: leave the floating window and keep playing the audio only, in the background. */
+    const val ACTION_AUDIO_ONLY = "dev.cluvex.strata.PIP_AUDIO_ONLY"
+
+    val ALL_ACTIONS = listOf(ACTION_TOGGLE, ACTION_PREVIOUS, ACTION_NEXT, ACTION_AUDIO_ONLY)
+
+    fun enter(activity: Activity, player: Player?) {
         if (!isSupported(activity)) return
-        runCatching { activity.enterPictureInPictureMode(buildParams(activity, playing)) }
+        runCatching { activity.enterPictureInPictureMode(buildParams(activity, player)) }
     }
 
-    /** Swaps the play/pause icon of the floating window to match the player. */
-    fun refresh(activity: Activity, playing: Boolean) {
+    /** Refreshes the floating window's buttons (play/pause icon, previous/next enabled state). */
+    fun refresh(activity: Activity, player: Player?) {
         if (!isSupported(activity)) return
-        runCatching { activity.setPictureInPictureParams(buildParams(activity, playing)) }
+        runCatching { activity.setPictureInPictureParams(buildParams(activity, player)) }
     }
 
-    private fun buildParams(activity: Activity, playing: Boolean): PictureInPictureParams {
-        val title = if (playing) "Pause" else "Play"
-        val icon = Icon.createWithResource(
-            activity,
-            if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-        )
+    private fun action(activity: Activity, code: Int, action: String, icon: Int, title: String, enabled: Boolean = true): RemoteAction {
         val intent = PendingIntent.getBroadcast(
             activity,
-            0,
-            Intent(ACTION_TOGGLE).setPackage(activity.packageName),
+            code,
+            Intent(action).setPackage(activity.packageName),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        return RemoteAction(Icon.createWithResource(activity, icon), title, title, intent).also { it.isEnabled = enabled }
+    }
+
+    private fun buildParams(activity: Activity, player: Player?): PictureInPictureParams {
+        val playing = player?.playWhenReady == true
+        // Previous is never disabled: with no earlier video it restarts the current one.
+        val hasNext = player?.hasNextMediaItem() == true
+        // A disabled Next also gets a dimmed icon, because some devices ignore RemoteAction.isEnabled.
+        val previous = action(activity, 1, ACTION_PREVIOUS, R.drawable.ic_pip_previous, activity.getString(R.string.media_pip_previous))
+        val toggle = action(
+            activity, 0, ACTION_TOGGLE,
+            if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
+            activity.getString(if (playing) R.string.media_pip_pause else R.string.media_pip_play),
+        )
+        val next = action(
+            activity, 2, ACTION_NEXT,
+            if (hasNext) R.drawable.ic_pip_next else R.drawable.ic_pip_next_disabled,
+            activity.getString(R.string.media_pip_next), hasNext,
+        )
+        val audio = action(activity, 3, ACTION_AUDIO_ONLY, R.drawable.ic_pip_headphones, activity.getString(R.string.media_pip_audio_only))
+
+        // Some devices allow fewer than 4 buttons; keep the most important ones first.
+        val max = activity.maxNumPictureInPictureActions
+        val actions = when {
+            max >= 4 -> listOf(previous, toggle, next, audio)
+            max == 3 -> listOf(toggle, next, audio)
+            else -> listOf(toggle)
+        }
         return PictureInPictureParams.Builder()
             .setAspectRatio(aspect)
-            .setActions(listOf(RemoteAction(icon, title, title, intent)))
+            .setActions(actions)
             .build()
     }
 }

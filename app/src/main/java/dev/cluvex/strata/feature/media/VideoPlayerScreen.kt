@@ -182,6 +182,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
                 }
             })
             resume = ResumeListener(getApplication(), ResumeKind.VIDEO, p) { resumeEnabled }.also { p.addListener(it) }
+            if (skip.saveSpeedVideo) p.setPlaybackSpeed(skip.speedVideo)
             p.setMediaItems(list.files.map(::mediaItem), list.start, if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
             p.prepare()
             p.playWhenReady = true
@@ -207,12 +208,14 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     private var handedOff = false
 
     /** App went to the background while playing: move playback (audio only) to the media service. */
-    fun handOffToBackground() {
+    fun handOffToBackground(force: Boolean = false) {
         val p = player ?: return
-        if (handedOff || !p.playWhenReady) return
+        if (handedOff || (!force && !p.playWhenReady)) return
+        if (force) p.volume = 1f // "audio only" was asked for: unmute
         val items = backgroundItems(p)
         val index = p.currentMediaItemIndex
         val position = p.currentPosition
+        val mutedVolume = p.volume
         resume?.saveNow()
         p.pause()
         handedOff = true
@@ -227,6 +230,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             }
             bgController = c
             c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build()
+            c.volume = mutedVolume
             c.setMediaItems(items, index, position)
             c.prepare()
             c.play()
@@ -251,6 +255,12 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     fun handOffAndClose() {
         val p = player ?: return
         if (!p.playWhenReady) return
+        if (p.volume == 0f) {
+            // Muted: there is nothing to listen to in the background.
+            resume?.saveNow()
+            p.pause()
+            return
+        }
         val items = backgroundItems(p)
         val index = p.currentMediaItemIndex
         val position = p.currentPosition
@@ -280,6 +290,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             val position = c.currentPosition
             val playing = c.playWhenReady
             c.pause()
+            c.volume = 1f
             c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false).build()
             c.clearMediaItems()
             p.seekTo(index, position)
@@ -331,6 +342,8 @@ fun VideoPlayerScreen(
     onSeekBackChange: (Int) -> Unit = {},
     seekForwardSeconds: Int = 15,
     onSeekForwardChange: (Int) -> Unit = {},
+    saveSpeed: Boolean = false,
+    onSaveSpeedChange: (enabled: Boolean, speed: Float) -> Unit = { _, _ -> },
     vm: VideoPlayerViewModel = viewModel(),
 ) {
     SideEffect { vm.resumeEnabled = resume }
@@ -352,9 +365,14 @@ fun VideoPlayerScreen(
     val view = LocalView.current
     val context = LocalContext.current
     val activity = remember(view) { view.context.findActivity() }
+    // Set by the headphones button of the floating window: the next stop is not a "window closed".
+    var audioOnlyFromPip by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        if (audioOnlyFromPip) {
+            audioOnlyFromPip = false
+            vm.handOffToBackground(force = true)
         // Stopping while in the floating window means the window was closed: stop the video too.
-        if (activity?.isInPictureInPictureMode == true) vm.player?.pause()
+        } else if (activity?.isInPictureInPictureMode == true) vm.player?.pause()
         else if (backgroundPlayNow) vm.handOffToBackground() else vm.player?.pause()
     }
     var inPip by remember { mutableStateOf(activity?.isInPictureInPictureMode == true) }
@@ -396,28 +414,37 @@ fun VideoPlayerScreen(
             onDispose { player.removeListener(pipListener) }
         }
     }
-    // Play/pause button inside the floating window: the system sends a broadcast, the player toggles,
-    // and the button's icon is refreshed whenever the playing state changes.
+    // Buttons inside the floating window (previous, play/pause, next, headphones): the system sends a
+    // broadcast, the player reacts, and the buttons are refreshed whenever the state changes.
     DisposableEffect(player, activity) {
         if (player == null || activity == null) {
             onDispose { }
         } else {
             val receiver = object : android.content.BroadcastReceiver() {
                 override fun onReceive(c: Context?, intent: android.content.Intent?) {
-                    if (intent?.action != VideoPip.ACTION_TOGGLE) return
-                    if (player.playWhenReady) player.pause() else player.play()
+                    when (intent?.action) {
+                        VideoPip.ACTION_TOGGLE -> if (player.playWhenReady) player.pause() else player.play()
+                        VideoPip.ACTION_PREVIOUS -> player.seekToPrevious()
+                        VideoPip.ACTION_NEXT -> player.seekToNext()
+                        VideoPip.ACTION_AUDIO_ONLY -> {
+                            // Close the floating window; ON_STOP then moves the audio to the background service.
+                            audioOnlyFromPip = true
+                            activity.moveTaskToBack(true)
+                        }
+                    }
                 }
             }
+            val filter = android.content.IntentFilter().also { f -> VideoPip.ALL_ACTIONS.forEach(f::addAction) }
             androidx.core.content.ContextCompat.registerReceiver(
                 activity,
                 receiver,
-                android.content.IntentFilter(VideoPip.ACTION_TOGGLE),
+                filter,
                 androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
             )
             val stateListener = object : Player.Listener {
-                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-                    VideoPip.refresh(activity, playWhenReady)
-                }
+                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) = VideoPip.refresh(activity, player)
+                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) = VideoPip.refresh(activity, player)
+                override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) = VideoPip.refresh(activity, player)
             }
             player.addListener(stateListener)
             onDispose {
@@ -595,10 +622,10 @@ fun VideoPlayerScreen(
                                     }
                                 }
                                 CompositionLocalProvider(LocalContentColor provides Color.White) {
-                                    SpeedButton(p, Color.White)
+                                    SpeedButton(p, Color.White, save = SpeedSave(saveSpeed, onSaveSpeedChange))
                                 }
                                 if (activity != null && VideoPip.isSupported(activity)) {
-                                    IconButton(onClick = { VideoPip.enter(activity, p?.playWhenReady == true) }) {
+                                    IconButton(onClick = { VideoPip.enter(activity, p) }) {
                                         Icon(Icons.Rounded.PictureInPictureAlt, contentDescription = stringResource(R.string.media_pip), tint = Color.White)
                                     }
                                 }
@@ -695,11 +722,17 @@ fun VideoPlayerScreen(
                 bottomControls = { p, visible ->
                     Column(Modifier.navigationBarsPadding()) {
                         AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
+                            Box(Modifier.fillMaxWidth().padding(end = 22.dp, bottom = 8.dp), contentAlignment = Alignment.CenterEnd) {
+                                MuteButton(p)
+                            }
+                        }
+                        AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
                             Row(
                                 Modifier.fillMaxWidth().padding(bottom = 12.dp),
                                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
+                                val hasNext = rememberHasNeighbors(p).second
                                 CompositionLocalProvider(LocalContentColor provides Color.White) { ShuffleButton(p, Modifier.size(40.dp)) }
                                 CrispButton(40.dp, { p?.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
                                 SkipButton(
@@ -720,7 +753,7 @@ fun VideoPlayerScreen(
                                     },
                                     onLongClick = { seekDialog = true },
                                 ) { SeekIcon(seekForwardSeconds * 1000L, mirrored = true) }
-                                CrispButton(40.dp, { p?.seekToNext() }) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
+                                CrispButton(40.dp, { p?.seekToNext() }, enabled = hasNext) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
                                 CompositionLocalProvider(LocalContentColor provides Color.White) { RepeatButton(p, Modifier.size(40.dp)) }
                             }
                         }
@@ -894,8 +927,64 @@ private fun SkipLengthDialog(title: String, seconds: Int, onDismiss: () -> Unit,
 
 // Real-size vector icons (no scaling), so they stay sharp.
 @Composable
-private fun CrispButton(slot: Dp, onClick: () -> Unit, content: @Composable () -> Unit) {
-    IconButton(onClick = onClick, modifier = Modifier.size(slot)) { content() }
+private fun CrispButton(slot: Dp, onClick: () -> Unit, enabled: Boolean = true, content: @Composable () -> Unit) {
+    IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(slot)) { content() }
+}
+
+/** Round mute / unmute button for the video itself (the phone's volume is not touched). */
+@Composable
+private fun MuteButton(player: Player?) {
+    var muted by remember(player) { mutableStateOf(player?.volume == 0f) }
+    DisposableEffect(player) {
+        if (player == null) {
+            onDispose { }
+        } else {
+            val listener = object : Player.Listener {
+                override fun onVolumeChanged(volume: Float) {
+                    muted = volume == 0f
+                }
+            }
+            muted = player.volume == 0f
+            player.addListener(listener)
+            onDispose { player.removeListener(listener) }
+        }
+    }
+    Box(
+        Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(Color(0xCC1B1B1B))
+            .clickable(enabled = player != null) { player?.volume = if (muted) 1f else 0f },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
+            contentDescription = stringResource(if (muted) R.string.media_unmute else R.string.media_mute),
+            tint = Color.White,
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+/** Whether there is a previous / next video to go to; follows the playlist, repeat and shuffle changes. */
+@Composable
+private fun rememberHasNeighbors(player: Player?): Pair<Boolean, Boolean> {
+    var state by remember(player) { mutableStateOf((player?.hasPreviousMediaItem() == true) to (player?.hasNextMediaItem() == true)) }
+    DisposableEffect(player) {
+        if (player == null) {
+            onDispose { }
+        } else {
+            val listener = object : Player.Listener {
+                override fun onEvents(p: Player, events: Player.Events) {
+                    state = p.hasPreviousMediaItem() to p.hasNextMediaItem()
+                }
+            }
+            state = player.hasPreviousMediaItem() to player.hasNextMediaItem()
+            player.addListener(listener)
+            onDispose { player.removeListener(listener) }
+        }
+    }
+    return state
 }
 
 @Composable

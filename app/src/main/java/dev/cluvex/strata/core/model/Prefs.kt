@@ -77,6 +77,11 @@ data class BehaviorPrefs(
     val backgroundVideo: Boolean = true,
     val seekBackSeconds: Int = 5,
     val seekForwardSeconds: Int = 15,
+    /** "Save" tick of the speed dialog: when on, the chosen playback speed is kept for next time. */
+    val saveSpeedVideo: Boolean = false,
+    val speedVideo: Float = 1f,
+    val saveSpeedAudio: Boolean = false,
+    val speedAudio: Float = 1f,
 )
 
 enum class ConflictChoice(@StringRes val label: Int) {

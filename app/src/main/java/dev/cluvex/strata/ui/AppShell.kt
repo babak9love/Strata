@@ -505,6 +505,8 @@ fun AppShell(
             onBackToListChange = { v -> scope.launch { settingsRepo.editBehavior { it.copy(backToListAudio = v) } } },
             backgroundPlay = settings.behavior.backgroundAudio,
             onBackgroundPlayChange = { v -> scope.launch { settingsRepo.editBehavior { it.copy(backgroundAudio = v) } } },
+            saveSpeed = settings.behavior.saveSpeedAudio,
+            onSaveSpeedChange = { on, speed -> scope.launch { settingsRepo.editBehavior { it.copy(saveSpeedAudio = on, speedAudio = speed) } } },
             onDismiss = { openDialog = null },
         )
         is OpenDialog.SignApk -> SignApkDialog(
@@ -628,6 +630,8 @@ private fun Screen(
                 onBackToListChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(backToListVideo = v) } } },
                 backgroundPlay = settings.behavior.backgroundVideo,
                 onBackgroundPlayChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(backgroundVideo = v) } } },
+                saveSpeed = settings.behavior.saveSpeedVideo,
+                onSaveSpeedChange = { on, speed -> videoScope.launch { settingsRepo.editBehavior { it.copy(saveSpeedVideo = on, speedVideo = speed) } } },
                 seekBackSeconds = settings.behavior.seekBackSeconds,
                 onSeekBackChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(seekBackSeconds = v.coerceIn(1, 60)) } } },
                 seekForwardSeconds = settings.behavior.seekForwardSeconds,

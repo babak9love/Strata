@@ -6,6 +6,12 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Checkbox
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
@@ -50,23 +56,31 @@ private const val MIN_SPEED = 0.5f
 private const val MAX_SPEED = 2.0f
 private const val STEP = 0.05f
 
+/**
+ * The "Save" tick of the speed dialog: [enabled] is whether the speed is kept for next time, and [onChange]
+ * reports every change of the tick (or of the speed while the tick is on) together with the current speed.
+ */
+class SpeedSave(val enabled: Boolean, val onChange: (enabled: Boolean, speed: Float) -> Unit)
+
 /** Playback-speed icon button; tapping it opens a ruler-style speed dialog. Works for any [Player] (video or audio). */
 @Composable
-fun SpeedButton(player: Player?, tint: Color = LocalContentColor.current) {
+fun SpeedButton(player: Player?, tint: Color = LocalContentColor.current, save: SpeedSave? = null) {
     var open by remember { mutableStateOf(false) }
     IconButton(onClick = { open = true }, enabled = player != null) {
         Icon(Icons.Rounded.SlowMotionVideo, contentDescription = stringResource(R.string.media_speed), tint = tint)
     }
-    if (open && player != null) SpeedDialog(player) { open = false }
+    if (open && player != null) SpeedDialog(player, save) { open = false }
 }
 
 @Composable
-private fun SpeedDialog(player: Player, onDismiss: () -> Unit) {
+private fun SpeedDialog(player: Player, save: SpeedSave?, onDismiss: () -> Unit) {
     var speed by remember { mutableFloatStateOf(player.playbackParameters.speed) }
+    var saveOn by remember { mutableStateOf(save?.enabled == true) }
     val apply: (Float) -> Unit = { v ->
         val s = v.coerceIn(MIN_SPEED, MAX_SPEED)
         speed = s
         player.setPlaybackSpeed(s)
+        if (saveOn) save?.onChange?.invoke(true, s)
     }
     // Fixed width (not the platform default) so the dialog has the same size in the video player and the music sheet.
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -82,7 +96,32 @@ private fun SpeedDialog(player: Player, onDismiss: () -> Unit) {
                     IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_close)) }
                 }
                 Column(Modifier.padding(end = 12.dp, top = 8.dp)) { SpeedRuler(speed, apply) }
-                Row(Modifier.fillMaxWidth().padding(end = 12.dp), horizontalArrangement = Arrangement.End) {
+                Row(
+                    Modifier.fillMaxWidth().padding(end = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (save != null) {
+                        Row(
+                            Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .toggleable(
+                                    value = saveOn,
+                                    role = Role.Checkbox,
+                                    onValueChange = { v ->
+                                        saveOn = v
+                                        save.onChange(v, speed)
+                                    },
+                                )
+                                .padding(end = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(checked = saveOn, onCheckedChange = null, modifier = Modifier.padding(12.dp))
+                            Text(stringResource(R.string.media_speed_save))
+                        }
+                    } else {
+                        Spacer(Modifier.width(1.dp))
+                    }
                     TextButton(onClick = { apply(1f) }) { Text(stringResource(R.string.media_speed_reset)) }
                 }
             }
