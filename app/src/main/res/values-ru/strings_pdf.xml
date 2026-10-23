@@ -125,6 +125,7 @@
     <string name="media_original_size">Исходный размер (100%)</string>
     <string name="media_reset_zoom">Сбросить масштаб</string>
     <string name="media_rotate_screen">Повернуть экран</string>
+    <string name="media_pip">Картинка в картинке</string>
     <string name="media_speed">Скорость</string>
     <string name="media_speed_reset">Сбросить</string>
     <string name="media_audio_tracks">Звуковые дорожки</string>

@@ -123,6 +123,7 @@
     <string name="media_original_size">Original size (100%)</string>
     <string name="media_reset_zoom">Reset zoom</string>
     <string name="media_rotate_screen">Rotate screen</string>
+    <string name="media_pip">Picture-in-picture</string>
     <string name="media_speed">Speed</string>
     <string name="media_speed_reset">Reset</string>
     <string name="media_audio_tracks">Audio tracks</string>

@@ -119,6 +119,7 @@
     <string name="media_original_size">اندازه‌ی اصلی (۱۰۰٪)</string>
     <string name="media_reset_zoom">بازنشانی زوم</string>
     <string name="media_rotate_screen">چرخاندن صفحه</string>
+    <string name="media_pip">تصویر در تصویر</string>
     <string name="media_speed">سرعت</string>
     <string name="media_speed_reset">بازنشانی</string>
     <string name="media_audio_tracks">آهنگ‌های صوتی</string>

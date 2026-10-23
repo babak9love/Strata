@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import android.os.SystemClock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +34,9 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.C
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.SeekParameters
 import kotlinx.coroutines.delay
 import java.util.Locale
 
@@ -40,6 +44,7 @@ import java.util.Locale
  * Seek bar for the audio and video players. While the finger moves along the bar, the time under it is
  * shown live in the left-hand time label; the player seeks on release.
  */
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun SeekBar(
     player: Player?,
@@ -49,11 +54,16 @@ fun SeekBar(
     textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onSeekingChange: (Boolean) -> Unit = {},
     compact: Boolean = false,
+    livePreview: Boolean = false,
 ) {
     var position by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     var dragFraction by remember { mutableStateOf<Float?>(null) }
     var trackWidth by remember { mutableIntStateOf(0) }
+    // Live preview: while the finger is down the video is paused and follows it frame by frame.
+    var wasPlaying by remember { mutableStateOf(false) }
+    var lastSeekAt by remember { mutableLongStateOf(0L) }
+    var savedParams by remember { mutableStateOf<SeekParameters?>(null) }
 
     LaunchedEffect(player) {
         while (true) {
@@ -71,28 +81,54 @@ fun SeekBar(
     Column(modifier) {
         // Times sit above the bar so they stay readable near the bottom edge of the screen.
         Row(Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
-            val labelStyle = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge
+            val labelStyle = MaterialTheme.typography.labelLarge
             Text(formatTime(shownMs), color = textColor, style = labelStyle)
             Spacer(Modifier.weight(1f))
             Text(formatTime(duration), color = textColor, style = labelStyle)
         }
         if (compact) {
+            // Inset on both sides so the bar is shorter than the time labels row above it.
+            Box(Modifier.fillMaxWidth().padding(horizontal = 40.dp)) {
             CompactBar(
                 fraction = fraction,
                 enabled = player != null && duration > 0,
                 activeColor = activeColor,
                 inactiveColor = inactiveColor,
                 onChange = {
-                    if (dragFraction == null) onSeekingChange(true)
+                    if (dragFraction == null) {
+                        onSeekingChange(true)
+                        if (livePreview && player != null) {
+                            wasPlaying = player.playWhenReady
+                            player.pause()
+                            // Nearest keyframe is much faster than an exact seek, so the picture keeps up with the finger.
+                            (player as? ExoPlayer)?.let { exo ->
+                                savedParams = exo.seekParameters
+                                exo.setSeekParameters(SeekParameters.CLOSEST_SYNC)
+                            }
+                        }
+                    }
                     dragFraction = it
+                    if (livePreview && player != null && duration > 0) {
+                        val now = SystemClock.uptimeMillis()
+                        if (now - lastSeekAt >= 80L) {
+                            lastSeekAt = now
+                            player.seekTo((it * duration).toLong())
+                        }
+                    }
                 },
                 onFinish = {
+                    if (livePreview) {
+                        (player as? ExoPlayer)?.setSeekParameters(savedParams ?: SeekParameters.EXACT)
+                        savedParams = null
+                    }
                     dragFraction?.let { f -> player?.seekTo((f * duration).toLong()) }
+                    if (livePreview && wasPlaying) player?.play()
                     position = ((dragFraction ?: fraction) * duration).toLong()
                     dragFraction = null
                     onSeekingChange(false)
                 },
             )
+            }
             return@Column
         }
         Box(Modifier.fillMaxWidth().onSizeChanged { trackWidth = it.width }) {
@@ -124,7 +160,7 @@ fun SeekBar(
 }
 
 /**
- * A thinner seek bar than the stock Slider: a 4dp rounded track with a small gap around a slim thumb.
+ * A thinner seek bar than the stock Slider: an 8dp rounded track with a small gap around a slim thumb.
  * Tap or drag anywhere along it; [onChange] gets the fraction while the finger moves and [onFinish] runs on release.
  */
 @Composable
@@ -144,7 +180,7 @@ private fun CompactBar(
     Canvas(
         Modifier
             .fillMaxWidth()
-            .height(28.dp)
+            .height(40.dp)
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     if (on && size.width > 0) {
@@ -167,10 +203,10 @@ private fun CompactBar(
                 )
             },
     ) {
-        val trackH = 4.dp.toPx()
-        val gap = 4.dp.toPx()
-        val thumbW = 3.dp.toPx()
-        val thumbH = 16.dp.toPx()
+        val trackH = 8.dp.toPx()
+        val gap = 5.dp.toPx()
+        val thumbW = 4.dp.toPx()
+        val thumbH = 28.dp.toPx()
         val cy = size.height / 2f
         val cx = (fraction.coerceIn(0f, 1f) * size.width).coerceIn(thumbW / 2f, size.width - thumbW / 2f)
         val radius = CornerRadius(trackH / 2f, trackH / 2f)

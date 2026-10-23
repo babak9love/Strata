@@ -68,6 +68,7 @@ import androidx.compose.material.icons.rounded.Crop
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.ScreenRotation
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -125,6 +126,7 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.material3.Player as PlayerView
@@ -323,9 +325,6 @@ fun VideoPlayerScreen(
     SideEffect { vm.resumeEnabled = resume }
     LaunchedEffect(path) { vm.open(path, showHidden) }
     val backgroundPlayNow by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-        if (backgroundPlayNow) vm.handOffToBackground() else vm.player?.pause()
-    }
     LifecycleEventEffect(Lifecycle.Event.ON_START) { vm.reclaimFromBackground() }
     DisposableEffect(Unit) { onDispose { vm.savePosition() } }
     var controls by remember { mutableStateOf(true) }
@@ -340,6 +339,18 @@ fun VideoPlayerScreen(
     val view = LocalView.current
     val context = LocalContext.current
     val activity = remember(view) { view.context.findActivity() }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        // Stopping while in the floating window means the window was closed: stop the video too.
+        if (activity?.isInPictureInPictureMode == true) vm.player?.pause()
+        else if (backgroundPlayNow) vm.handOffToBackground() else vm.player?.pause()
+    }
+    var inPip by remember { mutableStateOf(activity?.isInPictureInPictureMode == true) }
+    DisposableEffect(activity) {
+        val host = activity as? androidx.activity.ComponentActivity
+        val listener = androidx.core.util.Consumer<androidx.core.app.PictureInPictureModeChangedInfo> { inPip = it.isInPictureInPictureMode }
+        host?.addOnPictureInPictureModeChangedListener(listener)
+        onDispose { host?.removeOnPictureInPictureModeChangedListener(listener) }
+    }
     val audio = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     var hud by remember { mutableStateOf(Hud(volume = true, fraction = 0f)) }
     var hudVisible by remember { mutableStateOf(false) }
@@ -359,6 +370,31 @@ fun VideoPlayerScreen(
         }
     }
     val player = vm.player
+    // Keeps the floating window's shape in step with the video.
+    DisposableEffect(player) {
+        if (player == null) {
+            onDispose { }
+        } else {
+            VideoPip.update(player.videoSize)
+            val pipListener = object : Player.Listener {
+                override fun onVideoSizeChanged(size: VideoSize) = VideoPip.update(size)
+            }
+            player.addListener(pipListener)
+            onDispose { player.removeListener(pipListener) }
+        }
+    }
+    // In the floating window only the picture is shown, fitted to the window.
+    var modeBeforePip by remember { mutableStateOf<VideoScaleMode?>(null) }
+    LaunchedEffect(inPip) {
+        if (inPip) {
+            controls = false
+            modeBeforePip = zoomState.mode
+            zoomState.select(VideoScaleMode.FIT)
+        } else {
+            modeBeforePip?.let { zoomState.select(it) }
+            modeBeforePip = null
+        }
+    }
     val exit = {
         if (backgroundPlayNow) vm.handOffAndClose()
         onBack()
@@ -507,6 +543,11 @@ fun VideoPlayerScreen(
                                 CompositionLocalProvider(LocalContentColor provides Color.White) {
                                     SpeedButton(p, Color.White)
                                 }
+                                if (activity != null && VideoPip.isSupported(activity)) {
+                                    IconButton(onClick = { VideoPip.enter(activity) }) {
+                                        Icon(Icons.Rounded.PictureInPictureAlt, contentDescription = stringResource(R.string.media_pip), tint = Color.White)
+                                    }
+                                }
                                 IconButton(onClick = rotate) {
                                     Icon(Icons.Rounded.ScreenRotation, contentDescription = stringResource(R.string.media_rotate_screen), tint = Color.White)
                                 }
@@ -634,6 +675,7 @@ fun VideoPlayerScreen(
                                 textColor = Color.White,
                                 onSeekingChange = { seeking = it },
                                 compact = true,
+                                livePreview = true,
                             )
                         }
                     }
