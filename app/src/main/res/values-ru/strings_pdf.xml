@@ -117,6 +117,13 @@
     <string name="media_cover">Обложка</string>
     <string name="media_fit_screen">Вписать в экран</string>
     <string name="media_fill_screen">Заполнить экран</string>
+    <string name="media_screen_size">Размер экрана</string>
+    <string name="media_stretch">Растянуть</string>
+    <string name="media_ratio_16_9">16:9</string>
+    <string name="media_ratio_4_3">4:3</string>
+    <string name="media_ratio_21_9">21:9</string>
+    <string name="media_original_size">Исходный размер (100%)</string>
+    <string name="media_reset_zoom">Сбросить масштаб</string>
     <string name="media_rotate_screen">Повернуть экран</string>
     <string name="media_speed">Скорость</string>
     <string name="media_speed_reset">Сбросить</string>

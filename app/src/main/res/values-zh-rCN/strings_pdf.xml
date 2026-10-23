@@ -108,6 +108,13 @@
     <string name="media_cover">封面</string>
     <string name="media_fit_screen">适应屏幕</string>
     <string name="media_fill_screen">填满屏幕</string>
+    <string name="media_screen_size">屏幕尺寸</string>
+    <string name="media_stretch">拉伸</string>
+    <string name="media_ratio_16_9">16:9</string>
+    <string name="media_ratio_4_3">4:3</string>
+    <string name="media_ratio_21_9">21:9</string>
+    <string name="media_original_size">原始大小（100%）</string>
+    <string name="media_reset_zoom">重置缩放</string>
     <string name="media_rotate_screen">旋转屏幕</string>
     <string name="media_speed">速度</string>
     <string name="media_speed_reset">重置</string>

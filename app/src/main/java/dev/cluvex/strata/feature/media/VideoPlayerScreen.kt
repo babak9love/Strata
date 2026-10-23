@@ -62,6 +62,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AspectRatio
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Crop
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Movie
@@ -325,7 +326,8 @@ fun VideoPlayerScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_START) { vm.reclaimFromBackground() }
     DisposableEffect(Unit) { onDispose { vm.savePosition() } }
     var controls by remember { mutableStateOf(true) }
-    var fill by remember { mutableStateOf(false) }
+    val zoomState = remember { VideoZoomState() }
+    var scaleMenu by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
     var seeking by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
@@ -379,18 +381,40 @@ fun VideoPlayerScreen(
         onDispose { player?.removeListener(listener) }
     }
 
-    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !titleExpanded && !seeking) { controls = false }
+    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !scaleMenu && !titleExpanded && !seeking) { controls = false }
     ImmersiveWhile(!controls)
     LightSystemBarIcons()
+
+    // Press and hold on the left or right side plays at 2x until the finger lifts.
+    var holdSpeed by remember { mutableStateOf(1f) }
+    var holding by remember { mutableStateOf(false) }
+    val onMiddleTap = androidx.compose.runtime.rememberUpdatedState<() -> Unit> {
+        player?.let { if (it.playWhenReady) it.pause() else it.play() }
+    }
+    val onSideTap = androidx.compose.runtime.rememberUpdatedState<() -> Unit> { controls = !controls }
+    val onHoldStart = androidx.compose.runtime.rememberUpdatedState<() -> Unit> {
+        player?.let {
+            holdSpeed = it.playbackParameters.speed
+            it.setPlaybackSpeed(2f)
+            holding = true
+        }
+    }
+    val onHoldEnd = androidx.compose.runtime.rememberUpdatedState<() -> Unit> {
+        if (holding) {
+            player?.setPlaybackSpeed(holdSpeed)
+            holding = false
+        }
+    }
 
     val direction = LocalLayoutDirection.current
     Box(Modifier.fillMaxSize().background(Color.Black).testTag("video-player")) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            PlayerView(
+            ZoomablePlayer(
                 player = player,
+                state = zoomState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { controls = !controls }
+                    .videoTapGestures(onMiddleTap, onSideTap, onHoldStart, onHoldEnd)
                     .pointerInput(Unit) {
                         // Vertical swipe: left half = brightness, right half = volume.
                         var volume = true
@@ -423,7 +447,6 @@ fun VideoPlayerScreen(
                             },
                         )
                     },
-                contentScale = if (fill) ContentScale.Crop else ContentScale.Fit,
                 showControls = controls,
                 topControls = { p, visible ->
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
@@ -484,12 +507,44 @@ fun VideoPlayerScreen(
                                 IconButton(onClick = rotate) {
                                     Icon(Icons.Rounded.ScreenRotation, contentDescription = stringResource(R.string.media_rotate_screen), tint = Color.White)
                                 }
-                                IconButton(onClick = { fill = !fill }) {
-                                    Icon(
-                                        if (fill) Icons.Rounded.AspectRatio else Icons.Rounded.Crop,
-                                        contentDescription = stringResource(if (fill) R.string.media_fit_screen else R.string.media_fill_screen),
-                                        tint = Color.White,
-                                    )
+                                Box {
+                                    IconButton(onClick = { scaleMenu = true; controls = true }) {
+                                        Icon(
+                                            Icons.Rounded.AspectRatio,
+                                            contentDescription = stringResource(R.string.media_screen_size),
+                                            tint = Color.White,
+                                        )
+                                    }
+                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }) {
+                                        listOf(
+                                            VideoScaleMode.FIT to R.string.media_fit_screen,
+                                            VideoScaleMode.FILL to R.string.media_fill_screen,
+                                            VideoScaleMode.STRETCH to R.string.media_stretch,
+                                            VideoScaleMode.RATIO_16_9 to R.string.media_ratio_16_9,
+                                            VideoScaleMode.RATIO_4_3 to R.string.media_ratio_4_3,
+                                            VideoScaleMode.RATIO_21_9 to R.string.media_ratio_21_9,
+                                            VideoScaleMode.ORIGINAL to R.string.media_original_size,
+                                        ).forEach { (mode, label) ->
+                                            DropdownMenuItem(
+                                                text = { Text(stringResource(label)) },
+                                                trailingIcon = {
+                                                    if (zoomState.mode == mode) Icon(Icons.Rounded.Check, contentDescription = null)
+                                                },
+                                                onClick = {
+                                                    zoomState.select(mode)
+                                                    scaleMenu = false
+                                                },
+                                            )
+                                        }
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.media_reset_zoom)) },
+                                            enabled = zoomState.zoomed,
+                                            onClick = {
+                                                zoomState.resetZoom()
+                                                scaleMenu = false
+                                            },
+                                        )
+                                    }
                                 }
                                 Box {
                                     IconButton(onClick = { menu = true }) {
@@ -547,7 +602,6 @@ fun VideoPlayerScreen(
                         }
                     }
                 },
-                centerControls = { _, _ -> },
                 bottomControls = { p, visible ->
                     Column(Modifier.navigationBarsPadding()) {
                         AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
@@ -593,6 +647,18 @@ fun VideoPlayerScreen(
                     GestureHud(hud)
                 }
             }
+        }
+        AnimatedVisibility(
+            visible = holding,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 72.dp),
+        ) {
+            Text(
+                "2\u00D7",
+                color = Color.White,
+                modifier = Modifier.background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(50)).padding(horizontal = 14.dp, vertical = 6.dp),
+            )
         }
         if (audioTracks && player != null) AudioTracksDialog(player) { audioTracks = false }
         info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.VIDEO, onDismiss = { info = null }) }

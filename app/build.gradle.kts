@@ -206,6 +206,7 @@ dependencies {
     implementation(libs.ktor.server.cio)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.session)
+    implementation(libs.media3.ui.compose)
     implementation(libs.media3.ui.compose.material3)
 
     implementation(libs.jadx.core)
