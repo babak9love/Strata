@@ -54,6 +54,7 @@ class PlaybackService : MediaSessionService() {
     @OptIn(UnstableApi::class)
     override fun onCreate() {
         super.onCreate()
+        instance = this
         val player = ExoPlayer.Builder(this)
             .setAudioAttributes(
                 AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
@@ -158,10 +159,22 @@ class PlaybackService : MediaSessionService() {
             release()
         }
         session = null
+        if (instance === this) instance = null
         super.onDestroy()
     }
 
     companion object {
+        @Volatile private var instance: PlaybackService? = null
+
+        /**
+         * Stops whatever the service is playing in the background (music, or the audio of a video handed
+         * over earlier) and removes its notification. Called when a new video is opened, so two things
+         * never play at once. Does nothing if the service is not running. Must be called on the main thread.
+         */
+        fun stopPlayback() {
+            instance?.exitPlayback()
+        }
+
         private const val SAVE_INTERVAL_MS = 5_000L
         const val ACTION_EXIT = "dev.cluvex.strata.media.EXIT"
         private const val ACTION_SPEED = "dev.cluvex.strata.media.SPEED"

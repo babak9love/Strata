@@ -1,10 +1,14 @@
 package dev.cluvex.strata.feature.media
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -16,10 +20,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.C
@@ -39,6 +48,7 @@ fun SeekBar(
     inactiveColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     textColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onSeekingChange: (Boolean) -> Unit = {},
+    compact: Boolean = false,
 ) {
     var position by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
@@ -61,9 +71,29 @@ fun SeekBar(
     Column(modifier) {
         // Times sit above the bar so they stay readable near the bottom edge of the screen.
         Row(Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
-            Text(formatTime(shownMs), color = textColor, style = MaterialTheme.typography.labelLarge)
+            val labelStyle = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge
+            Text(formatTime(shownMs), color = textColor, style = labelStyle)
             Spacer(Modifier.weight(1f))
-            Text(formatTime(duration), color = textColor, style = MaterialTheme.typography.labelLarge)
+            Text(formatTime(duration), color = textColor, style = labelStyle)
+        }
+        if (compact) {
+            CompactBar(
+                fraction = fraction,
+                enabled = player != null && duration > 0,
+                activeColor = activeColor,
+                inactiveColor = inactiveColor,
+                onChange = {
+                    if (dragFraction == null) onSeekingChange(true)
+                    dragFraction = it
+                },
+                onFinish = {
+                    dragFraction?.let { f -> player?.seekTo((f * duration).toLong()) }
+                    position = ((dragFraction ?: fraction) * duration).toLong()
+                    dragFraction = null
+                    onSeekingChange(false)
+                },
+            )
+            return@Column
         }
         Box(Modifier.fillMaxWidth().onSizeChanged { trackWidth = it.width }) {
             Slider(
@@ -90,6 +120,69 @@ fun SeekBar(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+/**
+ * A thinner seek bar than the stock Slider: a 4dp rounded track with a small gap around a slim thumb.
+ * Tap or drag anywhere along it; [onChange] gets the fraction while the finger moves and [onFinish] runs on release.
+ */
+@Composable
+private fun CompactBar(
+    fraction: Float,
+    enabled: Boolean,
+    activeColor: Color,
+    inactiveColor: Color,
+    onChange: (Float) -> Unit,
+    onFinish: () -> Unit,
+) {
+    val change by rememberUpdatedState(onChange)
+    val finish by rememberUpdatedState(onFinish)
+    val on by rememberUpdatedState(enabled)
+    val shownActive = if (enabled) activeColor else activeColor.copy(alpha = 0.4f)
+    val shownInactive = if (enabled) inactiveColor else inactiveColor.copy(alpha = 0.4f)
+    Canvas(
+        Modifier
+            .fillMaxWidth()
+            .height(28.dp)
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    if (on && size.width > 0) {
+                        change((offset.x / size.width).coerceIn(0f, 1f))
+                        finish()
+                    }
+                }
+            }
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragStart = { offset -> if (on && size.width > 0) change((offset.x / size.width).coerceIn(0f, 1f)) },
+                    onDragEnd = { if (on) finish() },
+                    onDragCancel = { if (on) finish() },
+                    onHorizontalDrag = { pointer, _ ->
+                        if (on && size.width > 0) {
+                            pointer.consume()
+                            change((pointer.position.x / size.width).coerceIn(0f, 1f))
+                        }
+                    },
+                )
+            },
+    ) {
+        val trackH = 4.dp.toPx()
+        val gap = 4.dp.toPx()
+        val thumbW = 3.dp.toPx()
+        val thumbH = 16.dp.toPx()
+        val cy = size.height / 2f
+        val cx = (fraction.coerceIn(0f, 1f) * size.width).coerceIn(thumbW / 2f, size.width - thumbW / 2f)
+        val radius = CornerRadius(trackH / 2f, trackH / 2f)
+        val activeEnd = cx - gap
+        if (activeEnd > 0f) {
+            drawRoundRect(shownActive, Offset(0f, cy - trackH / 2f), Size(activeEnd, trackH), radius)
+        }
+        val inactiveStart = cx + gap
+        if (inactiveStart < size.width) {
+            drawRoundRect(shownInactive, Offset(inactiveStart, cy - trackH / 2f), Size(size.width - inactiveStart, trackH), radius)
+        }
+        drawRoundRect(shownActive, Offset(cx - thumbW / 2f, cy - thumbH / 2f), Size(thumbW, thumbH), CornerRadius(thumbW / 2f, thumbW / 2f))
     }
 }
 

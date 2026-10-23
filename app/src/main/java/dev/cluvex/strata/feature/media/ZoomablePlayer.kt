@@ -42,6 +42,7 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.ContentFrame
+import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -68,7 +69,7 @@ class VideoZoomState {
     }
 }
 
-private const val MAX_ZOOM = 5f
+private const val MAX_ZOOM = 10f
 
 private fun fitInside(aspect: Float, w: Float, h: Float): Size =
     if (w / h > aspect) Size(h * aspect, h) else Size(w, w / aspect)
@@ -187,7 +188,10 @@ fun ZoomablePlayer(
         ) {
             // The surface keeps one fixed size; zoom and pan are drawn with a graphics layer, which is
             // redrawn without re-measuring. A texture surface follows that layer exactly, so the picture
-            // does not shake while pinching.
+            // does not shake while pinching. A SurfaceView is cheaper (and keeps HDR/DRM intact) but cannot
+            // follow a graphics layer or be clipped, so it is used only while the picture is neither zoomed
+            // nor larger than the screen (e.g. FILL / ORIGINAL), and TextureView takes over otherwise.
+            val needsTexture = state.zoomed || base.width > cw + 1f || base.height > ch + 1f
             val baseW = base.width.roundToInt().coerceAtLeast(1)
             val baseH = base.height.roundToInt().coerceAtLeast(1)
             ContentFrame(
@@ -207,7 +211,7 @@ fun ZoomablePlayer(
                         translationX = pan.x
                         translationY = pan.y
                     },
-                surfaceType = SURFACE_TYPE_TEXTURE_VIEW,
+                surfaceType = if (needsTexture) SURFACE_TYPE_TEXTURE_VIEW else SURFACE_TYPE_SURFACE_VIEW,
                 contentScale = ContentScale.FillBounds,
             )
 

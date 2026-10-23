@@ -63,6 +63,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.Crop
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Movie
@@ -161,6 +162,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     fun open(path: String, showHidden: Boolean) {
         if (opened == path) return
         opened = path
+        // A song or an earlier video may still be playing in the background service: stop it first.
+        PlaybackService.stopPlayback()
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.VIDEO, showHidden) }
             val p = ExoPlayer.Builder(getApplication()).build()
@@ -625,11 +628,12 @@ fun VideoPlayerScreen(
                         AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
                             SeekBar(
                                 p,
-                                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
                                 activeColor = MaterialTheme.colorScheme.primary,
                                 inactiveColor = Color.White.copy(alpha = 0.3f),
                                 textColor = Color.White,
                                 onSeekingChange = { seeking = it },
+                                compact = true,
                             )
                         }
                     }
@@ -654,11 +658,17 @@ fun VideoPlayerScreen(
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 72.dp),
         ) {
-            Text(
-                "2\u00D7",
-                color = Color.White,
-                modifier = Modifier.background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(50)).padding(horizontal = 14.dp, vertical = 6.dp),
-            )
+            // "2x" followed by a fast-forward icon, always in this order (the screen is laid out left to right).
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(
+                    Modifier.background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(50)).padding(horizontal = 20.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("2x", color = Color.White, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Rounded.FastForward, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                }
+            }
         }
         if (audioTracks && player != null) AudioTracksDialog(player) { audioTracks = false }
         info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.VIDEO, onDismiss = { info = null }) }
