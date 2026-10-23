@@ -6,11 +6,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -20,23 +18,18 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.offset
-import androidx.compose.ui.unit.IntOffset
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import kotlinx.coroutines.delay
 import java.util.Locale
-import kotlin.math.roundToInt
 
 /**
  * Seek bar for the audio and video players. While the finger moves along the bar, the time under it is
- * shown live (in a bubble above the thumb and in the left-hand time label); the player seeks on release.
+ * shown live in the left-hand time label; the player seeks on release.
  */
 @Composable
 fun SeekBar(
@@ -51,8 +44,6 @@ fun SeekBar(
     var duration by remember { mutableLongStateOf(0L) }
     var dragFraction by remember { mutableStateOf<Float?>(null) }
     var trackWidth by remember { mutableIntStateOf(0) }
-    var bubbleWidth by remember { mutableIntStateOf(0) }
-    var bubbleHeight by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(player) {
         while (true) {
@@ -66,11 +57,14 @@ fun SeekBar(
 
     val fraction = dragFraction ?: if (duration > 0) (position / duration.toFloat()).coerceIn(0f, 1f) else 0f
     val shownMs = if (dragFraction != null) (fraction * duration).toLong() else position
-    val density = LocalDensity.current
-    val gap = with(density) { 6.dp.roundToPx() }
-    val thumbInset = with(density) { 10.dp.toPx() }
 
     Column(modifier) {
+        // Times sit above the bar so they stay readable near the bottom edge of the screen.
+        Row(Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
+            Text(formatTime(shownMs), color = textColor, style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.weight(1f))
+            Text(formatTime(duration), color = textColor, style = MaterialTheme.typography.labelLarge)
+        }
         Box(Modifier.fillMaxWidth().onSizeChanged { trackWidth = it.width }) {
             Slider(
                 value = fraction,
@@ -95,33 +89,6 @@ fun SeekBar(
                 ),
                 modifier = Modifier.fillMaxWidth(),
             )
-            if (dragFraction != null) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xE6202020),
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .onSizeChanged { bubbleWidth = it.width; bubbleHeight = it.height }
-                        .offset {
-                            val usable = (trackWidth - 2 * thumbInset).coerceAtLeast(0f)
-                            val x = (thumbInset + fraction * usable - bubbleWidth / 2f).roundToInt()
-                                .coerceIn(0, (trackWidth - bubbleWidth).coerceAtLeast(0))
-                            IntOffset(x, -bubbleHeight - gap)
-                        },
-                ) {
-                    Text(
-                        formatTime(shownMs),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    )
-                }
-            }
-        }
-        Row(Modifier.fillMaxWidth()) {
-            Text(formatTime(shownMs), color = textColor, style = MaterialTheme.typography.labelMedium)
-            Spacer(Modifier.weight(1f))
-            Text(formatTime(duration), color = textColor, style = MaterialTheme.typography.labelMedium)
         }
     }
 }

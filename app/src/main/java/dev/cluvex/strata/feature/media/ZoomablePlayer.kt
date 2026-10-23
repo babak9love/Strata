@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -28,6 +29,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
@@ -40,6 +42,7 @@ import androidx.media3.common.VideoSize
 import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.ContentFrame
+import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -135,13 +138,12 @@ fun ZoomablePlayer(
             return Offset(pan.x.coerceIn(-limitX, limitX), pan.y.coerceIn(-limitY, limitY))
         }
 
-        // The base size changes with the mode, the video or the window; keep the pan inside the picture.
-        val shownPan = clampPan(state.pan, state.zoom)
-
-        val applyTransform = rememberUpdatedState<(Float, Offset) -> Unit> { zoomChange, panChange ->
+        // Zooms around the fingers (centroid is measured from the middle of the screen) and pans.
+        val applyTransform = rememberUpdatedState<(Float, Offset, Offset) -> Unit> { zoomChange, panChange, centroid ->
             val oldZoom = state.zoom
             val newZoom = (oldZoom * zoomChange).coerceIn(1f, MAX_ZOOM)
-            val moved = state.pan * (newZoom / oldZoom) + panChange
+            val about = centroid - Offset(cw / 2f, ch / 2f)
+            val moved = (state.pan - about) * (newZoom / oldZoom) + about + panChange
             state.zoom = newZoom
             state.pan = if (newZoom <= 1.01f) Offset.Zero else clampPan(moved, newZoom)
         }
@@ -163,8 +165,9 @@ fun ZoomablePlayer(
                                 if (pressed >= 2) {
                                     val zoomChange = event.calculateZoom()
                                     val panChange = event.calculatePan()
+                                    val centroid = event.calculateCentroid(useCurrent = false)
                                     if (zoomChange != 1f || panChange != Offset.Zero) {
-                                        applyTransform.value(zoomChange, panChange)
+                                        applyTransform.value(zoomChange, panChange, centroid)
                                         event.changes.forEach { if (it.positionChanged()) it.consume() }
                                     }
                                     slopPassed = true
@@ -173,7 +176,7 @@ fun ZoomablePlayer(
                                     travelled += panChange
                                     if (!slopPassed && travelled.getDistance() > slop) slopPassed = true
                                     if (slopPassed && panChange != Offset.Zero) {
-                                        applyTransform.value(1f, panChange)
+                                        applyTransform.value(1f, panChange, Offset.Zero)
                                         event.changes.forEach { if (it.positionChanged()) it.consume() }
                                     }
                                 }
@@ -182,19 +185,29 @@ fun ZoomablePlayer(
                     }
                 },
         ) {
-            val shownW = (base.width * state.zoom).roundToInt().coerceAtLeast(1)
-            val shownH = (base.height * state.zoom).roundToInt().coerceAtLeast(1)
+            // The surface keeps one fixed size; zoom and pan are drawn with a graphics layer, which is
+            // redrawn without re-measuring. A texture surface follows that layer exactly, so the picture
+            // does not shake while pinching.
+            val baseW = base.width.roundToInt().coerceAtLeast(1)
+            val baseH = base.height.roundToInt().coerceAtLeast(1)
             ContentFrame(
                 player = player,
-                modifier = Modifier.layout { measurable, c ->
-                    val placeable = measurable.measure(Constraints.fixed(shownW, shownH))
-                    layout(c.maxWidth, c.maxHeight) {
-                        placeable.place(
-                            x = (c.maxWidth - shownW) / 2 + shownPan.x.roundToInt(),
-                            y = (c.maxHeight - shownH) / 2 + shownPan.y.roundToInt(),
-                        )
+                modifier = Modifier
+                    .layout { measurable, c ->
+                        val placeable = measurable.measure(Constraints.fixed(baseW, baseH))
+                        layout(c.maxWidth, c.maxHeight) {
+                            placeable.place((c.maxWidth - baseW) / 2, (c.maxHeight - baseH) / 2)
+                        }
                     }
-                },
+                    .graphicsLayer {
+                        val zoom = state.zoom
+                        val pan = clampPan(state.pan, zoom)
+                        scaleX = zoom
+                        scaleY = zoom
+                        translationX = pan.x
+                        translationY = pan.y
+                    },
+                surfaceType = SURFACE_TYPE_TEXTURE_VIEW,
                 contentScale = ContentScale.FillBounds,
             )
 
