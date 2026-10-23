@@ -121,7 +121,6 @@
     <string name="media_ratio_4_3">4:3</string>
     <string name="media_ratio_21_9">21:9</string>
     <string name="media_original_size">Original size (100%)</string>
-    <string name="media_reset_zoom">Reset zoom</string>
     <string name="media_rotate_screen">Rotate screen</string>
     <string name="media_pip">Picture-in-picture</string>
     <string name="media_speed">Speed</string>

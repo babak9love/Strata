@@ -123,7 +123,6 @@
     <string name="media_ratio_4_3">4:3</string>
     <string name="media_ratio_21_9">21:9</string>
     <string name="media_original_size">Исходный размер (100%)</string>
-    <string name="media_reset_zoom">Сбросить масштаб</string>
     <string name="media_rotate_screen">Повернуть экран</string>
     <string name="media_pip">Картинка в картинке</string>
     <string name="media_speed">Скорость</string>

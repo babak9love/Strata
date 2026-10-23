@@ -610,14 +610,6 @@ fun VideoPlayerScreen(
                                                 },
                                             )
                                         }
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.media_reset_zoom)) },
-                                            enabled = zoomState.zoomed,
-                                            onClick = {
-                                                zoomState.resetZoom()
-                                                scaleMenu = false
-                                            },
-                                        )
                                     }
                                 }
                                 Box {
