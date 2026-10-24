@@ -868,6 +868,8 @@ private class TitlePopupPositionProvider : PopupPositionProvider {
     }
 }
 
+private val HUD_LABEL_HEIGHT = 24.dp
+
 private data class Hud(val volume: Boolean, val fraction: Float)
 
 @Composable
@@ -877,13 +879,21 @@ private fun GestureHud(hud: Hud) {
         hud.fraction <= 0f -> Icons.Rounded.VolumeOff
         else -> Icons.Rounded.VolumeUp
     }
+    // The icon takes the colour of the bar at the current level.
+    val iconTint = if (hud.volume) {
+        volumeColorAt(hud.fraction)
+    } else {
+        androidx.compose.ui.graphics.lerp(Color(0xFFFFF1A8), Color(0xFFFFB300), hud.fraction.coerceIn(0f, 1f))
+    }
     if (hud.volume) {
         // Volume: the speaker on top (so it never sits next to the mute button below), then the percentage and the
         // bar (blue up to 100%, yellow, red at 200%).
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(28.dp))
             Spacer(Modifier.height(6.dp))
-            Text("${(hud.fraction * 100).roundToInt()}%", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Box(Modifier.height(HUD_LABEL_HEIGHT), contentAlignment = Alignment.Center) {
+                Text("${(hud.fraction * 100).roundToInt()}%", color = iconTint, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            }
             Spacer(Modifier.height(8.dp))
             androidx.compose.foundation.Canvas(Modifier.width(6.dp).height(140.dp)) {
                 val corner = androidx.compose.ui.geometry.CornerRadius(size.width / 2f)
@@ -896,13 +906,26 @@ private fun GestureHud(hud: Hud) {
         }
     } else {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.height(6.dp))
+            // Same layout as the volume indicator (a label row, then the bar) so both bars line up exactly.
+            Spacer(Modifier.height(HUD_LABEL_HEIGHT))
             Spacer(Modifier.height(8.dp))
-            Box(
-                Modifier.width(5.dp).height(140.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.3f)),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                Box(Modifier.fillMaxHeight(hud.fraction.coerceIn(0f, 1f)).width(5.dp).background(Color.White))
+            // Pale yellow at the bottom, getting richer towards the top.
+            androidx.compose.foundation.Canvas(Modifier.width(6.dp).height(140.dp)) {
+                val corner = androidx.compose.ui.geometry.CornerRadius(size.width / 2f)
+                drawRoundRect(Color.White.copy(alpha = 0.3f), cornerRadius = corner)
+                val frac = hud.fraction.coerceIn(0f, 1f)
+                clipRect(top = size.height * (1f - frac)) {
+                    drawRoundRect(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(Color(0xFFFFB300), Color(0xFFFFF1A8)),
+                            startY = 0f,
+                            endY = size.height,
+                        ),
+                        cornerRadius = corner,
+                    )
+                }
             }
         }
     }

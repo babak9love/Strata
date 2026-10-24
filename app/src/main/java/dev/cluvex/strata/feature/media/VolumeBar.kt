@@ -100,13 +100,14 @@ internal fun VolumeBar(player: MediaController, onVolumeChange: (Float) -> Unit,
     }
 
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
-    val onSurface = MaterialTheme.colorScheme.onSurface
+    // The percentage and the speaker take the colour of the bar at the current level.
+    val levelColor = volumeColorAt(level)
     Column(
         modifier.width(44.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Text("${(level * 100).roundToInt()}%", fontSize = 11.sp, color = onSurface, maxLines = 1)
+        Text("${(level * 100).roundToInt()}%", fontSize = 11.sp, color = levelColor, maxLines = 1)
         Box(
             Modifier
                 .width(32.dp)
@@ -167,7 +168,7 @@ internal fun VolumeBar(player: MediaController, onVolumeChange: (Float) -> Unit,
         Icon(
             if (level <= 0f) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
             contentDescription = stringResource(R.string.media_volume),
-            tint = onSurface,
+            tint = levelColor,
             modifier = Modifier
                 .size(28.dp)
                 .clickable {
