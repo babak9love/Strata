@@ -86,6 +86,14 @@ data class BehaviorPrefs(
     val videoVolume: Float = 1f,
     /** The music player's own volume level (0.05 to 2; above 1 is a boost), independent of the phone's volume. */
     val audioVolume: Float = 1f,
+    /** Repeat mode of the video player, remembered between sessions (0 = off, 1 = one, 2 = all; same values as Player.REPEAT_MODE_*). */
+    val repeatVideo: Int = 0,
+    /** Shuffle state of the video player, remembered between sessions. */
+    val shuffleVideo: Boolean = false,
+    /** Repeat mode of the music player, remembered between sessions (0 = off, 1 = one, 2 = all). */
+    val repeatAudio: Int = 0,
+    /** Shuffle state of the music player, remembered between sessions. */
+    val shuffleAudio: Boolean = false,
 )
 
 enum class ConflictChoice(@StringRes val label: Int) {

@@ -122,8 +122,10 @@ fun MusicPlayerSheet(
     saveSpeed: Boolean = false,
     onSaveSpeedChange: (enabled: Boolean, speed: Float) -> Unit = { _, _ -> },
     onVolumeChange: (Float) -> Unit = {},
+    onPlayModeChange: (repeatMode: Int, shuffle: Boolean) -> Unit = { _, _ -> },
     onDismiss: () -> Unit,
 ) {
+    val onPlayModeChangeNow by androidx.compose.runtime.rememberUpdatedState(onPlayModeChange)
     val backToListNow by androidx.compose.runtime.rememberUpdatedState(backToList)
     val onDismissNow by androidx.compose.runtime.rememberUpdatedState(onDismiss)
     val context = LocalContext.current
@@ -140,6 +142,9 @@ fun MusicPlayerSheet(
         val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.AUDIO, showHidden) }
         val behavior = dev.cluvex.strata.core.data.SettingsRepository(context).settings.first().behavior
         if (behavior.saveSpeedAudio) c.setPlaybackSpeed(behavior.speedAudio)
+        // Repeat and shuffle come back the way they were left.
+        c.repeatMode = behavior.repeatAudio.coerceIn(0, 2)
+        c.shuffleModeEnabled = behavior.shuffleAudio
         // The player's own volume (not the phone's); a remembered boost above the 100% limit starts at 100%.
         val remembered = behavior.audioVolume.coerceIn(0.05f, 2f)
         val start = minOf(remembered, VideoPlayerViewModel.SAFE_LEVEL)
@@ -176,6 +181,15 @@ fun MusicPlayerSheet(
 
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_ENDED && backToListNow) onDismissNow()
+            }
+
+            // Remember the repeat / shuffle buttons for next time.
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                c?.let { onPlayModeChangeNow(it.repeatMode, it.shuffleModeEnabled) }
+            }
+
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                c?.let { onPlayModeChangeNow(it.repeatMode, it.shuffleModeEnabled) }
             }
         }
         c?.addListener(listener)

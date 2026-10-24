@@ -165,6 +165,10 @@ class SettingsRepository(private val context: Context) {
         val SPEED_AUDIO = floatPreferencesKey("speed_audio")
         val VIDEO_VOLUME = floatPreferencesKey("video_volume")
         val AUDIO_VOLUME = floatPreferencesKey("audio_volume")
+        val REPEAT_VIDEO = intPreferencesKey("repeat_video")
+        val SHUFFLE_VIDEO = booleanPreferencesKey("shuffle_video")
+        val REPEAT_AUDIO = intPreferencesKey("repeat_audio")
+        val SHUFFLE_AUDIO = booleanPreferencesKey("shuffle_audio")
         val SHOW_EXTENSIONS = booleanPreferencesKey("show_extensions")
         val START_FOLDER = stringPreferencesKey("start_folder")
         val START_PATH = stringPreferencesKey("start_path")
@@ -226,9 +230,9 @@ class SettingsRepository(private val context: Context) {
             EDITOR_HIGHLIGHT_BRACKETS, EDITOR_PINCH_ZOOM, EDITOR_STICKY_SCROLL, EDITOR_INDENT_GUIDES, EDITOR_PIN_LINE_NUMBERS,
             EDITOR_CURSOR_ANIMATION, EDITOR_KEEP_SCREEN_ON, READER_KEEP_SCREEN, APP_LOCK, PERSIAN_CALENDAR,
             SHOW_PARENT_ENTRY, VIDEO_AUTO_HIDE, RESUME_AUDIO, RESUME_VIDEO, BACK_TO_LIST_AUDIO, BACK_TO_LIST_VIDEO, BACKGROUND_AUDIO, BACKGROUND_VIDEO,
-            SAVE_SPEED_VIDEO, SAVE_SPEED_AUDIO,
+            SAVE_SPEED_VIDEO, SAVE_SPEED_AUDIO, SHUFFLE_VIDEO, SHUFFLE_AUDIO,
         )
-        val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, FOLDER_SCALE, NAME_SCALE, META_SCALE, SEEK_BACK_SECONDS, SEEK_FORWARD_SECONDS)
+        val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, FOLDER_SCALE, NAME_SCALE, META_SCALE, SEEK_BACK_SECONDS, SEEK_FORWARD_SECONDS, REPEAT_VIDEO, REPEAT_AUDIO)
         val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE, SPEED_VIDEO, SPEED_AUDIO, VIDEO_VOLUME, AUDIO_VOLUME)
         val STRINGS = listOf(
             SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, FOLDER_STYLE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
@@ -529,6 +533,10 @@ class SettingsRepository(private val context: Context) {
             speedAudio = (p[Keys.SPEED_AUDIO] ?: 1f).coerceIn(0.5f, 2f),
             videoVolume = (p[Keys.VIDEO_VOLUME] ?: 1f).coerceIn(0.05f, 2f),
             audioVolume = (p[Keys.AUDIO_VOLUME] ?: 1f).coerceIn(0.05f, 2f),
+            repeatVideo = (p[Keys.REPEAT_VIDEO] ?: 0).coerceIn(0, 2),
+            shuffleVideo = p[Keys.SHUFFLE_VIDEO] ?: false,
+            repeatAudio = (p[Keys.REPEAT_AUDIO] ?: 0).coerceIn(0, 2),
+            shuffleAudio = p[Keys.SHUFFLE_AUDIO] ?: false,
         )
 
         private fun writeBehavior(p: MutablePreferences, b: BehaviorPrefs) {
@@ -552,6 +560,10 @@ class SettingsRepository(private val context: Context) {
             p[Keys.SPEED_AUDIO] = b.speedAudio.coerceIn(0.5f, 2f)
             p[Keys.VIDEO_VOLUME] = b.videoVolume.coerceIn(0.05f, 2f)
             p[Keys.AUDIO_VOLUME] = b.audioVolume.coerceIn(0.05f, 2f)
+            p[Keys.REPEAT_VIDEO] = b.repeatVideo.coerceIn(0, 2)
+            p[Keys.SHUFFLE_VIDEO] = b.shuffleVideo
+            p[Keys.REPEAT_AUDIO] = b.repeatAudio.coerceIn(0, 2)
+            p[Keys.SHUFFLE_AUDIO] = b.shuffleAudio
         }
 
         internal fun readOperations(p: Preferences) = OperationPrefs(

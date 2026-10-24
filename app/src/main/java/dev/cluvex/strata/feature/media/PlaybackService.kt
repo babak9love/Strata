@@ -94,7 +94,9 @@ class PlaybackService : MediaSessionService() {
         handler.postDelayed(saveTick, SAVE_INTERVAL_MS)
         val openApp = PendingIntent.getActivity(
             this, 0,
-            Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            Intent(this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                .putExtra(EXTRA_OPEN_PLAYER, true),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         session = MediaSession.Builder(this, SkipLengthPlayer(player))
@@ -224,6 +226,20 @@ class PlaybackService : MediaSessionService() {
 
     companion object {
         @Volatile private var instance: PlaybackService? = null
+
+        /** Extra of the notification's tap intent: open the player of whatever is playing, not just the app. */
+        const val EXTRA_OPEN_PLAYER = "strata_open_player"
+
+        /** What the service is playing right now (a song, or the audio of a video handed over earlier). */
+        class NowPlaying(val path: String, val fromVideo: Boolean, val positionMs: Long, val playing: Boolean)
+
+        /** Snapshot of the current item, or null if nothing is playing. Must be called on the main thread. */
+        fun nowPlaying(): NowPlaying? {
+            val player = instance?.session?.player ?: return null
+            val item = player.currentMediaItem ?: return null
+            val fromVideo = item.mediaMetadata.extras?.getBoolean(EXTRA_FROM_VIDEO) == true
+            return NowPlaying(item.mediaId, fromVideo, player.currentPosition.coerceAtLeast(0L), player.playWhenReady)
+        }
 
         /**
          * Stops whatever the service is playing in the background (music, or the audio of a video handed

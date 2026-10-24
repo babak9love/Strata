@@ -118,7 +118,9 @@ import dev.cluvex.strata.feature.media.ImageViewerScreen
 import dev.cluvex.strata.core.media.PlaybackPositions
 import dev.cluvex.strata.core.media.ResumeKind
 import dev.cluvex.strata.feature.media.MusicPlayerSheet
+import dev.cluvex.strata.feature.media.PlaybackService
 import dev.cluvex.strata.feature.media.VideoPlayerScreen
+import dev.cluvex.strata.feature.media.VideoPlayerViewModel
 import dev.cluvex.strata.feature.ninepatch.NinePatchScreen
 import dev.cluvex.strata.feature.open.OpenWithDialog
 import dev.cluvex.strata.feature.remote.RemoteScreen
@@ -199,6 +201,7 @@ fun AppShell(
     incomingFile: Uri? = null,
     incomingShare: List<Uri> = emptyList(),
     incomingShareMode: ShareMode? = null,
+    openPlayerToken: Int = 0,
     onIncomingDone: () -> Unit = {},
 ) {
     val access = rememberStorageAccessState()
@@ -246,6 +249,20 @@ fun AppShell(
 
     LaunchedEffect(incomingFile) {
         incomingFile?.let { vm.locateIncoming(it) }
+    }
+
+    // The media notification was tapped: show the player of what is playing (a song or the audio of a video).
+    LaunchedEffect(openPlayerToken) {
+        if (openPlayerToken == 0) return@LaunchedEffect
+        val now = PlaybackService.nowPlaying() ?: return@LaunchedEffect
+        if (now.fromVideo) {
+            val top = stack.route
+            if (top is Route.Video && top.path == now.path) return@LaunchedEffect
+            VideoPlayerViewModel.startOverride = VideoPlayerViewModel.StartAt(now.path, now.positionMs, now.playing)
+            stack.push(Route.Video(now.path))
+        } else if (openDialog !is OpenDialog.Music) {
+            openDialog = OpenDialog.Music(now.path)
+        }
     }
 
     LaunchedEffect(incomingShare) {
@@ -508,6 +525,7 @@ fun AppShell(
             saveSpeed = settings.behavior.saveSpeedAudio,
             onSaveSpeedChange = { on, speed -> scope.launch { settingsRepo.editBehavior { it.copy(saveSpeedAudio = on, speedAudio = speed) } } },
             onVolumeChange = { v -> scope.launch { settingsRepo.editBehavior { it.copy(audioVolume = v.coerceIn(0.05f, 2f)) } } },
+            onPlayModeChange = { repeat, shuffle -> scope.launch { settingsRepo.editBehavior { it.copy(repeatAudio = repeat.coerceIn(0, 2), shuffleAudio = shuffle) } } },
             onDismiss = { openDialog = null },
         )
         is OpenDialog.SignApk -> SignApkDialog(
@@ -634,6 +652,7 @@ private fun Screen(
                 saveSpeed = settings.behavior.saveSpeedVideo,
                 onSaveSpeedChange = { on, speed -> videoScope.launch { settingsRepo.editBehavior { it.copy(saveSpeedVideo = on, speedVideo = speed) } } },
                 onVolumeChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(videoVolume = v.coerceIn(0.05f, 2f)) } } },
+                onPlayModeChange = { repeat, shuffle -> videoScope.launch { settingsRepo.editBehavior { it.copy(repeatVideo = repeat.coerceIn(0, 2), shuffleVideo = shuffle) } } },
                 seekBackSeconds = settings.behavior.seekBackSeconds,
                 onSeekBackChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(seekBackSeconds = v.coerceIn(1, 60)) } } },
                 seekForwardSeconds = settings.behavior.seekForwardSeconds,

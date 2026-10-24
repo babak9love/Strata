@@ -14,6 +14,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -26,6 +27,7 @@ import dev.cluvex.strata.core.open.IncomingShare
 import dev.cluvex.strata.core.sound.UiSounds
 import dev.cluvex.strata.core.util.Formatters
 import dev.cluvex.strata.feature.pdf.ReaderSource
+import dev.cluvex.strata.feature.media.PlaybackService
 import dev.cluvex.strata.ui.AppShell
 import dev.cluvex.strata.ui.LocalSettings
 import dev.cluvex.strata.ui.LocalUiDensity
@@ -66,6 +68,18 @@ class MainActivity : FragmentActivity() {
         return intent.data?.takeIf { it.scheme == "file" || it.scheme == "content" }
     }
 
+    /** Bumped each time the media notification is tapped, so the app opens the player instead of just itself. */
+    private val openPlayerToken = mutableIntStateOf(0)
+
+    private fun requestsPlayer(intent: Intent?): Boolean =
+        intent?.getBooleanExtra(PlaybackService.EXTRA_OPEN_PLAYER, false) == true
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (requestsPlayer(intent)) openPlayerToken.intValue++
+    }
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLocales.wrap(newBase))
     }
@@ -104,6 +118,7 @@ class MainActivity : FragmentActivity() {
         val incomingFile = if (incoming == null && savedInstanceState == null) incomingFile(intent) else null
         val incomingShare = if (savedInstanceState == null) IncomingShare.uris(intent) else emptyList()
         val incomingShareMode = IncomingShare.mode(intent)
+        if (savedInstanceState == null && requestsPlayer(intent)) openPlayerToken.intValue++
         setContent {
             val settings by settingsFlow.collectAsStateWithLifecycle(initialValue = initial)
             val sounds = settings.appearance.sounds
@@ -134,6 +149,7 @@ class MainActivity : FragmentActivity() {
                                 incomingFile = incomingFile,
                                 incomingShare = incomingShare,
                                 incomingShareMode = incomingShareMode,
+                                openPlayerToken = openPlayerToken.intValue,
                                 onIncomingDone = { finish() },
                             )
                         }

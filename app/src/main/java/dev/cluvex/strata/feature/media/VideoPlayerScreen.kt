@@ -197,10 +197,16 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
     private var saveJob: kotlinx.coroutines.Job? = null
 
+    /** Called whenever the repeat or shuffle button changes, so the choice is kept for next time. */
+    var onPlayModeChange: (repeatMode: Int, shuffle: Boolean) -> Unit = { _, _ -> }
+
     fun open(path: String, showHidden: Boolean) {
         if (opened == path) return
         opened = path
         // A song or an earlier video may still be playing in the background service: stop it first.
+        // Opened from the notification: carry on from where the background audio got to.
+        val start = startOverride?.takeIf { it.path == path }
+        startOverride = null
         PlaybackService.stopPlayback()
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.VIDEO, showHidden) }
@@ -218,12 +224,20 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             })
             resume = ResumeListener(getApplication(), ResumeKind.VIDEO, p) { resumeEnabled }.also { p.addListener(it) }
             if (skip.saveSpeedVideo) p.setPlaybackSpeed(skip.speedVideo)
+            // Repeat and shuffle come back the way they were left; the listener is added after, so this is not re-saved.
+            p.repeatMode = skip.repeatVideo.coerceIn(0, 2)
+            p.shuffleModeEnabled = skip.shuffleVideo
+            p.addListener(object : Player.Listener {
+                override fun onRepeatModeChanged(repeatMode: Int) = onPlayModeChange(p.repeatMode, p.shuffleModeEnabled)
+
+                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) = onPlayModeChange(p.repeatMode, p.shuffleModeEnabled)
+            })
             // A remembered boost above the 100% limit starts at 100%.
             volumeLevel = minOf(skip.videoVolume.coerceIn(0.05f, MAX_LEVEL), SAFE_LEVEL)
             p.volume = minOf(volumeLevel, 1f)
-            p.setMediaItems(list.files.map(::mediaItem), list.start, if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
+            p.setMediaItems(list.files.map(::mediaItem), list.start, if (start != null) start.positionMs else if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
             p.prepare()
-            p.playWhenReady = true
+            p.playWhenReady = start?.playing ?: true
             title = list.current.name
             player = p
             saveJob?.cancel()
@@ -253,6 +267,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         val items = backgroundItems(p)
         val index = p.currentMediaItemIndex
         val position = p.currentPosition
+        val repeat = p.repeatMode
+        val shuffle = p.shuffleModeEnabled
         val mutedVolume = p.volume
         val boostLevel = volumeLevel
         resume?.saveNow()
@@ -271,6 +287,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build()
             c.volume = mutedVolume
             PlaybackService.sendBoost(c, if (mutedVolume > 0f) boostLevel else 1f)
+            c.repeatMode = repeat
+            c.shuffleModeEnabled = shuffle
             c.setMediaItems(items, index, position)
             c.prepare()
             c.play()
@@ -304,6 +322,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         val items = backgroundItems(p)
         val index = p.currentMediaItemIndex
         val position = p.currentPosition
+        val repeat = p.repeatMode
+        val shuffle = p.shuffleModeEnabled
         val closeVolume = p.volume
         val boostLevel = volumeLevel
         resume?.saveNow()
@@ -315,6 +335,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             c.volume = closeVolume
             PlaybackService.sendBoost(c, if (closeVolume > 0f) boostLevel else 1f)
             c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build()
+            c.repeatMode = repeat
+            c.shuffleModeEnabled = shuffle
             c.setMediaItems(items, index, position)
             c.prepare()
             c.play()
@@ -333,6 +355,9 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             val index = c.currentMediaItemIndex
             val position = c.currentPosition
             val playing = c.playWhenReady
+            // The notification may have changed repeat / shuffle meanwhile.
+            p.repeatMode = c.repeatMode
+            p.shuffleModeEnabled = c.shuffleModeEnabled
             c.pause()
             c.volume = 1f
             PlaybackService.sendBoost(c, 1f)
@@ -360,7 +385,12 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         player = null
     }
 
+    class StartAt(val path: String, val positionMs: Long, val playing: Boolean)
+
     companion object {
+        /** Set just before the video screen is opened from the notification; consumed by [open]. */
+        @Volatile var startOverride: StartAt? = null
+
         private const val SAVE_INTERVAL_MS = 5_000L
         const val MAX_LEVEL = 2f
         const val SAFE_LEVEL = 1f
@@ -394,9 +424,13 @@ fun VideoPlayerScreen(
     saveSpeed: Boolean = false,
     onSaveSpeedChange: (enabled: Boolean, speed: Float) -> Unit = { _, _ -> },
     onVolumeChange: (Float) -> Unit = {},
+    onPlayModeChange: (repeatMode: Int, shuffle: Boolean) -> Unit = { _, _ -> },
     vm: VideoPlayerViewModel = viewModel(),
 ) {
-    SideEffect { vm.resumeEnabled = resume }
+    SideEffect {
+        vm.resumeEnabled = resume
+        vm.onPlayModeChange = onPlayModeChange
+    }
     LaunchedEffect(path) { vm.open(path, showHidden) }
     val backgroundPlayNow by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
     val onVolumeChangeNow by androidx.compose.runtime.rememberUpdatedState(onVolumeChange)
@@ -909,7 +943,9 @@ private fun GestureHud(hud: Hud) {
             Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(28.dp))
             Spacer(Modifier.height(6.dp))
             // Same layout as the volume indicator (a label row, then the bar) so both bars line up exactly.
-            Spacer(Modifier.height(HUD_LABEL_HEIGHT))
+            Box(Modifier.height(HUD_LABEL_HEIGHT), contentAlignment = Alignment.Center) {
+                Text("${(hud.fraction.coerceIn(0f, 1f) * 100).roundToInt()}%", color = iconTint, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            }
             Spacer(Modifier.height(8.dp))
             // Pale yellow at the bottom, getting richer towards the top.
             androidx.compose.foundation.Canvas(Modifier.width(6.dp).height(140.dp)) {
