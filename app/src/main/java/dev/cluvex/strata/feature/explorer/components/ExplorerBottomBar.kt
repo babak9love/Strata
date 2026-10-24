@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NoteAdd
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.DashboardCustomize
@@ -351,7 +352,7 @@ private fun SelectionAction.text(dual: Boolean, activeIsLeft: Boolean, unprotect
 }
 
 private fun SelectionAction.iconFor(c: SelectionContext): ImageVector =
-    if (this == SelectionAction.PROTECT && c.protectedFolder) androidx.compose.material.icons.Icons.Rounded.LockOpen else icon
+    if (this == SelectionAction.PROTECT && c.protectedFolder) Icons.Rounded.LockOpen else icon
 
 private fun SelectionAction.run(a: BottomBarActions, dual: Boolean) = when (this) {
     SelectionAction.OPEN_WITH -> a.onOpenWith()
