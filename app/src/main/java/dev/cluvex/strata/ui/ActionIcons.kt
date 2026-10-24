@@ -17,6 +17,7 @@ import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.BookmarkAdd
 import androidx.compose.material.icons.rounded.FolderSpecial
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Bookmarks
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -69,6 +70,7 @@ val BrowseAction.icon: ImageVector
         BrowseAction.REFRESH -> Icons.Rounded.Refresh
         BrowseAction.BOOKMARKS -> Icons.Rounded.Bookmarks
         BrowseAction.BOOKMARK_FOLDER -> Icons.Rounded.BookmarkAdd
+        BrowseAction.PROTECTED_FOLDERS -> Icons.Rounded.Shield
         BrowseAction.SELECT_ALL -> Icons.Rounded.SelectAll
         BrowseAction.RUN_PROJECT -> Icons.Rounded.PlayArrow
         BrowseAction.TERMINAL -> Icons.Rounded.Terminal
@@ -96,8 +98,10 @@ val SelectionAction.icon: ImageVector
         SelectionAction.SMALI_TO_DEX -> Icons.Rounded.Build
         SelectionAction.JAR_TO_DEX -> Icons.Rounded.Coffee
         SelectionAction.BOOKMARK -> Icons.Rounded.BookmarkAdd
+        SelectionAction.BOOKMARKS -> Icons.Rounded.Bookmarks
         SelectionAction.FOLDER_ICON -> Icons.Rounded.FolderSpecial
         SelectionAction.PROTECT -> Icons.Rounded.Lock
+        SelectionAction.PROTECTED_FOLDERS -> Icons.Rounded.Shield
         SelectionAction.LINKS -> Icons.Rounded.AddLink
         SelectionAction.VAULT -> Icons.Rounded.EnhancedEncryption
         SelectionAction.RESTORE -> Icons.Rounded.Outbox

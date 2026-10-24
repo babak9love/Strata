@@ -35,7 +35,7 @@
     <string name="model_selection_invert">Invert selection</string>
     <string name="model_smali_to_dex" translatable="false">Smali → Dex</string>
     <string name="model_jar_to_dex" translatable="false">Jar → Dex</string>
-    <string name="model_add_bookmark">Add to bookmarks</string>
+    <string name="model_add_bookmark">Bookmark this folder</string>
     <string name="model_move_to_vault">Move to vault</string>
     <string name="model_restore">Restore</string>
     <string name="model_hint_in_vault">In the vault</string>

@@ -33,7 +33,7 @@
     <string name="model_selection_copy_path">کپی مسیر</string>
     <string name="model_selection_properties">ویژگی‌ها</string>
     <string name="model_selection_invert">وارونه کردن انتخاب</string>
-    <string name="model_add_bookmark">افزودن به نشانک‌ها</string>
+    <string name="model_add_bookmark">نشانک‌گذاری این پوشه</string>
     <string name="model_move_to_vault">انتقال به گاوصندوق</string>
     <string name="model_restore">بازگردانی</string>
     <string name="model_hint_in_vault">در گاوصندوق</string>

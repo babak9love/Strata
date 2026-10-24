@@ -274,7 +274,7 @@
     <string name="settings_group_protected">受保护的文件夹</string>
     <string name="settings_protected_footer">这些文件夹无法在此删除，但其中的内容仍可删除。选中文件夹并选择“防止删除”即可保护。不影响其他应用。</string>
     <string name="settings_protected_empty">暂无受保护的文件夹</string>
-    <string name="model_unprotect_folder">取消删除保护</string>
+    <string name="model_unprotect_folder">取消保护</string>
     <string name="explorer_protected_ask_title">保留哪个文件夹的保护？</string>
     <string name="explorer_protected_ask_text">受保护的文件夹“%1$s”已被移动，由于目标位置已有同名文件夹，它被保存为“%2$s”。</string>
     <string name="explorer_protected_ask_moved">已移动的：%1$s</string>

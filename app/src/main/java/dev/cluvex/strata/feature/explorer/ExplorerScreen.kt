@@ -101,6 +101,8 @@ import dev.cluvex.strata.feature.explorer.components.BookmarkEditDialog
 import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.bookmarks.Bookmarks
 import dev.cluvex.strata.feature.explorer.components.BookmarksSheet
+import dev.cluvex.strata.feature.explorer.components.ProtectedFolderActions
+import dev.cluvex.strata.feature.explorer.components.ProtectedFoldersSheet
 import dev.cluvex.strata.feature.explorer.components.BottomBarActions
 import dev.cluvex.strata.feature.explorer.components.ChecksumDialog
 import dev.cluvex.strata.feature.explorer.components.ClipboardQueueDialog
@@ -141,6 +143,7 @@ private sealed interface Dialog {
     data object Delete : Dialog
     data object Sort : Dialog
     data object Bookmarks : Dialog
+    data object ProtectedFolders : Dialog
     data object Clipboard : Dialog
     data class CreateArchive(val pane: Pane, val items: List<FileItem>) : Dialog
     data class BatchRename(val pane: Pane, val items: List<FileItem>) : Dialog
@@ -399,6 +402,7 @@ fun ExplorerScreen(
                 smaliFolder = smaliFolder,
                 jarFile = jarFile,
                 archiveFile = archiveFile,
+                protectedFolder = single?.let { it.isDirectory && vm.isProtected(it.path) } == true,
                 vault = ui.isVault(ui.active),
                 browse = ui.settings.actions.browse,
                 selection = ui.settings.actions.selection,
@@ -436,6 +440,7 @@ fun ExplorerScreen(
                     onBookmarkFolder = { vm.addBookmarks(listOf(ui.activePane.path)) },
                     onBookmarkSelection = { vm.addSelectionToBookmarks(ui.active) },
                     onFolderIcon = { single?.takeIf { it.isDirectory }?.let { dialog = Dialog.FolderIcon(it); vm.clearSelection(ui.active) } },
+                    onProtectedFolders = { dialog = Dialog.ProtectedFolders },
                     onProtect = {
                         single?.takeIf { it.isDirectory }?.let {
                             if (vm.isProtected(it.path)) dialog = Dialog.Unprotect(it) else vm.protectFolder(it)
@@ -569,6 +574,16 @@ fun ExplorerScreen(
                 onRenameGroup = { from, to -> vm.renameBookmarkGroup(from, to) },
                 onDeleteGroup = { vm.deleteBookmarkGroup(it) },
             ),
+            onDismiss = { dialog = Dialog.None },
+        )
+        Dialog.ProtectedFolders -> ProtectedFoldersSheet(
+            folders = ui.settings.protectedFolders,
+            actions = ProtectedFolderActions(
+                onOpen = { vm.openPath(ui.active, it); dialog = Dialog.None },
+                onRemove = { vm.unprotectFolder(it) },
+                onAddCurrent = if (ui.isRemote(ui.active) || ui.isVault(ui.active)) null else ({ vm.protectPath(ui.activePane.path) }),
+            ),
+            currentPath = ui.activePane.path,
             onDismiss = { dialog = Dialog.None },
         )
         is Dialog.CreateArchive -> CreateArchiveDialog(

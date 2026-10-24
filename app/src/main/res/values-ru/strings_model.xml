@@ -33,7 +33,7 @@
     <string name="model_selection_copy_path">Копировать путь</string>
     <string name="model_selection_properties">Свойства</string>
     <string name="model_selection_invert">Инвертировать выделение</string>
-    <string name="model_add_bookmark">Добавить в закладки</string>
+    <string name="model_add_bookmark">Добавить папку в закладки</string>
     <string name="model_move_to_vault">Переместить в сейф</string>
     <string name="model_restore">Восстановить</string>
     <string name="model_hint_in_vault">В сейфе</string>

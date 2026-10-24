@@ -192,7 +192,7 @@
     <string name="explorer_move_part_down">Move %1$s down</string>
     <string name="explorer_output_file">Output file</string>
     <string name="explorer_merge">Merge</string>
-    <string name="explorer_rename_help">{P} name without extension (abc in abc.txt) · {S} extension (.txt)\n{N} a number counting up from N, e.g. {1}, {0}\n{zN} the same, zero-padded: {z8} gives 08, 09, 10, 11 · {z001} gives 001…\n{T} modification time · {E} photo time (EXIF) — formatted with the date pattern\n{AN} {AP} {AV} {AC} APK name, package, version name, version code\nLeave “Text to find” empty to replace the whole name.</string>
+    <string name="explorer_rename_help">{P} name without extension (abc in abc.txt) · {S} extension (.txt)\n{N} a number counting up from N, e.g. {1}, {0}\n{zN} the same, zero-padded: {z8} gives 08, 09, 10, 11 · {z001} gives 001…\n{T} modification time · {E} photo time (EXIF) — formatted with the date pattern\n{AN} {AP} {AV} {AC} APK name, package, version name, version code\nLeave \"Text to find\" empty to replace the whole name.</string>
     <string name="explorer_batch_rename">Batch rename</string>
     <string name="explorer_history">History</string>
     <string name="explorer_text_to_find">Text to find</string>
@@ -216,15 +216,15 @@
         <item quantity="other">%d conflicts</item>
     </plurals>
     <string name="explorer_add_current_folder">Add current folder</string>
-    <string name="explorer_add_to_bookmarks">Add to bookmarks</string>
+    <string name="explorer_add_to_bookmarks">Bookmark this folder</string>
     <string name="explorer_no_bookmarks">No bookmarks yet</string>
     <string name="explorer_no_bookmarks_body">Bookmark the current folder here, or files and folders from their menus.</string>
     <string name="explorer_delete_bookmark">Delete bookmark</string>
-    <string name="explorer_delete_bookmark_confirm">Do you want to delete the bookmark “%1$s”?</string>
+    <string name="explorer_delete_bookmark_confirm">Do you want to delete the bookmark \"%1$s\"?</string>
     <string name="explorer_rename_group">Rename group</string>
     <string name="explorer_group_name">Group name</string>
     <string name="explorer_delete_group">Delete group</string>
-    <string name="explorer_delete_group_confirm">Delete group “%1$s”? Its bookmarks will be moved to the default group.</string>
+    <string name="explorer_delete_group_confirm">Delete group \"%1$s\"? Its bookmarks will be moved to the default group.</string>
     <string name="explorer_default_group">Default</string>
     <string name="explorer_group_options">Group options</string>
     <string name="explorer_options_for">Options for %1$s</string>
@@ -277,20 +277,20 @@
         <item quantity="other">%d items</item>
     </plurals>
     <string name="model_protect_folder">Protect from deletion</string>
-    <string name="explorer_protected_one">“%1$s” is in your protected folders list.</string>
-    <string name="explorer_protected_inside">“%1$s” contains the protected folder “%2$s”, so it can’t be deleted.</string>
+    <string name="explorer_protected_one">\"%1$s\" is in your protected folders list.</string>
+    <string name="explorer_protected_inside">\"%1$s\" contains the protected folder \"%2$s\", so it can’t be deleted.</string>
     <string name="explorer_protected_many">%1$d protected folders were not deleted.</string>
-    <string name="explorer_protected_added">“%1$s” is now protected from deletion.</string>
+    <string name="explorer_protected_added">\"%1$s\" is now protected from deletion.</string>
     <string name="explorer_protected_remove_title">Remove protection?</string>
-    <string name="explorer_protected_remove_text">“%1$s” will be deletable again.</string>
+    <string name="explorer_protected_remove_text">\"%1$s\" will be deletable again.</string>
     <string name="explorer_protected_remove_confirm">Remove</string>
     <string name="explorer_protected_badge">Protected from deletion</string>
     <string name="settings_group_protected">Protected folders</string>
-    <string name="settings_protected_footer">These folders can’t be deleted from here, but everything inside them can. To protect a folder, select it and choose “Protect from deletion”. Other apps are not affected.</string>
+    <string name="settings_protected_footer">These folders can’t be deleted from here, but everything inside them can. To protect a folder, select it and choose \"Protect from deletion\"; to undo, choose \"Remove protection\". Other apps are not affected.</string>
     <string name="settings_protected_empty">No protected folders yet</string>
-    <string name="model_unprotect_folder">Remove deletion protection</string>
+    <string name="model_unprotect_folder">Remove protection</string>
     <string name="explorer_protected_ask_title">Which folder stays protected?</string>
-    <string name="explorer_protected_ask_text">The protected folder “%1$s” was moved, and because the destination already had a folder with that name, it was saved as “%2$s”.</string>
+    <string name="explorer_protected_ask_text">The protected folder \"%1$s\" was moved, and because the destination already had a folder with that name, it was saved as \"%2$s\".</string>
     <string name="explorer_protected_ask_moved">Moved: %1$s</string>
     <string name="explorer_protected_ask_existing">Already there: %1$s</string>
     <string name="explorer_protected_ask_both">Both</string>

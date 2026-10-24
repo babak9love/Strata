@@ -268,6 +268,8 @@ private val SearchHiddenActions = setOf(
     SelectionAction.BATCH_RENAME,
     SelectionAction.FOLDER_ICON,
     SelectionAction.PROTECT,
+    SelectionAction.PROTECTED_FOLDERS,
+    SelectionAction.BOOKMARKS,
     SelectionAction.MERGE,
     SelectionAction.LINKS,
     SelectionAction.VAULT,

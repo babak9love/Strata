@@ -14,6 +14,7 @@ enum class BrowseAction(@StringRes val label: Int) {
     REFRESH(R.string.model_browse_refresh),
     BOOKMARKS(R.string.model_browse_bookmarks),
     BOOKMARK_FOLDER(R.string.model_browse_bookmark_folder),
+    PROTECTED_FOLDERS(R.string.settings_group_protected),
     SELECT_ALL(R.string.model_browse_select_all),
     RUN_PROJECT(R.string.model_browse_run_project),
     TERMINAL(R.string.model_browse_terminal),
@@ -39,9 +40,11 @@ enum class SelectionAction(@StringRes val label: Int, val asks: Boolean = false)
     COMPARE(R.string.model_selection_compare, asks = true),
     SMALI_TO_DEX(R.string.model_smali_to_dex),
     JAR_TO_DEX(R.string.model_jar_to_dex),
+    BOOKMARKS(R.string.model_browse_bookmarks),
     BOOKMARK(R.string.model_add_bookmark),
     FOLDER_ICON(R.string.model_folder_icon),
     PROTECT(R.string.model_protect_folder),
+    PROTECTED_FOLDERS(R.string.settings_group_protected),
     LINKS(R.string.model_selection_links, asks = true),
     VAULT(R.string.model_move_to_vault),
     RESTORE(R.string.model_restore),
@@ -97,6 +100,7 @@ data class SelectionContext(
     val jarFile: Boolean,
     val vault: Boolean = false,
     val archive: Boolean = false,
+    val protectedFolder: Boolean = false,
 )
 
 data class SheetContext(
@@ -170,9 +174,10 @@ fun BrowseAction.available(c: BrowseContext): Boolean = when (this) {
 }
 
 fun SelectionAction.available(c: SelectionContext): Boolean = when (this) {
-    SelectionAction.COPY, SelectionAction.MOVE, SelectionAction.DELETE, SelectionAction.BOOKMARK,
-    SelectionAction.SELECT_ALL, SelectionAction.INVERT -> true
+    SelectionAction.COPY, SelectionAction.MOVE, SelectionAction.DELETE,
+    SelectionAction.SELECT_ALL, SelectionAction.INVERT, SelectionAction.PROTECTED_FOLDERS, SelectionAction.BOOKMARKS -> true
     SelectionAction.RENAME -> c.count == 1
+    SelectionAction.BOOKMARK -> c.files == 0
     SelectionAction.FOLDER_ICON, SelectionAction.PROTECT -> !c.remote && c.count == 1 && c.files == 0
     SelectionAction.OPEN_WITH -> c.count == 1 && c.files == 1
     SelectionAction.EXTRACT -> !c.remote && c.count == 1 && c.archive
@@ -194,7 +199,8 @@ fun SheetAction.available(c: SheetContext): Boolean = when (this) {
     SheetAction.VIEW -> c.file && c.archiveViewable
     SheetAction.APK_INFO -> c.apk
     SheetAction.EXTRACT -> c.local && c.file && c.extractable
-    SheetAction.COMPRESS, SheetAction.BOOKMARK, SheetAction.LINK, SheetAction.PROPERTIES -> c.local
+    SheetAction.COMPRESS, SheetAction.LINK, SheetAction.PROPERTIES -> c.local
+    SheetAction.BOOKMARK -> c.local && !c.file
     SheetAction.SIGN_APK -> c.local && c.apk
     SheetAction.SMALI_TO_DEX -> c.local && !c.file && c.smaliFolder
     SheetAction.JAR_TO_DEX -> c.local && c.file && c.jar
@@ -302,7 +308,7 @@ data class ActionLayout(
                 listOf(BrowseAction.BACK, BrowseAction.FORWARD, BrowseAction.NEW, BrowseAction.PASTE, BrowseAction.SWAP, BrowseAction.UP),
                 listOf(
                     BrowseAction.RUN_PROJECT, BrowseAction.TERMINAL, BrowseAction.HOME, BrowseAction.REFRESH,
-                    BrowseAction.BOOKMARKS, BrowseAction.BOOKMARK_FOLDER, BrowseAction.SELECT_ALL,
+                    BrowseAction.BOOKMARKS, BrowseAction.PROTECTED_FOLDERS, BrowseAction.BOOKMARK_FOLDER, BrowseAction.SELECT_ALL,
                 ),
                 listOf(BrowseAction.FILTER, BrowseAction.SEARCH, BrowseAction.SORT, BrowseAction.JUMP, BrowseAction.HIDDEN_FILES),
             ),
@@ -314,7 +320,7 @@ data class ActionLayout(
                 listOf(
                     SelectionAction.OPEN_WITH, SelectionAction.EXTRACT, SelectionAction.RENAME, SelectionAction.BATCH_RENAME, SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD,
                     SelectionAction.COMPRESS, SelectionAction.MERGE, SelectionAction.COMPARE, SelectionAction.SMALI_TO_DEX,
-                    SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARK, SelectionAction.FOLDER_ICON, SelectionAction.PROTECT, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
+                    SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARKS, SelectionAction.BOOKMARK, SelectionAction.PROTECTED_FOLDERS, SelectionAction.PROTECT, SelectionAction.FOLDER_ICON, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
                     SelectionAction.COPY_PATH, SelectionAction.PROPERTIES, SelectionAction.SELECT_ALL, SelectionAction.INVERT,
                 ),
                 emptyList(),
@@ -340,11 +346,35 @@ data class ActionLayout(
                 val eq = part.indexOf('=')
                 if (eq <= 0) null else part.substring(0, eq) to part.substring(eq + 1)
             }.toMap()
+            // A saved layout that predates a new action gets it right next to its anchor instead of at the end of the menu.
+            var browse = Zoned.decode(parts["b"], BrowseAction.entries, DEFAULT_BROWSE, BROWSE_CAPS)
+            if (parts["b"]?.contains("PROTECTED_FOLDERS") != true) {
+                browse = browse.placedAfter(BrowseAction.PROTECTED_FOLDERS, BrowseAction.BOOKMARKS, BROWSE_CAPS)
+            }
+            var selection = Zoned.decode(parts["s"], SelectionAction.entries, DEFAULT_SELECTION, SELECTION_CAPS)
+            if (parts["s"]?.contains("PROTECTED_FOLDERS") != true) {
+                selection = selection.placedBefore(SelectionAction.PROTECTED_FOLDERS, SelectionAction.PROTECT, SELECTION_CAPS)
+            }
+            if (parts["s"]?.contains("BOOKMARKS") != true) {
+                selection = selection.placedBefore(SelectionAction.BOOKMARKS, SelectionAction.BOOKMARK, SELECTION_CAPS)
+            }
             return ActionLayout(
-                browse = Zoned.decode(parts["b"], BrowseAction.entries, DEFAULT_BROWSE, BROWSE_CAPS),
-                selection = Zoned.decode(parts["s"], SelectionAction.entries, DEFAULT_SELECTION, SELECTION_CAPS),
+                browse = browse,
+                selection = selection,
                 sheet = Zoned.decode(parts["q"], SheetAction.entries, DEFAULT_SHEET, SHEET_CAPS),
             )
+        }
+
+        private fun <T : Enum<T>> Zoned<T>.placedBefore(item: T, anchor: T, caps: List<Int>): Zoned<T> {
+            val zone = zoneOf(anchor)
+            if (zone < 0 || zoneOf(item) < 0) return this
+            return moveTo(item, zone, zones[zone].indexOf(anchor), caps)
+        }
+
+        private fun <T : Enum<T>> Zoned<T>.placedAfter(item: T, anchor: T, caps: List<Int>): Zoned<T> {
+            val zone = zoneOf(anchor)
+            if (zone < 0 || zoneOf(item) < 0) return this
+            return moveTo(item, zone, zones[zone].indexOf(anchor) + 1, caps)
         }
     }
 }

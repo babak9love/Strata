@@ -584,6 +584,11 @@ class ExplorerViewModel(
         postMessage(tr(R.string.explorer_protected_added, item.name))
     }
 
+    fun protectPath(path: String) = viewModelScope.launch {
+        settingsRepo.protectFolder(path)
+        postMessage(tr(R.string.explorer_protected_added, File(path).name.ifEmpty { path }))
+    }
+
     fun unprotectFolder(path: String) = viewModelScope.launch { settingsRepo.unprotectFolder(path) }
 
     fun deleteSelection(pane: Pane, toRecycleBin: Boolean) {

@@ -313,7 +313,7 @@
     <string name="settings_group_protected">Защищённые папки</string>
     <string name="settings_protected_footer">Эти папки нельзя удалить отсюда, но всё внутри них удалить можно. Чтобы защитить папку, выберите её и нажмите «Защитить от удаления». На другие приложения это не влияет.</string>
     <string name="settings_protected_empty">Защищённых папок пока нет</string>
-    <string name="model_unprotect_folder">Снять защиту от удаления</string>
+    <string name="model_unprotect_folder">Снять защиту</string>
     <string name="explorer_protected_ask_title">Какая папка останется защищённой?</string>
     <string name="explorer_protected_ask_text">Защищённая папка «%1$s» перемещена и, так как в месте назначения уже была папка с таким именем, сохранена как «%2$s».</string>
     <string name="explorer_protected_ask_moved">Перемещённая: %1$s</string>

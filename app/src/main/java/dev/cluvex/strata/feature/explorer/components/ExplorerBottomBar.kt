@@ -103,6 +103,7 @@ class BottomBarActions(
     val onBookmarkSelection: () -> Unit = {},
     val onFolderIcon: () -> Unit = {},
     val onProtect: () -> Unit = {},
+    val onProtectedFolders: () -> Unit = {},
     val onBatchRename: () -> Unit = {},
     val onCreateLinks: () -> Unit = {},
     val onMerge: () -> Unit = {},
@@ -142,6 +143,7 @@ fun ExplorerBottomBar(
     smaliFolder: Boolean = false,
     jarFile: Boolean = false,
     archiveFile: Boolean = false,
+    protectedFolder: Boolean = false,
     vault: Boolean = false,
     browse: Zoned<BrowseAction> = dev.cluvex.strata.core.model.ActionLayout.DEFAULT_BROWSE,
     selection: Zoned<SelectionAction> = dev.cluvex.strata.core.model.ActionLayout.DEFAULT_SELECTION,
@@ -175,7 +177,7 @@ fun ExplorerBottomBar(
             modifier = Modifier.fillMaxWidth(),
         ) { selecting ->
             if (selecting) {
-                val context = SelectionContext(selectionCount, selectedFiles, dual, remote, smaliFolder, jarFile, vault, archiveFile)
+                val context = SelectionContext(selectionCount, selectedFiles, dual, remote, smaliFolder, jarFile, vault, archiveFile, protectedFolder)
                 SelectionActions(selectionCount, context, activeIsLeft, selection, actions, hiddenSelection)
             } else {
                 val context = BrowseContext(clipboard = clipboardCount > 0, termux = !remote, project = projectLabel != null)
@@ -213,6 +215,7 @@ private fun BrowseAction.run(a: BottomBarActions) = when (this) {
     BrowseAction.REFRESH -> a.onRefresh()
     BrowseAction.BOOKMARKS -> a.onBookmarks()
     BrowseAction.BOOKMARK_FOLDER -> a.onBookmarkFolder()
+    BrowseAction.PROTECTED_FOLDERS -> a.onProtectedFolders()
     BrowseAction.SELECT_ALL -> a.onSelectAll()
     BrowseAction.RUN_PROJECT -> a.onRunProject()
     BrowseAction.TERMINAL -> a.onOpenTerminal()
@@ -328,7 +331,8 @@ private fun BrowseActions(
 }
 
 @Composable
-private fun SelectionAction.text(dual: Boolean, activeIsLeft: Boolean): String = when (this) {
+private fun SelectionAction.text(dual: Boolean, activeIsLeft: Boolean, unprotect: Boolean = false): String = when (this) {
+    SelectionAction.PROTECT -> stringResource(if (unprotect) R.string.model_unprotect_folder else label)
     SelectionAction.COPY -> stringResource(
         when {
             !dual -> R.string.common_copy
@@ -346,6 +350,9 @@ private fun SelectionAction.text(dual: Boolean, activeIsLeft: Boolean): String =
     else -> if (asks) stringResource(R.string.explorer_action_asks, stringResource(label)) else stringResource(label)
 }
 
+private fun SelectionAction.iconFor(c: SelectionContext): ImageVector =
+    if (this == SelectionAction.PROTECT && c.protectedFolder) androidx.compose.material.icons.Icons.Rounded.LockOpen else icon
+
 private fun SelectionAction.run(a: BottomBarActions, dual: Boolean) = when (this) {
     SelectionAction.OPEN_WITH -> a.onOpenWith()
     SelectionAction.EXTRACT -> a.onExtract()
@@ -361,9 +368,11 @@ private fun SelectionAction.run(a: BottomBarActions, dual: Boolean) = when (this
     SelectionAction.COMPARE -> a.onCompare()
     SelectionAction.SMALI_TO_DEX -> a.onSmaliToDex()
     SelectionAction.JAR_TO_DEX -> a.onJarToDex()
+    SelectionAction.BOOKMARKS -> a.onBookmarks()
     SelectionAction.BOOKMARK -> a.onBookmarkSelection()
     SelectionAction.FOLDER_ICON -> a.onFolderIcon()
     SelectionAction.PROTECT -> a.onProtect()
+    SelectionAction.PROTECTED_FOLDERS -> a.onProtectedFolders()
     SelectionAction.LINKS -> a.onCreateLinks()
     SelectionAction.VAULT -> a.onMoveToVault()
     SelectionAction.RESTORE -> a.onRestore()
@@ -394,13 +403,13 @@ private fun SelectionActions(
             if (dual && (action == SelectionAction.COPY || action == SelectionAction.MOVE)) {
                 DirectionalAction(action.icon, toRight = activeIsLeft, description = action.text(true, activeIsLeft)) { action.run(a, true) }
             } else {
-                BarButton(action.icon, action.text(dual, activeIsLeft)) { action.run(a, dual) }
+                BarButton(action.iconFor(context), action.text(dual, activeIsLeft, context.protectedFolder)) { action.run(a, dual) }
             }
         }
         Box {
             BarButton(Icons.Rounded.MoreVert, stringResource(R.string.explorer_more_actions)) { more = true }
             val entries = selection.zones[1].filter { it.available(context) && it !in hidden }.map { action ->
-                MenuEntry(action.text(dual, activeIsLeft), action.icon) { more = false; action.run(a, dual) }
+                MenuEntry(action.text(dual, activeIsLeft, context.protectedFolder), action.iconFor(context)) { more = false; action.run(a, dual) }
             }
             val tools = listOf(MenuEntry(stringResource(R.string.explorer_customize_bar), Icons.Rounded.DashboardCustomize) { more = false; a.onCustomize(ToolbarTab.SELECTION) })
             ExpressiveMenu(expanded = more, onDismiss = { more = false }, groups = listOf(entries, tools))

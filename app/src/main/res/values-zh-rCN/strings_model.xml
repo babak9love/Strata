@@ -33,7 +33,7 @@
     <string name="model_selection_copy_path">复制路径</string>
     <string name="model_selection_properties">属性</string>
     <string name="model_selection_invert">反选</string>
-    <string name="model_add_bookmark">添加到书签</string>
+    <string name="model_add_bookmark">将此文件夹加入书签</string>
     <string name="model_move_to_vault">移入保险箱</string>
     <string name="model_restore">恢复</string>
     <string name="model_hint_in_vault">在保险箱中</string>

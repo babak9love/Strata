@@ -278,7 +278,7 @@
     <string name="arsc_complex_not_editable">Styles, arrays and plurals can\'t be edited here yet</string>
     <string name="arsc_unknown_reference">Unknown reference %1$s</string>
     <string name="arsc_bool_value">A bool is true or false</string>
-    <string name="arsc_invalid_value">“%1$s” isn\'t a valid %2$s</string>
+    <string name="arsc_invalid_value">\"%1$s\" isn\'t a valid %2$s</string>
     <string name="arsc_kind_color">color (#RRGGBB / #AARRGGBB)</string>
     <string name="arsc_kind_dimension">dimension (e.g. 16dp, 14sp)</string>
     <string name="arsc_kind_fraction" formatted="false">fraction (e.g. 50%)</string>
