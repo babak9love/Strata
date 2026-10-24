@@ -163,6 +163,8 @@ class SettingsRepository(private val context: Context) {
         val SPEED_VIDEO = floatPreferencesKey("speed_video")
         val SAVE_SPEED_AUDIO = booleanPreferencesKey("save_speed_audio")
         val SPEED_AUDIO = floatPreferencesKey("speed_audio")
+        val VIDEO_VOLUME = floatPreferencesKey("video_volume")
+        val AUDIO_VOLUME = floatPreferencesKey("audio_volume")
         val SHOW_EXTENSIONS = booleanPreferencesKey("show_extensions")
         val START_FOLDER = stringPreferencesKey("start_folder")
         val START_PATH = stringPreferencesKey("start_path")
@@ -227,7 +229,7 @@ class SettingsRepository(private val context: Context) {
             SAVE_SPEED_VIDEO, SAVE_SPEED_AUDIO,
         )
         val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, FOLDER_SCALE, NAME_SCALE, META_SCALE, SEEK_BACK_SECONDS, SEEK_FORWARD_SECONDS)
-        val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE, SPEED_VIDEO, SPEED_AUDIO)
+        val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE, SPEED_VIDEO, SPEED_AUDIO, VIDEO_VOLUME, AUDIO_VOLUME)
         val STRINGS = listOf(
             SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, FOLDER_STYLE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
             START_FOLDER, START_PATH, CONFLICT, UI_DENSITY, OPEN_DEFAULTS, EDITOR_THEME, APK_EXTRACT_DIR, APK_NAME_PATTERN,
@@ -525,6 +527,8 @@ class SettingsRepository(private val context: Context) {
             speedVideo = (p[Keys.SPEED_VIDEO] ?: 1f).coerceIn(0.5f, 2f),
             saveSpeedAudio = p[Keys.SAVE_SPEED_AUDIO] ?: false,
             speedAudio = (p[Keys.SPEED_AUDIO] ?: 1f).coerceIn(0.5f, 2f),
+            videoVolume = (p[Keys.VIDEO_VOLUME] ?: 1f).coerceIn(0.05f, 2f),
+            audioVolume = (p[Keys.AUDIO_VOLUME] ?: 1f).coerceIn(0.05f, 2f),
         )
 
         private fun writeBehavior(p: MutablePreferences, b: BehaviorPrefs) {
@@ -546,6 +550,8 @@ class SettingsRepository(private val context: Context) {
             p[Keys.SPEED_VIDEO] = b.speedVideo.coerceIn(0.5f, 2f)
             p[Keys.SAVE_SPEED_AUDIO] = b.saveSpeedAudio
             p[Keys.SPEED_AUDIO] = b.speedAudio.coerceIn(0.5f, 2f)
+            p[Keys.VIDEO_VOLUME] = b.videoVolume.coerceIn(0.05f, 2f)
+            p[Keys.AUDIO_VOLUME] = b.audioVolume.coerceIn(0.05f, 2f)
         }
 
         internal fun readOperations(p: Preferences) = OperationPrefs(

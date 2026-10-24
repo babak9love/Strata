@@ -37,13 +37,12 @@ object VideoPip {
 
     /** Broadcast actions sent by the buttons inside the floating window. */
     const val ACTION_TOGGLE = "dev.cluvex.strata.PIP_TOGGLE_PLAYBACK"
-    const val ACTION_PREVIOUS = "dev.cluvex.strata.PIP_PREVIOUS"
     const val ACTION_NEXT = "dev.cluvex.strata.PIP_NEXT"
 
     /** Headphones button: leave the floating window and keep playing the audio only, in the background. */
     const val ACTION_AUDIO_ONLY = "dev.cluvex.strata.PIP_AUDIO_ONLY"
 
-    val ALL_ACTIONS = listOf(ACTION_TOGGLE, ACTION_PREVIOUS, ACTION_NEXT, ACTION_AUDIO_ONLY)
+    val ALL_ACTIONS = listOf(ACTION_TOGGLE, ACTION_NEXT, ACTION_AUDIO_ONLY)
 
     fun enter(activity: Activity, player: Player?) {
         if (!isSupported(activity)) return
@@ -68,13 +67,11 @@ object VideoPip {
 
     private fun buildParams(activity: Activity, player: Player?): PictureInPictureParams {
         val playing = player?.playWhenReady == true
-        // Previous is never disabled: with no earlier video it restarts the current one.
         val hasNext = player?.hasNextMediaItem() == true
         // A disabled Next also gets a dimmed icon, because some devices ignore RemoteAction.isEnabled.
-        val previous = action(activity, 1, ACTION_PREVIOUS, R.drawable.ic_pip_previous, activity.getString(R.string.media_pip_previous))
         val toggle = action(
             activity, 0, ACTION_TOGGLE,
-            if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
+            if (playing) R.drawable.ic_pip_pause else R.drawable.ic_pip_play,
             activity.getString(if (playing) R.string.media_pip_pause else R.string.media_pip_play),
         )
         val next = action(
@@ -84,13 +81,10 @@ object VideoPip {
         )
         val audio = action(activity, 3, ACTION_AUDIO_ONLY, R.drawable.ic_pip_headphones, activity.getString(R.string.media_pip_audio_only))
 
-        // Some devices allow fewer than 4 buttons; keep the most important ones first.
-        val max = activity.maxNumPictureInPictureActions
-        val actions = when {
-            max >= 4 -> listOf(previous, toggle, next, audio)
-            max == 3 -> listOf(toggle, next, audio)
-            else -> listOf(toggle)
-        }
+        // Some devices allow fewer than 3 buttons; keep the most important ones first.
+        val kept = listOf(toggle, next, audio).take(activity.maxNumPictureInPictureActions.coerceAtLeast(1))
+        // Shown left to right: headphones first, then play/pause and next.
+        val actions = kept.filter { it === audio } + kept.filter { it !== audio }
         return PictureInPictureParams.Builder()
             .setAspectRatio(aspect)
             .setActions(actions)

@@ -116,7 +116,6 @@
     <string name="media_original_size">原始大小（100%）</string>
     <string name="media_rotate_screen">旋转屏幕</string>
     <string name="media_pip">画中画</string>
-    <string name="media_pip_previous">上一个</string>
     <string name="media_pip_next">下一个</string>
     <string name="media_pip_play">播放</string>
     <string name="media_pip_pause">暂停</string>
@@ -126,6 +125,7 @@
     <string name="media_speed_save">保存</string>
     <string name="media_mute">静音</string>
     <string name="media_unmute">取消静音</string>
+    <string name="media_volume">音量</string>
     <string name="media_audio_tracks">音轨</string>
     <string name="media_audio_track_disable">禁用</string>
     <string name="media_audio_track_n">音轨 %1$d</string>

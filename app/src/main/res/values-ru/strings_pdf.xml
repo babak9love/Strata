@@ -125,7 +125,6 @@
     <string name="media_original_size">Исходный размер (100%)</string>
     <string name="media_rotate_screen">Повернуть экран</string>
     <string name="media_pip">Картинка в картинке</string>
-    <string name="media_pip_previous">Назад</string>
     <string name="media_pip_next">Далее</string>
     <string name="media_pip_play">Воспроизвести</string>
     <string name="media_pip_pause">Пауза</string>
@@ -135,6 +134,7 @@
     <string name="media_speed_save">Сохранить</string>
     <string name="media_mute">Выключить звук</string>
     <string name="media_unmute">Включить звук</string>
+    <string name="media_volume">Громкость</string>
     <string name="media_audio_tracks">Звуковые дорожки</string>
     <string name="media_audio_track_disable">Отключить</string>
     <string name="media_audio_track_n">Дорожка %1$d</string>

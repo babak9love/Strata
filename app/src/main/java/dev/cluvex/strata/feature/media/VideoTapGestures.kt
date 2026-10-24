@@ -11,7 +11,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 /**
  * Tap and hold gestures for the video area, split into three vertical zones (left, middle, right).
  *
- * - Short tap in the middle zone: [onMiddleTap] (play or pause).
+ * - Short tap in the middle zone: [onMiddleTap] (show or hide the controls).
  * - Short tap in the left or right zone: [onSideTap] (show or hide the controls).
  * - Press and hold in the left or right zone: [onHoldStart] right away once the long-press time
  *   passes, and [onHoldEnd] when the finger lifts, the gesture is cancelled or the composable leaves.

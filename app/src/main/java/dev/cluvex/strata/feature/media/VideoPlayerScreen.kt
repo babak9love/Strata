@@ -162,6 +162,38 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     private var opened: String? = null
     private var resume: ResumeListener? = null
     @Volatile var resumeEnabled = true
+    /**
+     * The player's own volume level the last time it was audible; what un-mute goes back to.
+     * 0 to 1 is the player's volume, 1 to 2 is a boost (up to +6 dB) done with a loudness enhancer.
+     */
+    @Volatile var volumeLevel = 1f
+    private var enhancer: android.media.audiofx.LoudnessEnhancer? = null
+
+    fun setLevel(level: Float) {
+        val l = level.coerceIn(0f, MAX_LEVEL)
+        player?.volume = minOf(l, 1f)
+        if (l > 0f) volumeLevel = l
+        applyBoost()
+    }
+
+    private fun applyBoost() {
+        val e = enhancer ?: return
+        val gainMb = if (volumeLevel > 1f) (2000.0 * kotlin.math.log10(volumeLevel.toDouble())).toInt() else 0
+        runCatching {
+            e.setTargetGain(gainMb)
+            e.enabled = gainMb > 0
+        }
+    }
+
+    private fun rebuildEnhancer(sessionId: Int) {
+        runCatching { enhancer?.release() }
+        enhancer = if (sessionId != C.AUDIO_SESSION_ID_UNSET) {
+            runCatching { android.media.audiofx.LoudnessEnhancer(sessionId) }.getOrNull()
+        } else {
+            null
+        }
+        applyBoost()
+    }
     private var saveJob: kotlinx.coroutines.Job? = null
 
     fun open(path: String, showHidden: Boolean) {
@@ -180,9 +212,15 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     title = mediaItem?.mediaMetadata?.displayTitle?.toString().orEmpty()
                 }
+
+                override fun onAudioSessionIdChanged(audioSessionId: Int) = rebuildEnhancer(audioSessionId)
             })
             resume = ResumeListener(getApplication(), ResumeKind.VIDEO, p) { resumeEnabled }.also { p.addListener(it) }
             if (skip.saveSpeedVideo) p.setPlaybackSpeed(skip.speedVideo)
+            // With headphones connected a remembered level above 90% would start too loud: begin at 90%.
+            val remembered = skip.videoVolume.coerceIn(0.05f, MAX_LEVEL)
+            volumeLevel = if (headphonesConnected(getApplication<Application>())) minOf(remembered, SAFE_LEVEL) else remembered
+            p.volume = minOf(volumeLevel, 1f)
             p.setMediaItems(list.files.map(::mediaItem), list.start, if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
             p.prepare()
             p.playWhenReady = true
@@ -211,11 +249,12 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     fun handOffToBackground(force: Boolean = false) {
         val p = player ?: return
         if (handedOff || (!force && !p.playWhenReady)) return
-        if (force) p.volume = 1f // "audio only" was asked for: unmute
+        if (force && p.volume == 0f) p.volume = volumeLevel.coerceIn(0.05f, 1f) // "audio only" was asked for: unmute
         val items = backgroundItems(p)
         val index = p.currentMediaItemIndex
         val position = p.currentPosition
         val mutedVolume = p.volume
+        val boostLevel = volumeLevel
         resume?.saveNow()
         p.pause()
         handedOff = true
@@ -231,6 +270,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             bgController = c
             c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build()
             c.volume = mutedVolume
+            PlaybackService.sendBoost(c, if (mutedVolume > 0f) boostLevel else 1f)
             c.setMediaItems(items, index, position)
             c.prepare()
             c.play()
@@ -264,12 +304,16 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         val items = backgroundItems(p)
         val index = p.currentMediaItemIndex
         val position = p.currentPosition
+        val closeVolume = p.volume
+        val boostLevel = volumeLevel
         resume?.saveNow()
         p.pause()
         val app = getApplication<Application>()
         val future = MediaController.Builder(app, SessionToken(app, ComponentName(app, PlaybackService::class.java))).buildAsync()
         future.addListener({
             val c = runCatching { future.get() }.getOrNull() ?: return@addListener
+            c.volume = closeVolume
+            PlaybackService.sendBoost(c, if (closeVolume > 0f) boostLevel else 1f)
             c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build()
             c.setMediaItems(items, index, position)
             c.prepare()
@@ -291,6 +335,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             val playing = c.playWhenReady
             c.pause()
             c.volume = 1f
+            PlaybackService.sendBoost(c, 1f)
             c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false).build()
             c.clearMediaItems()
             p.seekTo(index, position)
@@ -306,6 +351,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        runCatching { enhancer?.release() }
+        enhancer = null
         releaseBackground()
         saveJob?.cancel()
         resume?.saveNow()
@@ -315,6 +362,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         private const val SAVE_INTERVAL_MS = 5_000L
+        const val MAX_LEVEL = 2f
+        const val SAFE_LEVEL = 0.9f
 
         fun mediaItem(file: File): MediaItem = MediaItem.Builder()
             .setUri(Uri.fromFile(file))
@@ -344,11 +393,13 @@ fun VideoPlayerScreen(
     onSeekForwardChange: (Int) -> Unit = {},
     saveSpeed: Boolean = false,
     onSaveSpeedChange: (enabled: Boolean, speed: Float) -> Unit = { _, _ -> },
+    onVolumeChange: (Float) -> Unit = {},
     vm: VideoPlayerViewModel = viewModel(),
 ) {
     SideEffect { vm.resumeEnabled = resume }
     LaunchedEffect(path) { vm.open(path, showHidden) }
     val backgroundPlayNow by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
+    val onVolumeChangeNow by androidx.compose.runtime.rememberUpdatedState(onVolumeChange)
     LifecycleEventEffect(Lifecycle.Event.ON_START) { vm.reclaimFromBackground() }
     DisposableEffect(Unit) { onDispose { vm.savePosition() } }
     var controls by remember { mutableStateOf(true) }
@@ -382,7 +433,6 @@ fun VideoPlayerScreen(
         host?.addOnPictureInPictureModeChangedListener(listener)
         onDispose { host?.removeOnPictureInPictureModeChangedListener(listener) }
     }
-    val audio = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     var hud by remember { mutableStateOf(Hud(volume = true, fraction = 0f)) }
     var hudVisible by remember { mutableStateOf(false) }
     LaunchedEffect(hud) {
@@ -424,7 +474,6 @@ fun VideoPlayerScreen(
                 override fun onReceive(c: Context?, intent: android.content.Intent?) {
                     when (intent?.action) {
                         VideoPip.ACTION_TOGGLE -> if (player.playWhenReady) player.pause() else player.play()
-                        VideoPip.ACTION_PREVIOUS -> player.seekToPrevious()
                         VideoPip.ACTION_NEXT -> player.seekToNext()
                         VideoPip.ACTION_AUDIO_ONLY -> {
                             // Close the floating window; ON_STOP then moves the audio to the background service.
@@ -508,9 +557,8 @@ fun VideoPlayerScreen(
     // Press and hold on the left or right side plays at 2x until the finger lifts.
     var holdSpeed by remember { mutableStateOf(1f) }
     var holding by remember { mutableStateOf(false) }
-    val onMiddleTap = androidx.compose.runtime.rememberUpdatedState<() -> Unit> {
-        player?.let { if (it.playWhenReady) it.pause() else it.play() }
-    }
+    // A short tap anywhere (middle or sides) shows or hides the buttons and the seek bar.
+    val onMiddleTap = androidx.compose.runtime.rememberUpdatedState<() -> Unit> { controls = !controls }
     val onSideTap = androidx.compose.runtime.rememberUpdatedState<() -> Unit> { controls = !controls }
     val onHoldStart = androidx.compose.runtime.rememberUpdatedState<() -> Unit> {
         player?.let {
@@ -539,32 +587,37 @@ fun VideoPlayerScreen(
                         // Vertical swipe: left half = brightness, right half = volume.
                         var volume = true
                         var fraction = 0f
+                        var headphones = false
                         detectVerticalDragGestures(
                             onDragStart = { offset ->
                                 volume = offset.x >= size.width / 2f
+                                // The right half sets the video's own volume, not the phone's.
+                                headphones = volume && headphonesConnected(context)
                                 fraction = if (volume) {
-                                    val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
-                                    audio.getStreamVolume(AudioManager.STREAM_MUSIC) / max.toFloat()
+                                    if (vm.player?.volume == 0f) 0f else vm.volumeLevel
                                 } else {
                                     currentBrightness(activity, context)
                                 }
-                                hud = Hud(volume, fraction)
+                                hud = Hud(volume, fraction, headphones && fraction > VideoPlayerViewModel.SAFE_LEVEL)
                                 hudVisible = true
                             },
                             onVerticalDrag = { change, dy ->
                                 change.consume()
-                                fraction = (fraction - dy / (size.height * 0.6f)).coerceIn(0f, 1f)
+                                // Volume goes from 0 to 200% (above 100% is a boost); brightness from 0 to 100%.
+                                val top = if (volume) VideoPlayerViewModel.MAX_LEVEL else 1f
+                                fraction = (fraction - dy / (size.height * 0.6f)).coerceIn(0f, top)
                                 if (volume) {
-                                    val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
-                                    runCatching { audio.setStreamVolume(AudioManager.STREAM_MUSIC, (fraction * max).roundToInt(), 0) }
+                                    vm.setLevel(fraction)
                                 } else {
                                     activity?.window?.let { w ->
                                         w.attributes = w.attributes.also { it.screenBrightness = fraction.coerceAtLeast(0.01f) }
                                     }
                                 }
-                                hud = Hud(volume, fraction)
+                                hud = Hud(volume, fraction, headphones && fraction > VideoPlayerViewModel.SAFE_LEVEL)
                                 hudVisible = true
                             },
+                            onDragEnd = { if (volume) onVolumeChangeNow(vm.volumeLevel) },
+                            onDragCancel = { if (volume) onVolumeChangeNow(vm.volumeLevel) },
                         )
                     },
                 showControls = controls,
@@ -723,7 +776,7 @@ fun VideoPlayerScreen(
                     Column(Modifier.navigationBarsPadding()) {
                         AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
                             Box(Modifier.fillMaxWidth().padding(end = 22.dp, bottom = 8.dp), contentAlignment = Alignment.CenterEnd) {
-                                MuteButton(p)
+                                MuteButton(p) { vm.volumeLevel }
                             }
                         }
                         AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
@@ -817,7 +870,23 @@ private class TitlePopupPositionProvider : PopupPositionProvider {
     }
 }
 
-private data class Hud(val volume: Boolean, val fraction: Float)
+private data class Hud(val volume: Boolean, val fraction: Float, val danger: Boolean = false)
+
+/** Whether headphones (wired, USB or Bluetooth) are the current audio output. */
+internal fun headphonesConnected(context: Context): Boolean {
+    val am = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return false
+    return am.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any { d ->
+        when (d.type) {
+            android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+            android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET,
+            android.media.AudioDeviceInfo.TYPE_USB_HEADSET,
+            android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+            android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+            -> true
+            else -> android.os.Build.VERSION.SDK_INT >= 31 && d.type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET
+        }
+    }
+}
 
 @Composable
 private fun GestureHud(hud: Hud) {
@@ -826,14 +895,18 @@ private fun GestureHud(hud: Hud) {
         hud.fraction <= 0f -> Icons.Rounded.VolumeOff
         else -> Icons.Rounded.VolumeUp
     }
+    // Red when headphones are connected and the volume is above the safe level.
+    val tint = if (hud.danger) Color(0xFFFF3B30) else Color.White
+    val top = if (hud.volume) VideoPlayerViewModel.MAX_LEVEL else 1f
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(28.dp))
+        if (hud.volume) Text("${(hud.fraction * 100).roundToInt()}%", color = tint, style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(8.dp))
         Box(
             Modifier.width(5.dp).height(140.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.3f)),
             contentAlignment = Alignment.BottomCenter,
         ) {
-            Box(Modifier.fillMaxHeight(hud.fraction.coerceIn(0f, 1f)).width(5.dp).background(Color.White))
+            Box(Modifier.fillMaxHeight((hud.fraction / top).coerceIn(0f, 1f)).width(5.dp).background(tint))
         }
     }
 }
@@ -933,7 +1006,7 @@ private fun CrispButton(slot: Dp, onClick: () -> Unit, enabled: Boolean = true, 
 
 /** Round mute / unmute button for the video itself (the phone's volume is not touched). */
 @Composable
-private fun MuteButton(player: Player?) {
+private fun MuteButton(player: Player?, restoreVolume: () -> Float) {
     var muted by remember(player) { mutableStateOf(player?.volume == 0f) }
     DisposableEffect(player) {
         if (player == null) {
@@ -954,7 +1027,7 @@ private fun MuteButton(player: Player?) {
             .size(40.dp)
             .clip(CircleShape)
             .background(Color(0xCC1B1B1B))
-            .clickable(enabled = player != null) { player?.volume = if (muted) 1f else 0f },
+            .clickable(enabled = player != null) { player?.volume = if (muted) restoreVolume().coerceIn(0.05f, 1f) else 0f },
         contentAlignment = Alignment.Center,
     ) {
         Icon(

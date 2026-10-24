@@ -113,11 +113,12 @@ private fun SpeedDialog(player: Player, save: SpeedSave?, onDismiss: () -> Unit)
                                         save.onChange(v, speed)
                                     },
                                 )
-                                .padding(end = 12.dp),
+                                .padding(start = 0.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Checkbox(checked = saveOn, onCheckedChange = null, modifier = Modifier.padding(12.dp))
+                            // The label comes first, then the tick box.
                             Text(stringResource(R.string.media_speed_save))
+                            Checkbox(checked = saveOn, onCheckedChange = null, modifier = Modifier.padding(12.dp))
                         }
                     } else {
                         Spacer(Modifier.width(1.dp))

@@ -16,6 +16,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.CommandButton
+import androidx.media3.session.MediaController
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
@@ -44,6 +45,8 @@ class PlaybackService : MediaSessionService() {
     @Volatile private var backgroundVideo = true
     @Volatile private var seekBackMs = 5_000L
     @Volatile private var seekForwardMs = 15_000L
+    private var enhancer: android.media.audiofx.LoudnessEnhancer? = null
+    @Volatile private var boostLevel = 1f
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val handler = Handler(Looper.getMainLooper())
     private val saveTick = object : Runnable {
@@ -83,6 +86,10 @@ class PlaybackService : MediaSessionService() {
                     seekForwardMs = forward * 1000L
                 }
         }
+        player.addListener(object : Player.Listener {
+            override fun onAudioSessionIdChanged(audioSessionId: Int) = rebuildEnhancer(audioSessionId)
+        })
+        rebuildEnhancer(player.audioSessionId)
         resume = ResumeListener(this, ResumeKind.AUDIO, player) { resumeEnabled }.also { player.addListener(it) }
         handler.postDelayed(saveTick, SAVE_INTERVAL_MS)
         val openApp = PendingIntent.getActivity(
@@ -98,6 +105,32 @@ class PlaybackService : MediaSessionService() {
             override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) = updateNotificationButtons()
         })
         updateNotificationButtons()
+    }
+
+    /** Volume boost above 100% (1 to 2, up to +6 dB), done with a loudness enhancer on the player's audio session. */
+    private fun setBoost(level: Float) {
+        boostLevel = level.coerceIn(1f, 2f)
+        applyBoost()
+        session?.setSessionExtras(Bundle().apply { putFloat(EXTRA_BOOST, boostLevel) })
+    }
+
+    private fun applyBoost() {
+        val e = enhancer ?: return
+        val gainMb = if (boostLevel > 1f) (2000.0 * kotlin.math.log10(boostLevel.toDouble())).toInt() else 0
+        runCatching {
+            e.setTargetGain(gainMb)
+            e.enabled = gainMb > 0
+        }
+    }
+
+    private fun rebuildEnhancer(sessionId: Int) {
+        runCatching { enhancer?.release() }
+        enhancer = if (sessionId != C.AUDIO_SESSION_ID_UNSET) {
+            runCatching { android.media.audiofx.LoudnessEnhancer(sessionId) }.getOrNull()
+        } else {
+            null
+        }
+        applyBoost()
     }
 
     /** Media keys, headset buttons and the notification skip by the lengths chosen in the video player. */
@@ -175,6 +208,8 @@ class PlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         handler.removeCallbacks(saveTick)
+        runCatching { enhancer?.release() }
+        enhancer = null
         resume?.saveNow()
         resume = null
         scope.cancel()
@@ -202,6 +237,16 @@ class PlaybackService : MediaSessionService() {
         private const val SAVE_INTERVAL_MS = 5_000L
         const val ACTION_EXIT = "dev.cluvex.strata.media.EXIT"
         private const val ACTION_SPEED = "dev.cluvex.strata.media.SPEED"
+        private const val ACTION_BOOST = "dev.cluvex.strata.media.BOOST"
+
+        /** Key of the boost level (1 to 2) in the command's arguments and in the session extras. */
+        const val EXTRA_BOOST = "boost"
+
+        /** Asks the service to boost the volume above 100% ([level] 1 = no boost, 2 = +6 dB). */
+        @OptIn(UnstableApi::class)
+        fun sendBoost(controller: MediaController, level: Float) {
+            controller.sendCustomCommand(SessionCommand(ACTION_BOOST, Bundle.EMPTY), Bundle().apply { putFloat(EXTRA_BOOST, level) })
+        }
         private val SPEED_ICONS = intArrayOf(
             R.drawable.ic_notif_speed_050,
             R.drawable.ic_notif_speed_055,
@@ -247,6 +292,7 @@ class PlaybackService : MediaSessionService() {
                 val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
                     .add(SessionCommand(ACTION_EXIT, Bundle.EMPTY))
                     .add(SessionCommand(ACTION_SPEED, Bundle.EMPTY))
+                    .add(SessionCommand(ACTION_BOOST, Bundle.EMPTY))
                     .build()
                 return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
                     .setAvailableSessionCommands(sessionCommands)
@@ -287,6 +333,10 @@ class PlaybackService : MediaSessionService() {
         ): ListenableFuture<SessionResult> {
             if (customCommand.customAction == ACTION_EXIT) {
                 exitPlayback()
+                return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            }
+            if (customCommand.customAction == ACTION_BOOST) {
+                setBoost(args.getFloat(EXTRA_BOOST, 1f))
                 return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
             }
             if (customCommand.customAction == ACTION_SPEED) {

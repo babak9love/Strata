@@ -82,6 +82,10 @@ data class BehaviorPrefs(
     val speedVideo: Float = 1f,
     val saveSpeedAudio: Boolean = false,
     val speedAudio: Float = 1f,
+    /** The video player's own volume level (0.05 to 2; above 1 is a boost), independent of the phone's volume. */
+    val videoVolume: Float = 1f,
+    /** The music player's own volume level (0.05 to 2; above 1 is a boost), independent of the phone's volume. */
+    val audioVolume: Float = 1f,
 )
 
 enum class ConflictChoice(@StringRes val label: Int) {
