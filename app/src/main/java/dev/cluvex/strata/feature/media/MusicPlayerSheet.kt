@@ -140,9 +140,9 @@ fun MusicPlayerSheet(
         val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.AUDIO, showHidden) }
         val behavior = dev.cluvex.strata.core.data.SettingsRepository(context).settings.first().behavior
         if (behavior.saveSpeedAudio) c.setPlaybackSpeed(behavior.speedAudio)
-        // The player's own volume (not the phone's); with headphones a remembered level above 90% starts at 90%.
+        // The player's own volume (not the phone's); a remembered boost above the 100% limit starts at 100%.
         val remembered = behavior.audioVolume.coerceIn(0.05f, 2f)
-        val start = if (headphonesConnected(context)) minOf(remembered, 0.9f) else remembered
+        val start = minOf(remembered, VideoPlayerViewModel.SAFE_LEVEL)
         c.volume = minOf(start, 1f)
         PlaybackService.sendBoost(c, start)
         c.setMediaItems(list.files.map(::songItem), list.start, if (resume) PlaybackPositions.get(context, ResumeKind.AUDIO, path) else 0L)
@@ -231,13 +231,16 @@ fun MusicPlayerSheet(
                     RepeatButton(c)
                 }
             }
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                VolumeRow(c, onVolumeChange)
-            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SpeedButton(c, save = SpeedSave(saveSpeed, onSaveSpeedChange))
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
+            }
+        }
+        // The player's own volume: a small vertical bar in the free space to the left of the cover.
+        controller?.let { vc ->
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                VolumeBar(vc, onVolumeChange, Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 8.dp))
             }
         }
         // Menu pinned to the physical top-right corner of the sheet (regardless of language direction).
@@ -294,67 +297,3 @@ private fun songItem(file: File): MediaItem = MediaItem.Builder()
     .setMediaId(file.path)
     .setMediaMetadata(MediaMetadata.Builder().setDisplayTitle(file.nameWithoutExtension).build())
     .build()
-
-
-/** The music player's own volume: a mute button, a slider and the percentage. Independent of the phone's volume. */
-@Composable
-private fun VolumeRow(player: MediaController, onVolumeChange: (Float) -> Unit) {
-    val context = LocalContext.current
-    // 0 to 1 is the player's volume; 1 to 2 is a boost done by the service.
-    var boost by remember(player) { mutableFloatStateOf(player.sessionExtras.getFloat(PlaybackService.EXTRA_BOOST, 1f)) }
-    var level by remember(player) { mutableFloatStateOf(if (boost > 1f && player.volume >= 1f) boost else player.volume) }
-    // The last audible level, so un-muting goes back to it.
-    var lastLevel by remember(player) { mutableFloatStateOf(if (player.volume > 0f) player.volume else 1f) }
-    DisposableEffect(player) {
-        val listener = object : Player.Listener {
-            override fun onVolumeChanged(volume: Float) {
-                level = if (boost > 1f && volume >= 1f) boost else volume
-                if (level > 0f) lastLevel = level
-            }
-        }
-        player.addListener(listener)
-        onDispose { player.removeListener(listener) }
-    }
-    // Red when headphones are connected and the volume is above the safe level.
-    val danger = remember(level) { level > 0.9f && headphonesConnected(context) }
-    LaunchedEffect(level) { if (level > 0f) lastLevel = level }
-    val accent = if (danger) androidx.compose.ui.graphics.Color(0xFFFF3B30) else MaterialTheme.colorScheme.primary
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = {
-            if (level > 0f) {
-                player.volume = 0f
-            } else {
-                player.volume = minOf(lastLevel, 1f).coerceAtLeast(0.05f)
-                onVolumeChange(lastLevel)
-            }
-        }) {
-            Icon(
-                if (level <= 0f) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
-                contentDescription = stringResource(R.string.media_volume),
-                tint = if (danger) accent else LocalContentColor.current,
-            )
-        }
-        Slider(
-            value = level,
-            onValueChange = { v ->
-                level = v
-                player.volume = minOf(v, 1f)
-                if (v > 1f || boost > 1f) {
-                    boost = maxOf(v, 1f)
-                    PlaybackService.sendBoost(player, boost)
-                }
-            },
-            onValueChangeFinished = { if (level > 0f) onVolumeChange(level) },
-            valueRange = 0f..2f,
-            colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent),
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            "${(level * 100).roundToInt()}%",
-            style = MaterialTheme.typography.labelLarge,
-            color = if (danger) accent else MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End,
-            modifier = Modifier.width(48.dp),
-        )
-    }
-}

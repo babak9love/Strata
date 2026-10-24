@@ -217,9 +217,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             })
             resume = ResumeListener(getApplication(), ResumeKind.VIDEO, p) { resumeEnabled }.also { p.addListener(it) }
             if (skip.saveSpeedVideo) p.setPlaybackSpeed(skip.speedVideo)
-            // With headphones connected a remembered level above 90% would start too loud: begin at 90%.
-            val remembered = skip.videoVolume.coerceIn(0.05f, MAX_LEVEL)
-            volumeLevel = if (headphonesConnected(getApplication<Application>())) minOf(remembered, SAFE_LEVEL) else remembered
+            // A remembered boost above the 100% limit starts at 100%.
+            volumeLevel = minOf(skip.videoVolume.coerceIn(0.05f, MAX_LEVEL), SAFE_LEVEL)
             p.volume = minOf(volumeLevel, 1f)
             p.setMediaItems(list.files.map(::mediaItem), list.start, if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
             p.prepare()
@@ -363,7 +362,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     companion object {
         private const val SAVE_INTERVAL_MS = 5_000L
         const val MAX_LEVEL = 2f
-        const val SAFE_LEVEL = 0.9f
+        const val SAFE_LEVEL = 1f
 
         fun mediaItem(file: File): MediaItem = MediaItem.Builder()
             .setUri(Uri.fromFile(file))
@@ -587,18 +586,16 @@ fun VideoPlayerScreen(
                         // Vertical swipe: left half = brightness, right half = volume.
                         var volume = true
                         var fraction = 0f
-                        var headphones = false
                         detectVerticalDragGestures(
                             onDragStart = { offset ->
                                 volume = offset.x >= size.width / 2f
                                 // The right half sets the video's own volume, not the phone's.
-                                headphones = volume && headphonesConnected(context)
                                 fraction = if (volume) {
                                     if (vm.player?.volume == 0f) 0f else vm.volumeLevel
                                 } else {
                                     currentBrightness(activity, context)
                                 }
-                                hud = Hud(volume, fraction, headphones && fraction > VideoPlayerViewModel.SAFE_LEVEL)
+                                hud = Hud(volume, fraction)
                                 hudVisible = true
                             },
                             onVerticalDrag = { change, dy ->
@@ -613,7 +610,7 @@ fun VideoPlayerScreen(
                                         w.attributes = w.attributes.also { it.screenBrightness = fraction.coerceAtLeast(0.01f) }
                                     }
                                 }
-                                hud = Hud(volume, fraction, headphones && fraction > VideoPlayerViewModel.SAFE_LEVEL)
+                                hud = Hud(volume, fraction)
                                 hudVisible = true
                             },
                             onDragEnd = { if (volume) onVolumeChangeNow(vm.volumeLevel) },
@@ -870,23 +867,7 @@ private class TitlePopupPositionProvider : PopupPositionProvider {
     }
 }
 
-private data class Hud(val volume: Boolean, val fraction: Float, val danger: Boolean = false)
-
-/** Whether headphones (wired, USB or Bluetooth) are the current audio output. */
-internal fun headphonesConnected(context: Context): Boolean {
-    val am = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return false
-    return am.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any { d ->
-        when (d.type) {
-            android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
-            android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET,
-            android.media.AudioDeviceInfo.TYPE_USB_HEADSET,
-            android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
-            android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
-            -> true
-            else -> android.os.Build.VERSION.SDK_INT >= 31 && d.type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET
-        }
-    }
-}
+private data class Hud(val volume: Boolean, val fraction: Float)
 
 @Composable
 private fun GestureHud(hud: Hud) {
@@ -895,18 +876,33 @@ private fun GestureHud(hud: Hud) {
         hud.fraction <= 0f -> Icons.Rounded.VolumeOff
         else -> Icons.Rounded.VolumeUp
     }
-    // Red when headphones are connected and the volume is above the safe level.
-    val tint = if (hud.danger) Color(0xFFFF3B30) else Color.White
-    val top = if (hud.volume) VideoPlayerViewModel.MAX_LEVEL else 1f
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(28.dp))
-        if (hud.volume) Text("${(hud.fraction * 100).roundToInt()}%", color = tint, style = MaterialTheme.typography.labelMedium)
-        Spacer(Modifier.height(8.dp))
-        Box(
-            Modifier.width(5.dp).height(140.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.3f)),
-            contentAlignment = Alignment.BottomCenter,
-        ) {
-            Box(Modifier.fillMaxHeight((hud.fraction / top).coerceIn(0f, 1f)).width(5.dp).background(tint))
+    if (hud.volume) {
+        // Volume: the speaker on top (so it never sits next to the mute button below), then the percentage and the
+        // bar (blue up to 100%, yellow, red at 200%).
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.height(6.dp))
+            Text("${(hud.fraction * 100).roundToInt()}%", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            androidx.compose.foundation.Canvas(Modifier.width(6.dp).height(140.dp)) {
+                val corner = androidx.compose.ui.geometry.CornerRadius(size.width / 2f)
+                drawRoundRect(Color.White.copy(alpha = 0.3f), cornerRadius = corner)
+                val frac = (hud.fraction / VideoPlayerViewModel.MAX_LEVEL).coerceIn(0f, 1f)
+                androidx.compose.ui.graphics.drawscope.clipRect(top = size.height * (1f - frac)) {
+                    drawRoundRect(volumeBrush(0f, size.height), cornerRadius = corner)
+                }
+            }
+        }
+    } else {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.height(8.dp))
+            Box(
+                Modifier.width(5.dp).height(140.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                Box(Modifier.fillMaxHeight(hud.fraction.coerceIn(0f, 1f)).width(5.dp).background(Color.White))
+            }
         }
     }
 }
