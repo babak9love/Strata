@@ -276,4 +276,22 @@
         <item quantity="one">%d item</item>
         <item quantity="other">%d items</item>
     </plurals>
+    <string name="model_protect_folder">Protect from deletion</string>
+    <string name="explorer_protected_one">“%1$s” is in your protected folders list.</string>
+    <string name="explorer_protected_inside">“%1$s” contains the protected folder “%2$s”, so it can’t be deleted.</string>
+    <string name="explorer_protected_many">%1$d protected folders were not deleted.</string>
+    <string name="explorer_protected_added">“%1$s” is now protected from deletion.</string>
+    <string name="explorer_protected_remove_title">Remove protection?</string>
+    <string name="explorer_protected_remove_text">“%1$s” will be deletable again.</string>
+    <string name="explorer_protected_remove_confirm">Remove</string>
+    <string name="explorer_protected_badge">Protected from deletion</string>
+    <string name="settings_group_protected">Protected folders</string>
+    <string name="settings_protected_footer">These folders can’t be deleted from here, but everything inside them can. To protect a folder, select it and choose “Protect from deletion”. Other apps are not affected.</string>
+    <string name="settings_protected_empty">No protected folders yet</string>
+    <string name="model_unprotect_folder">Remove deletion protection</string>
+    <string name="explorer_protected_ask_title">Which folder stays protected?</string>
+    <string name="explorer_protected_ask_text">The protected folder “%1$s” was moved, and because the destination already had a folder with that name, it was saved as “%2$s”.</string>
+    <string name="explorer_protected_ask_moved">Moved: %1$s</string>
+    <string name="explorer_protected_ask_existing">Already there: %1$s</string>
+    <string name="explorer_protected_ask_both">Both</string>
 </resources>

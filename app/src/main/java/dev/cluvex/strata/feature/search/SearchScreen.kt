@@ -222,6 +222,13 @@ fun SearchScreen(
             onChanged = { explorer.refreshAll() },
         )
         is SearchDialog.Delete -> {
+            val blocked = remember(d.items) { explorer.protectedBlocked(d.items) }
+            if (blocked.isNotEmpty() && blocked.size == d.items.size) {
+                LaunchedEffect(Unit) {
+                    explorer.reportProtected(blocked)
+                    dialog = SearchDialog.None
+                }
+            } else {
             var stats by remember { mutableStateOf<DirStats?>(null) }
             var counting by remember { mutableStateOf(true) }
             LaunchedEffect(Unit) {
@@ -243,6 +250,7 @@ fun SearchScreen(
                 },
                 onDismiss = { dialog = SearchDialog.None },
             )
+            }
         }
     }
 }
@@ -259,6 +267,7 @@ private sealed interface SearchDialog {
 private val SearchHiddenActions = setOf(
     SelectionAction.BATCH_RENAME,
     SelectionAction.FOLDER_ICON,
+    SelectionAction.PROTECT,
     SelectionAction.MERGE,
     SelectionAction.LINKS,
     SelectionAction.VAULT,

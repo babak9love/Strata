@@ -301,4 +301,22 @@
         <item quantity="many">%d элементов</item>
         <item quantity="other">%d элемента</item>
     </plurals>
+    <string name="model_protect_folder">Защитить от удаления</string>
+    <string name="explorer_protected_one">«%1$s» находится в списке защищённых папок.</string>
+    <string name="explorer_protected_inside">«%1$s» содержит защищённую папку «%2$s», поэтому её нельзя удалить.</string>
+    <string name="explorer_protected_many">Защищённых папок не удалено: %1$d.</string>
+    <string name="explorer_protected_added">«%1$s» теперь защищена от удаления.</string>
+    <string name="explorer_protected_remove_title">Снять защиту?</string>
+    <string name="explorer_protected_remove_text">«%1$s» снова можно будет удалить.</string>
+    <string name="explorer_protected_remove_confirm">Снять</string>
+    <string name="explorer_protected_badge">Защищено от удаления</string>
+    <string name="settings_group_protected">Защищённые папки</string>
+    <string name="settings_protected_footer">Эти папки нельзя удалить отсюда, но всё внутри них удалить можно. Чтобы защитить папку, выберите её и нажмите «Защитить от удаления». На другие приложения это не влияет.</string>
+    <string name="settings_protected_empty">Защищённых папок пока нет</string>
+    <string name="model_unprotect_folder">Снять защиту от удаления</string>
+    <string name="explorer_protected_ask_title">Какая папка останется защищённой?</string>
+    <string name="explorer_protected_ask_text">Защищённая папка «%1$s» перемещена и, так как в месте назначения уже была папка с таким именем, сохранена как «%2$s».</string>
+    <string name="explorer_protected_ask_moved">Перемещённая: %1$s</string>
+    <string name="explorer_protected_ask_existing">Уже была: %1$s</string>
+    <string name="explorer_protected_ask_both">Обе</string>
 </resources>

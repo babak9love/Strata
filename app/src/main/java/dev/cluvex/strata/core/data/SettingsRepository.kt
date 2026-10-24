@@ -102,6 +102,7 @@ data class StrataSettings(
     val runCommands: Map<String, String> = emptyMap(),
     val reader: ReaderPrefs = ReaderPrefs(),
     val actions: ActionLayout = ActionLayout(),
+    val protectedFolders: List<String> = emptyList(),
 )
 
 fun StrataSettings.sortFor(path: String): SortOrder = FolderSorts.effective(path, sortOrder, folderSorts)
@@ -170,6 +171,7 @@ class SettingsRepository(private val context: Context) {
         val REPEAT_AUDIO = intPreferencesKey("repeat_audio")
         val SHUFFLE_AUDIO = booleanPreferencesKey("shuffle_audio")
         val PLAY_ALONE_VIDEO = booleanPreferencesKey("play_alone_video")
+        val PROTECTED_FOLDERS = stringPreferencesKey("protected_folders")
         val PLAY_ALONE_AUDIO = booleanPreferencesKey("play_alone_audio")
         val SHOW_EXTENSIONS = booleanPreferencesKey("show_extensions")
         val START_FOLDER = stringPreferencesKey("start_folder")
@@ -240,7 +242,7 @@ class SettingsRepository(private val context: Context) {
             SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, FOLDER_STYLE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
             START_FOLDER, START_PATH, CONFLICT, UI_DENSITY, OPEN_DEFAULTS, EDITOR_THEME, APK_EXTRACT_DIR, APK_NAME_PATTERN,
             RENAME_HISTORY, RECENT_COLORS, PLUGIN_PINS, LAST_LEFT, LAST_RIGHT, RUN_COMMANDS, READER_THEME, READER_SPOTS, READER_MARKS,
-            ACTION_LAYOUT, LOCK_DELAY, VAULT_LOCK_DELAY,
+            ACTION_LAYOUT, LOCK_DELAY, VAULT_LOCK_DELAY, PROTECTED_FOLDERS,
         )
 
         val PRIVATE: Set<String> = setOf(
@@ -301,6 +303,41 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setShowHidden(value: Boolean) = context.dataStore.edit { it[Keys.SHOW_HIDDEN] = value }
     suspend fun setDualPanePreferred(value: Boolean) = context.dataStore.edit { it[Keys.DUAL_PANE] = value }
+    suspend fun protectFolder(path: String) = context.dataStore.edit { p ->
+        val list = dev.cluvex.strata.core.model.ProtectedFolders.decode(p[Keys.PROTECTED_FOLDERS])
+        val key = dev.cluvex.strata.core.model.ProtectedFolders.canonical(path)
+        if (key !in list) p[Keys.PROTECTED_FOLDERS] = dev.cluvex.strata.core.model.ProtectedFolders.encode(list + key)
+    }
+
+    /** Folders were moved or renamed inside the app: protected folders follow them to their new paths. */
+    suspend fun followMoves(moves: List<Pair<String, String>>) {
+        if (moves.isEmpty()) return
+        context.dataStore.edit { p ->
+            val list = dev.cluvex.strata.core.model.ProtectedFolders.decode(p[Keys.PROTECTED_FOLDERS])
+            if (list.isEmpty()) return@edit
+            val next = moves.fold(list) { acc, (from, to) -> dev.cluvex.strata.core.model.ProtectedFolders.follow(acc, from, to) }
+            if (next != list) p[Keys.PROTECTED_FOLDERS] = dev.cluvex.strata.core.model.ProtectedFolders.encode(next)
+        }
+    }
+
+    /** A protected folder [from] was moved to [to] (a new name, next to a same-named folder [existing]): protect the one(s) the user chose. */
+    suspend fun resolveKeptBoth(from: String, to: String, existing: String, keepMoved: Boolean, keepExisting: Boolean) {
+        context.dataStore.edit { p ->
+            val pf = dev.cluvex.strata.core.model.ProtectedFolders
+            var next = pf.follow(pf.decode(p[Keys.PROTECTED_FOLDERS]), from, to)
+            if (!keepMoved) next = next - pf.canonical(to)
+            if (keepExisting) next = (next + pf.canonical(existing)).distinct()
+            p[Keys.PROTECTED_FOLDERS] = pf.encode(next)
+        }
+    }
+
+    suspend fun unprotectFolder(path: String) = context.dataStore.edit { p ->
+        val list = dev.cluvex.strata.core.model.ProtectedFolders.decode(p[Keys.PROTECTED_FOLDERS])
+        val plain = dev.cluvex.strata.core.model.ProtectedFolders.key(path)
+        val canonical = dev.cluvex.strata.core.model.ProtectedFolders.canonical(path)
+        p[Keys.PROTECTED_FOLDERS] = dev.cluvex.strata.core.model.ProtectedFolders.encode(list.filter { it != plain && it != canonical })
+    }
+
     suspend fun setTrashByDefault(value: Boolean) = context.dataStore.edit { it[Keys.TRASH_DEFAULT] = value }
     suspend fun setTrashAutoCleanDays(days: Int) = context.dataStore.edit { it[Keys.TRASH_CLEAN_DAYS] = days }
     suspend fun setRootAccess(value: Boolean) = context.dataStore.edit { it[Keys.ROOT_ACCESS] = value }
@@ -397,6 +434,7 @@ class SettingsRepository(private val context: Context) {
                 dirsFirst = p[Keys.DIRS_FIRST] ?: true,
             ),
             folderSorts = FolderSorts.decode(p[Keys.FOLDER_SORTS]),
+            protectedFolders = dev.cluvex.strata.core.model.ProtectedFolders.decode(p[Keys.PROTECTED_FOLDERS]),
             showHidden = p[Keys.SHOW_HIDDEN] ?: false,
             appearance = readAppearance(p),
             list = readList(p),

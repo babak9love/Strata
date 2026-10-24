@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -270,6 +271,9 @@ fun FileTile(
                 folderBadge -> FolderIconWithBadge(item, iconSize, shape)
                 else -> KindIcon(item, iconSize, shape)
             }
+            if (item.isDirectory && dev.cluvex.strata.core.model.ProtectedFolders.shows(settings.protectedFolders, item.path)) {
+                LockBadge(Modifier.align(Alignment.BottomEnd))
+            }
             Box(
                 Modifier
                     .align(Alignment.TopStart)
@@ -403,6 +407,22 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
                 else -> KindIcon(item, iconSize, shape)
             }
         }
+        if (item.isDirectory && dev.cluvex.strata.core.model.ProtectedFolders.shows(settings.protectedFolders, item.path)) {
+            LockBadge(Modifier.align(Alignment.BottomEnd))
+        }
+    }
+}
+
+@Composable
+private fun LockBadge(modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(modifier.size(16.dp).clip(CircleShape).background(colors.primary), contentAlignment = Alignment.Center) {
+        Icon(
+            Icons.Rounded.Lock,
+            contentDescription = stringResource(R.string.explorer_protected_badge),
+            tint = colors.onPrimary,
+            modifier = Modifier.size(10.dp),
+        )
     }
 }
 

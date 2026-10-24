@@ -98,6 +98,9 @@ data class TransferPrompt(
 
 data class DropRequest(val pane: Pane, val items: List<FileItem>, val destination: String)
 
+/** A protected folder was moved and saved under a new name next to a same-named folder: which of the two stays protected? */
+data class ProtectQuestion(val from: String, val to: String)
+
 data class MoveUndo(val message: String, val moved: List<String>, val backTo: String, val seq: Int)
 
 data class IncomingCopy(val uri: String, val name: String, val seq: Int)
@@ -142,6 +145,7 @@ data class ExplorerUiState(
     val remoteEdits: List<RemoteEdit> = emptyList(),
     val storagePrompt: StoragePrompt? = null,
     val undo: MoveUndo? = null,
+    val protectQuestions: List<ProtectQuestion> = emptyList(),
     val incoming: IncomingCopy? = null,
 ) {
     /** The entry a short press on Paste runs: the most recently copied or cut one. */

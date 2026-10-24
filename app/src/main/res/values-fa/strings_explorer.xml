@@ -276,4 +276,22 @@
         <item quantity="one">\u200F%d مورد</item>
         <item quantity="other">\u200F%d مورد</item>
     </plurals>
+    <string name="model_protect_folder">محافظت از حذف</string>
+    <string name="explorer_protected_one">«%1$s» در لیست پوشه‌های محافظت‌شده شماست.</string>
+    <string name="explorer_protected_inside">«%1$s» شامل پوشه‌ی محافظت‌شده‌ی «%2$s» است و حذف نمی‌شود.</string>
+    <string name="explorer_protected_many">%1$d پوشه‌ی محافظت‌شده حذف نشد.</string>
+    <string name="explorer_protected_added">«%1$s» اکنون از حذف محافظت می‌شود.</string>
+    <string name="explorer_protected_remove_title">محافظت برداشته شود؟</string>
+    <string name="explorer_protected_remove_text">«%1$s» دوباره قابل حذف خواهد بود.</string>
+    <string name="explorer_protected_remove_confirm">برداشتن</string>
+    <string name="explorer_protected_badge">محافظت‌شده از حذف</string>
+    <string name="settings_group_protected">پوشه‌های محافظت‌شده</string>
+    <string name="settings_protected_footer">این پوشه‌ها از اینجا قابل حذف نیستند، اما همه‌ی محتوای داخلشان قابل حذف است. برای محافظت از یک پوشه، آن را انتخاب کنید و «محافظت از حذف» را بزنید. برنامه‌های دیگر تحت‌تأثیر نیستند.</string>
+    <string name="settings_protected_empty">هنوز پوشه‌ای محافظت نشده است</string>
+    <string name="model_unprotect_folder">برداشتن محافظت از حذف</string>
+    <string name="explorer_protected_ask_title">کدام پوشه محافظت‌شده بماند؟</string>
+    <string name="explorer_protected_ask_text">پوشه‌ی محافظت‌شده‌ی «%1$s» جابه‌جا شد و چون در مقصد پوشه‌ای هم‌نام داشت، با نام «%2$s» ذخیره شد.</string>
+    <string name="explorer_protected_ask_moved">جابه‌جاشده: %1$s</string>
+    <string name="explorer_protected_ask_existing">موجود در مقصد: %1$s</string>
+    <string name="explorer_protected_ask_both">هر دو</string>
 </resources>

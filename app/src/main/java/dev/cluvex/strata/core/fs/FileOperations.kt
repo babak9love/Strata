@@ -28,6 +28,10 @@ sealed interface OpProgress {
         val failed: List<String>,
         val skipped: List<String> = emptyList(),
         val created: List<String> = emptyList(),
+        /** Old and new path of every item that was moved or renamed, so things tied to a path can follow it. */
+        val moves: List<Pair<String, String>> = emptyList(),
+        /** The moves among [moves] where the item was saved under another name because the destination already had one of that name. */
+        val keptBoth: List<Pair<String, String>> = emptyList(),
     ) : OpProgress
 }
 
@@ -183,6 +187,8 @@ object FileOperations {
         val failed = mutableListOf<String>()
         val skipped = mutableListOf<String>()
         val created = mutableListOf<String>()
+        val moves = mutableListOf<Pair<String, String>>()
+        val keptBoth = mutableListOf<Pair<String, String>>()
 
         for (item in items) {
             currentCoroutineContext().ensureActive()
@@ -226,11 +232,15 @@ object FileOperations {
                 done++
                 doneBytes += FsUtil.sizeOf(target, to)
                 created += target.absolutePath
+                if (move) {
+                    moves += src.absolutePath to target.absolutePath
+                    if (target.name != src.name) keptBoth += src.absolutePath to target.absolutePath
+                }
             } else {
                 failed += item.name
             }
         }
-        emit(OpProgress.Finished(done, failed, skipped, created))
+        emit(OpProgress.Finished(done, failed, skipped, created, moves, keptBoth))
     }.flowOn(Dispatchers.IO)
 
     private fun transferOne(src: File, target: File, move: Boolean, merge: Boolean, from: FileAccess, to: FileAccess, keepTime: Boolean): Boolean {

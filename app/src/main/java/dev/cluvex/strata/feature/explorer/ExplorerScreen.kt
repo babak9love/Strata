@@ -1,8 +1,10 @@
 package dev.cluvex.strata.feature.explorer
 
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import java.io.File
 import kotlinx.coroutines.delay
 import dev.cluvex.strata.core.i18n.separator
 import dev.cluvex.strata.feature.vault.VaultSetupDialog
@@ -152,6 +154,7 @@ private sealed interface Dialog {
     data class JumpTo(val pane: Pane) : Dialog
     data class Rename(val pane: Pane, val item: FileItem) : Dialog
     data class FolderIcon(val item: FileItem) : Dialog
+    data class Unprotect(val item: FileItem) : Dialog
     data class ItemSheet(val pane: Pane, val item: FileItem) : Dialog
     data class Checksum(val item: FileItem) : Dialog
     data class Properties(val items: List<FileItem>) : Dialog
@@ -279,6 +282,29 @@ fun ExplorerScreen(
     drag.onDrop = { session, spot -> vm.dropInto(session.pane, session.items, spot.dir) }
     drag.onSpring = { spot -> Pane.entries.getOrNull(spot.pane)?.let { p -> vm.setActive(p); vm.openPath(p, spot.dir) } }
     val host = remember { arrayOfNulls<LayoutCoordinates>(1) }
+
+    ui.protectQuestions.firstOrNull()?.let { q ->
+        val movedName = File(q.to).name
+        val existingName = File(q.from).name
+        AlertDialog(
+            onDismissRequest = { vm.answerProtectQuestion(keepMoved = true, keepExisting = false) },
+            title = { Text(stringResource(R.string.explorer_protected_ask_title)) },
+            text = { Text(stringResource(R.string.explorer_protected_ask_text, existingName, movedName)) },
+            confirmButton = {
+                Column(horizontalAlignment = Alignment.End) {
+                    TextButton(onClick = { vm.answerProtectQuestion(keepMoved = true, keepExisting = false) }) {
+                        Text(stringResource(R.string.explorer_protected_ask_moved, movedName))
+                    }
+                    TextButton(onClick = { vm.answerProtectQuestion(keepMoved = false, keepExisting = true) }) {
+                        Text(stringResource(R.string.explorer_protected_ask_existing, existingName))
+                    }
+                    TextButton(onClick = { vm.answerProtectQuestion(keepMoved = true, keepExisting = true) }) {
+                        Text(stringResource(R.string.explorer_protected_ask_both))
+                    }
+                }
+            },
+        )
+    }
 
     LaunchedEffect(ui.undo?.seq) {
         val u = ui.undo ?: return@LaunchedEffect
@@ -410,6 +436,12 @@ fun ExplorerScreen(
                     onBookmarkFolder = { vm.addBookmarks(listOf(ui.activePane.path)) },
                     onBookmarkSelection = { vm.addSelectionToBookmarks(ui.active) },
                     onFolderIcon = { single?.takeIf { it.isDirectory }?.let { dialog = Dialog.FolderIcon(it); vm.clearSelection(ui.active) } },
+                    onProtect = {
+                        single?.takeIf { it.isDirectory }?.let {
+                            if (vm.isProtected(it.path)) dialog = Dialog.Unprotect(it) else vm.protectFolder(it)
+                            vm.clearSelection(ui.active)
+                        }
+                    },
                     onBatchRename = { dialog = Dialog.BatchRename(ui.active, selectionInOrder()) },
                     onCreateLinks = { dialog = Dialog.CreateLink(ui.active, selectionInOrder()) },
                     onMerge = { dialog = Dialog.Merge(ui.active, selectionInOrder().filterNot { it.isDirectory }) },
@@ -597,6 +629,17 @@ fun ExplorerScreen(
             onDismiss = { dialog = Dialog.None },
         )
         is Dialog.FolderIcon -> FolderIconDialog(d.item.path) { dialog = Dialog.None }
+        is Dialog.Unprotect -> AlertDialog(
+            onDismissRequest = { dialog = Dialog.None },
+            title = { Text(stringResource(R.string.explorer_protected_remove_title)) },
+            text = { Text(stringResource(R.string.explorer_protected_remove_text, d.item.name)) },
+            confirmButton = {
+                TextButton(onClick = { vm.unprotectFolder(d.item.path); dialog = Dialog.None }) {
+                    Text(stringResource(R.string.explorer_protected_remove_confirm))
+                }
+            },
+            dismissButton = { TextButton(onClick = { dialog = Dialog.None }) { Text(stringResource(R.string.common_cancel)) } },
+        )
         is Dialog.Rename -> RenameDialog(
             name = d.item.name, isDirectory = d.item.isDirectory,
             onConfirm = { vm.rename(d.pane, d.item, it); vm.clearSelection(d.pane); dialog = Dialog.None },
@@ -604,6 +647,14 @@ fun ExplorerScreen(
         )
         is Dialog.Transfer -> Unit
         Dialog.Delete -> {
+        val blocked = remember(selection) { vm.protectedBlocked(selection) }
+        if (blocked.isNotEmpty() && blocked.size == selection.size) {
+            // Nothing in the selection may be deleted: say so right away instead of asking to confirm.
+            LaunchedEffect(Unit) {
+                vm.reportProtected(blocked)
+                dialog = Dialog.None
+            }
+        } else {
         var delStats by remember { mutableStateOf<dev.cluvex.strata.core.props.DirStats?>(null) }
         var delCounting by remember { mutableStateOf(true) }
         LaunchedEffect(Unit) {
@@ -621,6 +672,7 @@ fun ExplorerScreen(
             onConfirm = { toBin -> vm.deleteSelection(ui.active, toBin); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
+        }
         }
         Dialog.Sort -> {
             val folder = ui.activePane.path
@@ -665,6 +717,14 @@ fun ExplorerScreen(
                 onSignApk = { localOnly(d.item) { dialog = Dialog.SignApk(d.item) } },
                 onCompress = { localOnly(d.item) { dialog = Dialog.CreateArchive(d.pane, listOf(d.item)) } },
                 onAddBookmark = { vm.addBookmarks(listOf(d.item.path)); dialog = Dialog.None },
+                onProtect = {
+                    if (vm.isProtected(d.item.path)) {
+                        dialog = Dialog.Unprotect(d.item)
+                    } else {
+                        vm.protectFolder(d.item)
+                        dialog = Dialog.None
+                    }
+                },
                 onCreateLink = { localOnly(d.item) { dialog = Dialog.CreateLink(d.pane, listOf(d.item)) } },
                 onSplit = { localOnly(d.item) { dialog = Dialog.Split(d.pane, d.item) } },
                 onEncrypt = { localOnly(d.item) { dialog = Dialog.Encrypt(d.pane, d.item) } },

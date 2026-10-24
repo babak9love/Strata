@@ -51,6 +51,7 @@ import dev.cluvex.strata.core.archive.ArchiveReader
 import dev.cluvex.strata.core.crypto.FileCipher
 import dev.cluvex.strata.core.model.ActionLayout
 import dev.cluvex.strata.core.model.FileItem
+import dev.cluvex.strata.core.model.ProtectedFolders
 import dev.cluvex.strata.core.model.SheetAction
 import dev.cluvex.strata.core.model.SheetContext
 import dev.cluvex.strata.core.model.SheetGroup
@@ -79,6 +80,7 @@ class ItemActions(
     val onView: () -> Unit,
     val onCompress: () -> Unit,
     val onAddBookmark: () -> Unit,
+    val onProtect: () -> Unit = {},
     val onCreateLink: () -> Unit,
     val onSplit: () -> Unit,
     val onEncrypt: () -> Unit,
@@ -123,6 +125,7 @@ fun ItemActionSheet(
         video = kind == FileKind.VIDEO,
     )
     val encrypted = item.name.endsWith(FileCipher.EXTENSION, ignoreCase = true)
+    val protectedList = dev.cluvex.strata.ui.LocalSettings.current.protectedFolders
     fun entry(a: SheetAction): SheetEntry = when (a) {
         SheetAction.OPEN -> SheetEntry(if (file) Icons.Rounded.FileOpen else Icons.Rounded.FolderOpen, a.label, actions.onOpen)
         SheetAction.OPEN_WITH -> SheetEntry(a.icon, a.label, actions.onOpenWith)
@@ -142,6 +145,11 @@ fun ItemActionSheet(
         SheetAction.CIPHER -> if (encrypted) SheetEntry(Icons.Rounded.LockOpen, R.string.explorer_decrypt_more, actions.onDecrypt) else SheetEntry(a.icon, R.string.explorer_encrypt_more, actions.onEncrypt)
         SheetAction.SELECT -> SheetEntry(a.icon, a.label, actions.onSelect)
         SheetAction.BOOKMARK -> SheetEntry(a.icon, a.label, actions.onAddBookmark)
+        SheetAction.PROTECT -> if (ProtectedFolders.shows(protectedList, item.path)) {
+            SheetEntry(Icons.Rounded.LockOpen, R.string.model_unprotect_folder, actions.onProtect)
+        } else {
+            SheetEntry(a.icon, a.label, actions.onProtect)
+        }
         SheetAction.LINK -> SheetEntry(a.icon, a.label, actions.onCreateLink)
         SheetAction.VAULT -> SheetEntry(a.icon, a.label, actions.onMoveToVault)
         SheetAction.RESTORE -> SheetEntry(a.icon, a.label, actions.onRestore)

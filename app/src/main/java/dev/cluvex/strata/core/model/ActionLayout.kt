@@ -41,6 +41,7 @@ enum class SelectionAction(@StringRes val label: Int, val asks: Boolean = false)
     JAR_TO_DEX(R.string.model_jar_to_dex),
     BOOKMARK(R.string.model_add_bookmark),
     FOLDER_ICON(R.string.model_folder_icon),
+    PROTECT(R.string.model_protect_folder),
     LINKS(R.string.model_selection_links, asks = true),
     VAULT(R.string.model_move_to_vault),
     RESTORE(R.string.model_restore),
@@ -76,6 +77,7 @@ enum class SheetAction(@StringRes val label: Int, val group: SheetGroup) {
     CIPHER(R.string.model_sheet_cipher, SheetGroup.TOOLS),
     SELECT(R.string.model_sheet_select, SheetGroup.ORGANIZE),
     BOOKMARK(R.string.model_add_bookmark, SheetGroup.ORGANIZE),
+    PROTECT(R.string.model_protect_folder, SheetGroup.ORGANIZE),
     LINK(R.string.model_sheet_link, SheetGroup.ORGANIZE),
     VAULT(R.string.model_move_to_vault, SheetGroup.ORGANIZE),
     RESTORE(R.string.model_restore, SheetGroup.ORGANIZE),
@@ -152,6 +154,7 @@ val SheetAction.hint: Int?
         SheetAction.JAR_TO_DEX -> R.string.model_hint_local_jars
         SheetAction.SPLIT, SheetAction.CIPHER -> R.string.model_hint_local_files
         SheetAction.VAULT -> R.string.model_hint_local_not_links
+        SheetAction.PROTECT -> R.string.model_hint_local_folders
         SheetAction.RESTORE -> R.string.model_hint_in_vault
         else -> null
     }
@@ -170,7 +173,7 @@ fun SelectionAction.available(c: SelectionContext): Boolean = when (this) {
     SelectionAction.COPY, SelectionAction.MOVE, SelectionAction.DELETE, SelectionAction.BOOKMARK,
     SelectionAction.SELECT_ALL, SelectionAction.INVERT -> true
     SelectionAction.RENAME -> c.count == 1
-    SelectionAction.FOLDER_ICON -> !c.remote && c.count == 1 && c.files == 0
+    SelectionAction.FOLDER_ICON, SelectionAction.PROTECT -> !c.remote && c.count == 1 && c.files == 0
     SelectionAction.OPEN_WITH -> c.count == 1 && c.files == 1
     SelectionAction.EXTRACT -> !c.remote && c.count == 1 && c.archive
     SelectionAction.BATCH_RENAME, SelectionAction.COMPRESS, SelectionAction.LINKS, SelectionAction.SHARE,
@@ -197,6 +200,7 @@ fun SheetAction.available(c: SheetContext): Boolean = when (this) {
     SheetAction.JAR_TO_DEX -> c.local && c.file && c.jar
     SheetAction.SPLIT, SheetAction.CIPHER -> c.local && c.file && !c.symlink
     SheetAction.VAULT -> c.local && !c.symlink
+    SheetAction.PROTECT -> c.local && !c.file
     SheetAction.RESTORE -> c.vault
     SheetAction.AUDIO_INFO -> c.local && c.file && c.audio
     SheetAction.VIDEO_INFO -> c.local && c.file && c.video
@@ -310,7 +314,7 @@ data class ActionLayout(
                 listOf(
                     SelectionAction.OPEN_WITH, SelectionAction.EXTRACT, SelectionAction.RENAME, SelectionAction.BATCH_RENAME, SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD,
                     SelectionAction.COMPRESS, SelectionAction.MERGE, SelectionAction.COMPARE, SelectionAction.SMALI_TO_DEX,
-                    SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARK, SelectionAction.FOLDER_ICON, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
+                    SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARK, SelectionAction.FOLDER_ICON, SelectionAction.PROTECT, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
                     SelectionAction.COPY_PATH, SelectionAction.PROPERTIES, SelectionAction.SELECT_ALL, SelectionAction.INVERT,
                 ),
                 emptyList(),
@@ -323,7 +327,7 @@ data class ActionLayout(
                 listOf(
                     SheetAction.RESTORE, SheetAction.OPEN_AS_TEXT, SheetAction.HEX, SheetAction.VIEW, SheetAction.APK_INFO, SheetAction.AUDIO_INFO, SheetAction.VIDEO_INFO, SheetAction.EXTRACT,
                     SheetAction.COMPRESS, SheetAction.SIGN_APK, SheetAction.SMALI_TO_DEX, SheetAction.JAR_TO_DEX, SheetAction.CHECKSUM,
-                    SheetAction.SPLIT, SheetAction.CIPHER, SheetAction.SELECT, SheetAction.BOOKMARK,
+                    SheetAction.SPLIT, SheetAction.CIPHER, SheetAction.SELECT, SheetAction.BOOKMARK, SheetAction.PROTECT,
                     SheetAction.LINK, SheetAction.VAULT, SheetAction.PROPERTIES,
                 ),
                 emptyList(),

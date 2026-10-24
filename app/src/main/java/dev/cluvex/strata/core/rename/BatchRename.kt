@@ -210,6 +210,7 @@ object BatchRename {
         val oldNames = changes.mapTo(HashSet()) { it.item.name.lowercase() }
         val failed = mutableListOf<String>()
         val created = mutableListOf<String>()
+        val moves = mutableListOf<Pair<String, String>>()
         var done = 0
 
         val (viaTemp, direct) = changes.partition { it.newName.lowercase() in oldNames }
@@ -233,6 +234,7 @@ object BatchRename {
             if (!FsUtil.exists(dst, access) && src.renameTo(dst)) {
                 done++
                 created += dst.absolutePath
+                moves += src.absolutePath to dst.absolutePath
             } else {
                 failed += c.item.name
             }
@@ -244,13 +246,14 @@ object BatchRename {
             if (!FsUtil.exists(dst, access) && temp.renameTo(dst)) {
                 done++
                 created += dst.absolutePath
+                moves += access.file(c.item.path).absolutePath to dst.absolutePath
             } else {
                 val home = access.file(c.item.path)
                 val restored = !FsUtil.exists(home, access) && temp.renameTo(home)
                 failed += if (restored) c.item.name else tr(R.string.files_rename_left_as, c.item.name, temp.name)
             }
         }
-        emit(OpProgress.Finished(done, failed, created = created))
+        emit(OpProgress.Finished(done, failed, created = created, moves = moves))
     }.flowOn(Dispatchers.IO)
 
     private fun tempSibling(src: File, access: FileAccess): File? {

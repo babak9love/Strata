@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.BookmarkAdd
 import androidx.compose.material.icons.rounded.FolderSpecial
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Bookmarks
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -96,6 +97,7 @@ val SelectionAction.icon: ImageVector
         SelectionAction.JAR_TO_DEX -> Icons.Rounded.Coffee
         SelectionAction.BOOKMARK -> Icons.Rounded.BookmarkAdd
         SelectionAction.FOLDER_ICON -> Icons.Rounded.FolderSpecial
+        SelectionAction.PROTECT -> Icons.Rounded.Lock
         SelectionAction.LINKS -> Icons.Rounded.AddLink
         SelectionAction.VAULT -> Icons.Rounded.EnhancedEncryption
         SelectionAction.RESTORE -> Icons.Rounded.Outbox
@@ -126,6 +128,7 @@ val SheetAction.icon: ImageVector
         SheetAction.CIPHER -> Icons.Rounded.EnhancedEncryption
         SheetAction.SELECT -> Icons.Rounded.CheckCircle
         SheetAction.BOOKMARK -> Icons.Rounded.BookmarkAdd
+        SheetAction.PROTECT -> Icons.Rounded.Lock
         SheetAction.LINK -> Icons.Rounded.AddLink
         SheetAction.VAULT -> Icons.Rounded.EnhancedEncryption
         SheetAction.RESTORE -> Icons.Rounded.Outbox

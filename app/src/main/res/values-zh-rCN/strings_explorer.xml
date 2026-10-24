@@ -262,4 +262,22 @@
     <plurals name="explorer_clip_items">
         <item quantity="other">%d 项</item>
     </plurals>
+    <string name="model_protect_folder">防止删除</string>
+    <string name="explorer_protected_one">“%1$s”在您的受保护文件夹列表中。</string>
+    <string name="explorer_protected_inside">“%1$s”包含受保护的文件夹“%2$s”，无法删除。</string>
+    <string name="explorer_protected_many">%1$d 个受保护的文件夹未被删除。</string>
+    <string name="explorer_protected_added">“%1$s”现已受删除保护。</string>
+    <string name="explorer_protected_remove_title">取消保护？</string>
+    <string name="explorer_protected_remove_text">“%1$s”将可以再次被删除。</string>
+    <string name="explorer_protected_remove_confirm">取消保护</string>
+    <string name="explorer_protected_badge">受删除保护</string>
+    <string name="settings_group_protected">受保护的文件夹</string>
+    <string name="settings_protected_footer">这些文件夹无法在此删除，但其中的内容仍可删除。选中文件夹并选择“防止删除”即可保护。不影响其他应用。</string>
+    <string name="settings_protected_empty">暂无受保护的文件夹</string>
+    <string name="model_unprotect_folder">取消删除保护</string>
+    <string name="explorer_protected_ask_title">保留哪个文件夹的保护？</string>
+    <string name="explorer_protected_ask_text">受保护的文件夹“%1$s”已被移动，由于目标位置已有同名文件夹，它被保存为“%2$s”。</string>
+    <string name="explorer_protected_ask_moved">已移动的：%1$s</string>
+    <string name="explorer_protected_ask_existing">原有的：%1$s</string>
+    <string name="explorer_protected_ask_both">两者都保护</string>
 </resources>

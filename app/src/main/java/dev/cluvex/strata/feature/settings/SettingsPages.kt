@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.AutoDelete
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.DataObject
 import androidx.compose.material.icons.rounded.Delete
@@ -266,6 +267,7 @@ fun BehaviorPage(settings: StrataSettings, act: SettingsActions, activeFolder: S
 @Composable
 fun OperationsPage(settings: StrataSettings, act: SettingsActions, onOpenRecycleBin: () -> Unit, onBack: () -> Unit) {
     val o = settings.operations
+    var unprotecting by remember { mutableStateOf<String?>(null) }
     SettingsPageScaffold(stringResource(R.string.settings_page_operations), onBack, subtitle = stringResource(R.string.settings_operations_subtitle)) {
         SettingsGroup(stringResource(R.string.settings_group_copy_move)) {
             val photo = tr(R.string.settings_sample_photo)
@@ -310,6 +312,35 @@ fun OperationsPage(settings: StrataSettings, act: SettingsActions, onOpenRecycle
                 icon = Icons.Rounded.AutoDelete,
             )
             link(tr(R.string.settings_open_recycle_bin), icon = Icons.Rounded.Delete, tint = Tint.NEUTRAL, onClick = onOpenRecycleBin)
+        }
+        SettingsGroup(stringResource(R.string.settings_group_protected), footer = stringResource(R.string.settings_protected_footer)) {
+            if (settings.protectedFolders.isEmpty()) {
+                link(tr(R.string.settings_protected_empty), icon = Icons.Rounded.Lock, tint = Tint.NEUTRAL, chevron = false, enabled = false, onClick = {})
+            }
+            settings.protectedFolders.forEach { path ->
+                link(
+                    java.io.File(path).name.ifEmpty { path },
+                    summary = path,
+                    icon = Icons.Rounded.Lock,
+                    tint = Tint.PRIMARY,
+                    chevron = false,
+                    trailing = { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.explorer_protected_remove_confirm)) },
+                    onClick = { unprotecting = path },
+                )
+            }
+        }
+        unprotecting?.let { path ->
+            AlertDialog(
+                onDismissRequest = { unprotecting = null },
+                title = { Text(stringResource(R.string.explorer_protected_remove_title)) },
+                text = { Text(stringResource(R.string.explorer_protected_remove_text, java.io.File(path).name.ifEmpty { path })) },
+                confirmButton = {
+                    TextButton(onClick = { act.run { unprotectFolder(path) }; unprotecting = null }) {
+                        Text(stringResource(R.string.explorer_protected_remove_confirm))
+                    }
+                },
+                dismissButton = { TextButton(onClick = { unprotecting = null }) { Text(stringResource(R.string.common_cancel)) } },
+            )
         }
     }
 }

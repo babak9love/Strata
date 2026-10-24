@@ -467,8 +467,35 @@ class ExplorerViewModel(
             Result.failure(e)
         }
         result
-            .onSuccess { renamed -> refreshAllRevealing(dir, listOf(renamed.path)) }
+            .onSuccess { renamed ->
+                followProtected(item.path, renamed.path)
+                refreshAllRevealing(dir, listOf(renamed.path))
+            }
             .onFailure { postMessage(it.message) }
+    }
+
+    /** Protection follows moved folders; if a protected folder had to be saved under a new name, the user is asked which one stays protected. */
+    private fun handleProtectedMoves(p: OpProgress.Finished) {
+        val list = _state.value.settings.protectedFolders
+        val asked = p.keptBoth.filter { (from, _) -> dev.cluvex.strata.core.model.ProtectedFolders.canonical(from) in list }
+        val rest = p.moves - asked.toSet()
+        if (rest.isNotEmpty()) viewModelScope.launch { settingsRepo.followMoves(rest) }
+        if (asked.isNotEmpty()) {
+            _state.update { s -> s.copy(protectQuestions = s.protectQuestions + asked.map { (from, to) -> ProtectQuestion(from, to) }) }
+        }
+    }
+
+    /** The answer to the first pending question: keep the moved folder, the one that was already there, or both protected. */
+    fun answerProtectQuestion(keepMoved: Boolean, keepExisting: Boolean) {
+        val q = _state.value.protectQuestions.firstOrNull() ?: return
+        _state.update { it.copy(protectQuestions = it.protectQuestions.drop(1)) }
+        val existing = File(File(q.to).parentFile, File(q.from).name).path
+        viewModelScope.launch { settingsRepo.resolveKeptBoth(q.from, q.to, existing, keepMoved, keepExisting) }
+    }
+
+    private fun followProtected(from: String, to: String) {
+        if (_state.value.settings.protectedFolders.isEmpty()) return
+        viewModelScope.launch { settingsRepo.followMoves(listOf(from to to)) }
     }
 
     fun canRecycle(pane: Pane): Boolean {
@@ -523,8 +550,47 @@ class ExplorerViewModel(
         }
     }
 
+    /** The items among [items] that must not be deleted: a protected folder, or a folder that contains one. */
+    fun protectedBlocked(items: List<FileItem>): List<FileItem> {
+        val list = _state.value.settings.protectedFolders
+        if (list.isEmpty()) return emptyList()
+        return items.filter { it.isDirectory && !RemoteUri.isRemote(it.path) && dev.cluvex.strata.core.model.ProtectedFolders.blockedBy(list, it.path) != null }
+    }
+
+    /** Tells the user why [blocked] was not deleted. */
+    fun reportProtected(blocked: List<FileItem>) {
+        if (blocked.isEmpty()) return
+        UiSounds.play(UiSound.ERROR)
+        val first = blocked.first()
+        val by = dev.cluvex.strata.core.model.ProtectedFolders.blockedBy(_state.value.settings.protectedFolders, first.path)
+        postMessage(
+            when {
+                blocked.size > 1 -> tr(R.string.explorer_protected_many, blocked.size)
+                by != null && by != dev.cluvex.strata.core.model.ProtectedFolders.canonical(first.path) ->
+                    tr(R.string.explorer_protected_inside, first.name, File(by).name.ifEmpty { by })
+                else -> tr(R.string.explorer_protected_one, first.name)
+            },
+        )
+    }
+
+    fun isProtected(path: String): Boolean {
+        val list = _state.value.settings.protectedFolders
+        return dev.cluvex.strata.core.model.ProtectedFolders.shows(list, path) ||
+            dev.cluvex.strata.core.model.ProtectedFolders.canonical(path) in list
+    }
+
+    fun protectFolder(item: FileItem) = viewModelScope.launch {
+        settingsRepo.protectFolder(item.path)
+        postMessage(tr(R.string.explorer_protected_added, item.name))
+    }
+
+    fun unprotectFolder(path: String) = viewModelScope.launch { settingsRepo.unprotectFolder(path) }
+
     fun deleteSelection(pane: Pane, toRecycleBin: Boolean) {
-        val items = selectedItems(pane)
+        val all = selectedItems(pane)
+        val blocked = protectedBlocked(all)
+        reportProtected(blocked)
+        val items = all - blocked.toSet()
         if (items.isEmpty()) return
         val ps = _state.value.pane(pane)
         if (RemoteUri.isRemote(ps.path)) {
@@ -555,7 +621,10 @@ class ExplorerViewModel(
             emitAll(dev.cluvex.strata.core.props.DirectoryStats.stream(items.map { it.path }, fa, countRoots = true))
         }
 
-    fun deleteItems(items: List<FileItem>, toRecycleBin: Boolean, onDone: () -> Unit = {}) {
+    fun deleteItems(all: List<FileItem>, toRecycleBin: Boolean, onDone: () -> Unit = {}) {
+        val blocked = protectedBlocked(all)
+        reportProtected(blocked)
+        val items = all - blocked.toSet()
         if (items.isEmpty()) return
         val dir = items.first().parentPath ?: rootPath
         val useBin = toRecycleBin && canRecycleItems(items)
@@ -583,6 +652,7 @@ class ExplorerViewModel(
         }
         result
             .onSuccess { renamed ->
+                followProtected(item.path, renamed.path)
                 refreshAllRevealing(dir, listOf(renamed.path))
                 onDone(renamed)
             }
@@ -1334,6 +1404,7 @@ class ExplorerViewModel(
                         is OpProgress.Running -> _state.update { it.copy(task = taskState(title, p)) }
                         is OpProgress.Finished -> {
                             _state.update { it.copy(task = null) }
+                            if (p.moves.isNotEmpty() && _state.value.settings.protectedFolders.isNotEmpty()) handleProtectedMoves(p)
                             if (sound == null) {
                                 UiSounds.forTask(title, failed = p.failed.isNotEmpty(), okCount = p.okCount)
                             } else if (p.failed.isNotEmpty()) {
