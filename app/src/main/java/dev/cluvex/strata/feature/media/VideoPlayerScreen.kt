@@ -165,37 +165,25 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     @Volatile var resumeEnabled = true
     /**
      * The player's own volume level the last time it was audible; what un-mute goes back to.
-     * 0 to 1 is the player's volume, 1 to 2 is a boost (up to +6 dB) done with a loudness enhancer.
+     * 0 to 1 is the player's volume; there is no boost above 100%.
      */
     @Volatile var volumeLevel = 1f
-    private var enhancer: android.media.audiofx.LoudnessEnhancer? = null
 
     fun setLevel(level: Float) {
         val l = level.coerceIn(0f, MAX_LEVEL)
         player?.volume = minOf(l, 1f)
         if (l > 0f) volumeLevel = l
-        applyBoost()
     }
 
-    private fun applyBoost() {
-        val e = enhancer ?: return
-        val gainMb = if (volumeLevel > 1f) (2000.0 * kotlin.math.log10(volumeLevel.toDouble())).toInt() else 0
-        runCatching {
-            e.setTargetGain(gainMb)
-            e.enabled = gainMb > 0
-        }
-    }
-
-    private fun rebuildEnhancer(sessionId: Int) {
-        runCatching { enhancer?.release() }
-        enhancer = if (sessionId != C.AUDIO_SESSION_ID_UNSET) {
-            runCatching { android.media.audiofx.LoudnessEnhancer(sessionId) }.getOrNull()
-        } else {
-            null
-        }
-        applyBoost()
-    }
     private var saveJob: kotlinx.coroutines.Job? = null
+
+    private var playAlone = true
+
+    /** "Play alone": take the audio focus (other players stop; this one pauses for other apps and calls) or share the sound. */
+    fun setPlayAlone(on: Boolean) {
+        playAlone = on
+        player?.setAudioAttributes(VIDEO_AUDIO_ATTRIBUTES, on)
+    }
 
     /** Called whenever the repeat or shuffle button changes, so the choice is kept for next time. */
     var onPlayModeChange: (repeatMode: Int, shuffle: Boolean) -> Unit = { _, _ -> }
@@ -211,7 +199,9 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.VIDEO, showHidden) }
             val skip = dev.cluvex.strata.core.data.SettingsRepository(getApplication()).settings.first().behavior
+            playAlone = skip.playAloneVideo
             val p = ExoPlayer.Builder(getApplication())
+                .setAudioAttributes(VIDEO_AUDIO_ATTRIBUTES, skip.playAloneVideo)
                 .setSeekBackIncrementMs(skip.seekBackSeconds * 1000L)
                 .setSeekForwardIncrementMs(skip.seekForwardSeconds * 1000L)
                 .build()
@@ -219,8 +209,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     title = mediaItem?.mediaMetadata?.displayTitle?.toString().orEmpty()
                 }
-
-                override fun onAudioSessionIdChanged(audioSessionId: Int) = rebuildEnhancer(audioSessionId)
             })
             resume = ResumeListener(getApplication(), ResumeKind.VIDEO, p) { resumeEnabled }.also { p.addListener(it) }
             if (skip.saveSpeedVideo) p.setPlaybackSpeed(skip.speedVideo)
@@ -232,7 +220,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
 
                 override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) = onPlayModeChange(p.repeatMode, p.shuffleModeEnabled)
             })
-            // A remembered boost above the 100% limit starts at 100%.
             volumeLevel = minOf(skip.videoVolume.coerceIn(0.05f, MAX_LEVEL), SAFE_LEVEL)
             p.volume = minOf(volumeLevel, 1f)
             p.setMediaItems(list.files.map(::mediaItem), list.start, if (start != null) start.positionMs else if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
@@ -270,7 +257,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         val repeat = p.repeatMode
         val shuffle = p.shuffleModeEnabled
         val mutedVolume = p.volume
-        val boostLevel = volumeLevel
         resume?.saveNow()
         p.pause()
         handedOff = true
@@ -286,7 +272,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             bgController = c
             c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build()
             c.volume = mutedVolume
-            PlaybackService.sendBoost(c, if (mutedVolume > 0f) boostLevel else 1f)
             c.repeatMode = repeat
             c.shuffleModeEnabled = shuffle
             c.setMediaItems(items, index, position)
@@ -325,7 +310,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         val repeat = p.repeatMode
         val shuffle = p.shuffleModeEnabled
         val closeVolume = p.volume
-        val boostLevel = volumeLevel
         resume?.saveNow()
         p.pause()
         val app = getApplication<Application>()
@@ -333,7 +317,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         future.addListener({
             val c = runCatching { future.get() }.getOrNull() ?: return@addListener
             c.volume = closeVolume
-            PlaybackService.sendBoost(c, if (closeVolume > 0f) boostLevel else 1f)
             c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true).build()
             c.repeatMode = repeat
             c.shuffleModeEnabled = shuffle
@@ -360,7 +343,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             p.shuffleModeEnabled = c.shuffleModeEnabled
             c.pause()
             c.volume = 1f
-            PlaybackService.sendBoost(c, 1f)
             c.trackSelectionParameters = c.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false).build()
             c.clearMediaItems()
             p.seekTo(index, position)
@@ -376,8 +358,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
-        runCatching { enhancer?.release() }
-        enhancer = null
         releaseBackground()
         saveJob?.cancel()
         resume?.saveNow()
@@ -388,11 +368,16 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     class StartAt(val path: String, val positionMs: Long, val playing: Boolean)
 
     companion object {
+        private val VIDEO_AUDIO_ATTRIBUTES = androidx.media3.common.AudioAttributes.Builder()
+            .setUsage(C.USAGE_MEDIA)
+            .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+            .build()
+
         /** Set just before the video screen is opened from the notification; consumed by [open]. */
         @Volatile var startOverride: StartAt? = null
 
         private const val SAVE_INTERVAL_MS = 5_000L
-        const val MAX_LEVEL = 2f
+        const val MAX_LEVEL = 1f
         const val SAFE_LEVEL = 1f
 
         fun mediaItem(file: File): MediaItem = MediaItem.Builder()
@@ -417,6 +402,8 @@ fun VideoPlayerScreen(
     onBackToListChange: (Boolean) -> Unit = {},
     backgroundPlay: Boolean = true,
     onBackgroundPlayChange: (Boolean) -> Unit = {},
+    playAlone: Boolean = true,
+    onPlayAloneChange: (Boolean) -> Unit = {},
     seekBackSeconds: Int = 5,
     onSeekBackChange: (Int) -> Unit = {},
     seekForwardSeconds: Int = 15,
@@ -430,6 +417,7 @@ fun VideoPlayerScreen(
     SideEffect {
         vm.resumeEnabled = resume
         vm.onPlayModeChange = onPlayModeChange
+        vm.setPlayAlone(playAlone)
     }
     LaunchedEffect(path) { vm.open(path, showHidden) }
     val backgroundPlayNow by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
@@ -635,7 +623,7 @@ fun VideoPlayerScreen(
                             },
                             onVerticalDrag = { change, dy ->
                                 change.consume()
-                                // Volume goes from 0 to 200% (above 100% is a boost); brightness from 0 to 100%.
+                                // Volume and brightness both go from 0 to 100%.
                                 val top = if (volume) VideoPlayerViewModel.MAX_LEVEL else 1f
                                 fraction = (fraction - dy / (size.height * 0.6f)).coerceIn(0f, top)
                                 if (volume) {
@@ -798,6 +786,20 @@ fun VideoPlayerScreen(
                                             trailingIcon = { Switch(checked = backgroundPlay, onCheckedChange = null) },
                                             onClick = { onBackgroundPlayChange(!backgroundPlay) },
                                         )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(stringResource(R.string.media_play_alone))
+                                                    Text(
+                                                        stringResource(R.string.media_play_alone_desc),
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    )
+                                                }
+                                            },
+                                            trailingIcon = { Switch(checked = playAlone, onCheckedChange = null) },
+                                            onClick = { onPlayAloneChange(!playAlone) },
+                                        )
                                     }
                                 }
                             }
@@ -921,7 +923,7 @@ private fun GestureHud(hud: Hud) {
     }
     if (hud.volume) {
         // Volume: the speaker on top (so it never sits next to the mute button below), then the percentage and the
-        // bar (blue up to 100%, yellow, red at 200%).
+        // bar (light blue at low volume, deepening to a strong blue at 100%).
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(28.dp))
             Spacer(Modifier.height(6.dp))

@@ -169,6 +169,8 @@ class SettingsRepository(private val context: Context) {
         val SHUFFLE_VIDEO = booleanPreferencesKey("shuffle_video")
         val REPEAT_AUDIO = intPreferencesKey("repeat_audio")
         val SHUFFLE_AUDIO = booleanPreferencesKey("shuffle_audio")
+        val PLAY_ALONE_VIDEO = booleanPreferencesKey("play_alone_video")
+        val PLAY_ALONE_AUDIO = booleanPreferencesKey("play_alone_audio")
         val SHOW_EXTENSIONS = booleanPreferencesKey("show_extensions")
         val START_FOLDER = stringPreferencesKey("start_folder")
         val START_PATH = stringPreferencesKey("start_path")
@@ -230,7 +232,7 @@ class SettingsRepository(private val context: Context) {
             EDITOR_HIGHLIGHT_BRACKETS, EDITOR_PINCH_ZOOM, EDITOR_STICKY_SCROLL, EDITOR_INDENT_GUIDES, EDITOR_PIN_LINE_NUMBERS,
             EDITOR_CURSOR_ANIMATION, EDITOR_KEEP_SCREEN_ON, READER_KEEP_SCREEN, APP_LOCK, PERSIAN_CALENDAR,
             SHOW_PARENT_ENTRY, VIDEO_AUTO_HIDE, RESUME_AUDIO, RESUME_VIDEO, BACK_TO_LIST_AUDIO, BACK_TO_LIST_VIDEO, BACKGROUND_AUDIO, BACKGROUND_VIDEO,
-            SAVE_SPEED_VIDEO, SAVE_SPEED_AUDIO, SHUFFLE_VIDEO, SHUFFLE_AUDIO,
+            SAVE_SPEED_VIDEO, SAVE_SPEED_AUDIO, SHUFFLE_VIDEO, SHUFFLE_AUDIO, PLAY_ALONE_VIDEO, PLAY_ALONE_AUDIO,
         )
         val INTS = listOf(SEED, TRASH_CLEAN_DAYS, EDITOR_TAB_WIDTH, GRID_COLUMNS, ITEM_SCALE, FOLDER_SCALE, NAME_SCALE, META_SCALE, SEEK_BACK_SECONDS, SEEK_FORWARD_SECONDS, REPEAT_VIDEO, REPEAT_AUDIO)
         val FLOATS = listOf(TEXT_SCALE, EDITOR_TEXT_SIZE, SPEED_VIDEO, SPEED_AUDIO, VIDEO_VOLUME, AUDIO_VOLUME)
@@ -528,15 +530,17 @@ class SettingsRepository(private val context: Context) {
             seekBackSeconds = (p[Keys.SEEK_BACK_SECONDS] ?: 5).coerceIn(1, 60),
             seekForwardSeconds = (p[Keys.SEEK_FORWARD_SECONDS] ?: 15).coerceIn(1, 60),
             saveSpeedVideo = p[Keys.SAVE_SPEED_VIDEO] ?: false,
-            speedVideo = (p[Keys.SPEED_VIDEO] ?: 1f).coerceIn(0.5f, 2f),
+            speedVideo = (p[Keys.SPEED_VIDEO] ?: 1f).coerceIn(0.25f, 3f),
             saveSpeedAudio = p[Keys.SAVE_SPEED_AUDIO] ?: false,
-            speedAudio = (p[Keys.SPEED_AUDIO] ?: 1f).coerceIn(0.5f, 2f),
-            videoVolume = (p[Keys.VIDEO_VOLUME] ?: 1f).coerceIn(0.05f, 2f),
-            audioVolume = (p[Keys.AUDIO_VOLUME] ?: 1f).coerceIn(0.05f, 2f),
+            speedAudio = (p[Keys.SPEED_AUDIO] ?: 1f).coerceIn(0.25f, 3f),
+            videoVolume = (p[Keys.VIDEO_VOLUME] ?: 1f).coerceIn(0.05f, 1f),
+            audioVolume = (p[Keys.AUDIO_VOLUME] ?: 1f).coerceIn(0.05f, 1f),
             repeatVideo = (p[Keys.REPEAT_VIDEO] ?: 0).coerceIn(0, 2),
             shuffleVideo = p[Keys.SHUFFLE_VIDEO] ?: false,
             repeatAudio = (p[Keys.REPEAT_AUDIO] ?: 0).coerceIn(0, 2),
             shuffleAudio = p[Keys.SHUFFLE_AUDIO] ?: false,
+            playAloneVideo = p[Keys.PLAY_ALONE_VIDEO] ?: true,
+            playAloneAudio = p[Keys.PLAY_ALONE_AUDIO] ?: true,
         )
 
         private fun writeBehavior(p: MutablePreferences, b: BehaviorPrefs) {
@@ -555,15 +559,17 @@ class SettingsRepository(private val context: Context) {
             p[Keys.SEEK_BACK_SECONDS] = b.seekBackSeconds.coerceIn(1, 60)
             p[Keys.SEEK_FORWARD_SECONDS] = b.seekForwardSeconds.coerceIn(1, 60)
             p[Keys.SAVE_SPEED_VIDEO] = b.saveSpeedVideo
-            p[Keys.SPEED_VIDEO] = b.speedVideo.coerceIn(0.5f, 2f)
+            p[Keys.SPEED_VIDEO] = b.speedVideo.coerceIn(0.25f, 3f)
             p[Keys.SAVE_SPEED_AUDIO] = b.saveSpeedAudio
-            p[Keys.SPEED_AUDIO] = b.speedAudio.coerceIn(0.5f, 2f)
-            p[Keys.VIDEO_VOLUME] = b.videoVolume.coerceIn(0.05f, 2f)
-            p[Keys.AUDIO_VOLUME] = b.audioVolume.coerceIn(0.05f, 2f)
+            p[Keys.SPEED_AUDIO] = b.speedAudio.coerceIn(0.25f, 3f)
+            p[Keys.VIDEO_VOLUME] = b.videoVolume.coerceIn(0.05f, 1f)
+            p[Keys.AUDIO_VOLUME] = b.audioVolume.coerceIn(0.05f, 1f)
             p[Keys.REPEAT_VIDEO] = b.repeatVideo.coerceIn(0, 2)
             p[Keys.SHUFFLE_VIDEO] = b.shuffleVideo
             p[Keys.REPEAT_AUDIO] = b.repeatAudio.coerceIn(0, 2)
             p[Keys.SHUFFLE_AUDIO] = b.shuffleAudio
+            p[Keys.PLAY_ALONE_VIDEO] = b.playAloneVideo
+            p[Keys.PLAY_ALONE_AUDIO] = b.playAloneAudio
         }
 
         internal fun readOperations(p: Preferences) = OperationPrefs(

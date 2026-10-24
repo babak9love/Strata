@@ -152,6 +152,8 @@
     <string name="media_back_to_list">返回列表</string>
     <string name="media_back_to_list_desc">播放结束后返回列表。</string>
     <string name="media_background_play">后台播放</string>
+    <string name="media_play_alone">独占播放</string>
+    <string name="media_play_alone_desc">播放时暂停其他应用。其他应用开始播放或来电时，会自动暂停。</string>
     <string name="media_exit">退出</string>
     <string name="media_seek_back_title">后退步长</string>
     <string name="media_seek_forward_title">快进步长</string>

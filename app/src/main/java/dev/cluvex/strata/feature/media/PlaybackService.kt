@@ -43,10 +43,11 @@ class PlaybackService : MediaSessionService() {
     @Volatile private var resumeEnabled = true
     @Volatile private var backgroundAudio = true
     @Volatile private var backgroundVideo = true
+    @Volatile private var playAloneAudio = true
+    @Volatile private var playAloneVideo = true
+    private var exo: ExoPlayer? = null
     @Volatile private var seekBackMs = 5_000L
     @Volatile private var seekForwardMs = 15_000L
-    private var enhancer: android.media.audiofx.LoudnessEnhancer? = null
-    @Volatile private var boostLevel = 1f
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val handler = Handler(Looper.getMainLooper())
     private val saveTick = object : Runnable {
@@ -79,6 +80,15 @@ class PlaybackService : MediaSessionService() {
                     backgroundVideo = video
                 }
         }
+        exo = player
+        scope.launch {
+            SettingsRepository(applicationContext).settings.map { it.behavior.playAloneAudio to it.behavior.playAloneVideo }.distinctUntilChanged()
+                .collect { (audio, video) ->
+                    playAloneAudio = audio
+                    playAloneVideo = video
+                    applyAudioFocus()
+                }
+        }
         scope.launch {
             SettingsRepository(applicationContext).settings.map { it.behavior.seekBackSeconds to it.behavior.seekForwardSeconds }.distinctUntilChanged()
                 .collect { (back, forward) ->
@@ -86,10 +96,6 @@ class PlaybackService : MediaSessionService() {
                     seekForwardMs = forward * 1000L
                 }
         }
-        player.addListener(object : Player.Listener {
-            override fun onAudioSessionIdChanged(audioSessionId: Int) = rebuildEnhancer(audioSessionId)
-        })
-        rebuildEnhancer(player.audioSessionId)
         resume = ResumeListener(this, ResumeKind.AUDIO, player) { resumeEnabled }.also { player.addListener(it) }
         handler.postDelayed(saveTick, SAVE_INTERVAL_MS)
         val openApp = PendingIntent.getActivity(
@@ -105,34 +111,10 @@ class PlaybackService : MediaSessionService() {
             .build()
         player.addListener(object : Player.Listener {
             override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) = updateNotificationButtons()
+
+            override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) = applyAudioFocus()
         })
         updateNotificationButtons()
-    }
-
-    /** Volume boost above 100% (1 to 2, up to +6 dB), done with a loudness enhancer on the player's audio session. */
-    private fun setBoost(level: Float) {
-        boostLevel = level.coerceIn(1f, 2f)
-        applyBoost()
-        session?.setSessionExtras(Bundle().apply { putFloat(EXTRA_BOOST, boostLevel) })
-    }
-
-    private fun applyBoost() {
-        val e = enhancer ?: return
-        val gainMb = if (boostLevel > 1f) (2000.0 * kotlin.math.log10(boostLevel.toDouble())).toInt() else 0
-        runCatching {
-            e.setTargetGain(gainMb)
-            e.enabled = gainMb > 0
-        }
-    }
-
-    private fun rebuildEnhancer(sessionId: Int) {
-        runCatching { enhancer?.release() }
-        enhancer = if (sessionId != C.AUDIO_SESSION_ID_UNSET) {
-            runCatching { android.media.audiofx.LoudnessEnhancer(sessionId) }.getOrNull()
-        } else {
-            null
-        }
-        applyBoost()
     }
 
     /** Media keys, headset buttons and the notification skip by the lengths chosen in the video player. */
@@ -147,6 +129,16 @@ class PlaybackService : MediaSessionService() {
             val target = currentPosition + seekForwardMs
             seekTo(if (end != C.TIME_UNSET) target.coerceAtMost(end) else target)
         }
+    }
+
+    /** "Play alone": hold the audio focus (others stop, and this pauses for other apps and calls), or share the sound. */
+    private fun applyAudioFocus() {
+        val player = exo ?: return
+        val on = if (isPlayingVideoAudio()) playAloneVideo else playAloneAudio
+        player.setAudioAttributes(
+            AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
+            on,
+        )
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
@@ -179,9 +171,9 @@ class PlaybackService : MediaSessionService() {
         current.setMediaButtonPreferences(listOf(speedButton, exitButton))
     }
 
-    /** Icon showing the speed as a number, picked by the nearest 0.05 step between 0.5x and 2x. */
+    /** Icon showing the speed as a number, picked by the nearest 0.05 step between 0.25x and 3x. */
     private fun speedIcon(speed: Float): Int {
-        val step = Math.round((speed - 0.5f) / 0.05f).coerceIn(0, SPEED_ICONS.size - 1)
+        val step = Math.round((speed - 0.25f) / 0.05f).coerceIn(0, SPEED_ICONS.size - 1)
         return SPEED_ICONS[step]
     }
 
@@ -210,8 +202,6 @@ class PlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         handler.removeCallbacks(saveTick)
-        runCatching { enhancer?.release() }
-        enhancer = null
         resume?.saveNow()
         resume = null
         scope.cancel()
@@ -253,17 +243,12 @@ class PlaybackService : MediaSessionService() {
         private const val SAVE_INTERVAL_MS = 5_000L
         const val ACTION_EXIT = "dev.cluvex.strata.media.EXIT"
         private const val ACTION_SPEED = "dev.cluvex.strata.media.SPEED"
-        private const val ACTION_BOOST = "dev.cluvex.strata.media.BOOST"
-
-        /** Key of the boost level (1 to 2) in the command's arguments and in the session extras. */
-        const val EXTRA_BOOST = "boost"
-
-        /** Asks the service to boost the volume above 100% ([level] 1 = no boost, 2 = +6 dB). */
-        @OptIn(UnstableApi::class)
-        fun sendBoost(controller: MediaController, level: Float) {
-            controller.sendCustomCommand(SessionCommand(ACTION_BOOST, Bundle.EMPTY), Bundle().apply { putFloat(EXTRA_BOOST, level) })
-        }
         private val SPEED_ICONS = intArrayOf(
+            R.drawable.ic_notif_speed_025,
+            R.drawable.ic_notif_speed_030,
+            R.drawable.ic_notif_speed_035,
+            R.drawable.ic_notif_speed_040,
+            R.drawable.ic_notif_speed_045,
             R.drawable.ic_notif_speed_050,
             R.drawable.ic_notif_speed_055,
             R.drawable.ic_notif_speed_060,
@@ -295,8 +280,28 @@ class PlaybackService : MediaSessionService() {
             R.drawable.ic_notif_speed_190,
             R.drawable.ic_notif_speed_195,
             R.drawable.ic_notif_speed_200,
+            R.drawable.ic_notif_speed_205,
+            R.drawable.ic_notif_speed_210,
+            R.drawable.ic_notif_speed_215,
+            R.drawable.ic_notif_speed_220,
+            R.drawable.ic_notif_speed_225,
+            R.drawable.ic_notif_speed_230,
+            R.drawable.ic_notif_speed_235,
+            R.drawable.ic_notif_speed_240,
+            R.drawable.ic_notif_speed_245,
+            R.drawable.ic_notif_speed_250,
+            R.drawable.ic_notif_speed_255,
+            R.drawable.ic_notif_speed_260,
+            R.drawable.ic_notif_speed_265,
+            R.drawable.ic_notif_speed_270,
+            R.drawable.ic_notif_speed_275,
+            R.drawable.ic_notif_speed_280,
+            R.drawable.ic_notif_speed_285,
+            R.drawable.ic_notif_speed_290,
+            R.drawable.ic_notif_speed_295,
+            R.drawable.ic_notif_speed_300,
         )
-        private val SPEEDS = floatArrayOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
+        private val SPEEDS = floatArrayOf(0.25f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f, 2.5f, 3f)
         /** Marks media items that were handed over from the video player, so the video setting applies to them. */
         const val EXTRA_FROM_VIDEO = "strata_from_video"
     }
@@ -308,7 +313,6 @@ class PlaybackService : MediaSessionService() {
                 val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()
                     .add(SessionCommand(ACTION_EXIT, Bundle.EMPTY))
                     .add(SessionCommand(ACTION_SPEED, Bundle.EMPTY))
-                    .add(SessionCommand(ACTION_BOOST, Bundle.EMPTY))
                     .build()
                 return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
                     .setAvailableSessionCommands(sessionCommands)
@@ -349,10 +353,6 @@ class PlaybackService : MediaSessionService() {
         ): ListenableFuture<SessionResult> {
             if (customCommand.customAction == ACTION_EXIT) {
                 exitPlayback()
-                return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
-            }
-            if (customCommand.customAction == ACTION_BOOST) {
-                setBoost(args.getFloat(EXTRA_BOOST, 1f))
                 return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
             }
             if (customCommand.customAction == ACTION_SPEED) {

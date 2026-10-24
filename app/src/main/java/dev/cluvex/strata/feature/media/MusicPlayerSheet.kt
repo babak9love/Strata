@@ -119,6 +119,8 @@ fun MusicPlayerSheet(
     onBackToListChange: (Boolean) -> Unit = {},
     backgroundPlay: Boolean = true,
     onBackgroundPlayChange: (Boolean) -> Unit = {},
+    playAlone: Boolean = true,
+    onPlayAloneChange: (Boolean) -> Unit = {},
     saveSpeed: Boolean = false,
     onSaveSpeedChange: (enabled: Boolean, speed: Float) -> Unit = { _, _ -> },
     onVolumeChange: (Float) -> Unit = {},
@@ -145,11 +147,8 @@ fun MusicPlayerSheet(
         // Repeat and shuffle come back the way they were left.
         c.repeatMode = behavior.repeatAudio.coerceIn(0, 2)
         c.shuffleModeEnabled = behavior.shuffleAudio
-        // The player's own volume (not the phone's); a remembered boost above the 100% limit starts at 100%.
-        val remembered = behavior.audioVolume.coerceIn(0.05f, 2f)
-        val start = minOf(remembered, VideoPlayerViewModel.SAFE_LEVEL)
-        c.volume = minOf(start, 1f)
-        PlaybackService.sendBoost(c, start)
+        // The player's own volume (not the phone's), kept from last time.
+        c.volume = behavior.audioVolume.coerceIn(0.05f, 1f)
         c.setMediaItems(list.files.map(::songItem), list.start, if (resume) PlaybackPositions.get(context, ResumeKind.AUDIO, path) else 0L)
         c.prepare()
         c.play()
@@ -296,6 +295,20 @@ fun MusicPlayerSheet(
                             text = { Text(stringResource(R.string.media_background_play)) },
                             trailingIcon = { Switch(checked = backgroundPlay, onCheckedChange = null) },
                             onClick = { onBackgroundPlayChange(!backgroundPlay) },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(stringResource(R.string.media_play_alone))
+                                    Text(
+                                        stringResource(R.string.media_play_alone_desc),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            },
+                            trailingIcon = { Switch(checked = playAlone, onCheckedChange = null) },
+                            onClick = { onPlayAloneChange(!playAlone) },
                         )
                     }
                 }

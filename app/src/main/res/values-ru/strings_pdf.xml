@@ -164,6 +164,8 @@
     <string name="media_back_to_list">Назад к списку</string>
     <string name="media_back_to_list_desc">Возвращаться к списку после окончания воспроизведения.</string>
     <string name="media_background_play">Фоновое воспроизведение</string>
+    <string name="media_play_alone">Только это приложение</string>
+    <string name="media_play_alone_desc">Ставит на паузу другие приложения во время воспроизведения. Само встаёт на паузу, когда играет другое приложение или поступает звонок.</string>
     <string name="media_exit">Выйти</string>
     <string name="media_seek_back_title">Шаг перемотки назад</string>
     <string name="media_seek_forward_title">Шаг перемотки вперёд</string>

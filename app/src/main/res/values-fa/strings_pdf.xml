@@ -156,6 +156,8 @@
     <string name="media_back_to_list">بازگشت به لیست</string>
     <string name="media_back_to_list_desc">پس از پایان پخش، به لیست فایل‌ها برگردد.</string>
     <string name="media_background_play">پخش در پس‌زمینه</string>
+    <string name="media_play_alone">پخش تکی</string>
+    <string name="media_play_alone_desc">هنگام پخش، پخش‌کننده‌های دیگر را متوقف می‌کند. با پخش برنامه‌ای دیگر یا تماس، خودش هم متوقف می‌شود.</string>
     <string name="media_exit">خروج</string>
     <string name="media_seek_back_title">مدت عقب‌رفتن</string>
     <string name="media_seek_forward_title">مدت جلو رفتن</string>

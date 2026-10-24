@@ -39,39 +39,31 @@ import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import dev.cluvex.strata.R
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/** Volume goes from 0 to 200%; 100% is the limit, anything above it is a boost. */
-internal const val VOLUME_MAX_LEVEL = 2f
+/** Volume goes from 0 to 100%. */
+internal const val VOLUME_MAX_LEVEL = 1f
 
-private val VolumeBlue = Color(0xFF3B82F6)
-private val VolumeYellow = Color(0xFFF7C948)
-private val VolumeRed = Color(0xFFFF5A4F)
+private val VolumeLight = Color(0xFFA9D2FF)
+private val VolumeDeep = Color(0xFF1666E8)
 
-/** Blue up to 100%, yellow at 150%, red at 200%: one gradient over the whole bar, from [bottom] up to [top]. */
+/** Light blue at the bottom of the bar, deepening to a strong blue at the top (100%). */
 internal fun volumeBrush(top: Float, bottom: Float): Brush = Brush.verticalGradient(
-    colorStops = arrayOf(0f to VolumeRed, 0.25f to VolumeYellow, 0.5f to VolumeBlue, 1f to VolumeBlue),
+    colors = listOf(VolumeDeep, VolumeLight),
     startY = top,
     endY = bottom,
 )
 
-/** The colour of the gradient at [level] (0 to 2). */
-internal fun volumeColorAt(level: Float): Color = when {
-    level <= 1f -> VolumeBlue
-    level <= 1.5f -> lerp(VolumeBlue, VolumeYellow, (level - 1f) / 0.5f)
-    else -> lerp(VolumeYellow, VolumeRed, ((level - 1.5f) / 0.5f).coerceAtMost(1f))
-}
+/** The colour of the gradient at [level] (0 to 1): the louder, the deeper the blue. */
+internal fun volumeColorAt(level: Float): Color = lerp(VolumeLight, VolumeDeep, level.coerceIn(0f, 1f))
 
 /**
  * The music player's own volume as a small vertical bar: percentage on top, the bar, and a speaker button
- * (mute / un-mute) below. It is independent of the phone's volume; above 100% the service boosts the sound.
+ * (mute / un-mute) below. It is independent of the phone's volume.
  */
 @Composable
 internal fun VolumeBar(player: MediaController, onVolumeChange: (Float) -> Unit, modifier: Modifier = Modifier) {
-    // 0 to 1 is the player's volume; 1 to 2 is a boost done by the service.
-    var boost by remember(player) { mutableFloatStateOf(player.sessionExtras.getFloat(PlaybackService.EXTRA_BOOST, 1f)) }
-    var level by remember(player) { mutableFloatStateOf(if (boost > 1f && player.volume >= 1f) boost else player.volume) }
+    var level by remember(player) { mutableFloatStateOf(player.volume.coerceIn(0f, 1f)) }
     // The last audible level, so un-muting goes back to it.
     var lastLevel by remember(player) { mutableFloatStateOf(if (level > 0f) level else 1f) }
     var dragging by remember(player) { mutableStateOf(false) }
@@ -79,7 +71,7 @@ internal fun VolumeBar(player: MediaController, onVolumeChange: (Float) -> Unit,
         val listener = object : Player.Listener {
             override fun onVolumeChanged(volume: Float) {
                 if (dragging) return
-                level = if (boost > 1f && volume >= 1f) boost else volume
+                level = volume.coerceIn(0f, 1f)
                 if (level > 0f) lastLevel = level
             }
         }
@@ -88,14 +80,9 @@ internal fun VolumeBar(player: MediaController, onVolumeChange: (Float) -> Unit,
     }
 
     fun apply(v: Float) {
-        // A light snap to exactly 100%, the limit.
-        val l = v.coerceIn(0f, VOLUME_MAX_LEVEL).let { if (abs(it - 1f) < 0.03f) 1f else it }
+        val l = v.coerceIn(0f, VOLUME_MAX_LEVEL)
         level = l
-        player.volume = minOf(l, 1f)
-        if (l > 1f || boost > 1f) {
-            boost = maxOf(l, 1f)
-            PlaybackService.sendBoost(player, boost)
-        }
+        player.volume = l
         if (l > 0f) lastLevel = l
     }
 

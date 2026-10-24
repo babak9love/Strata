@@ -4,6 +4,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,8 +54,8 @@ import androidx.media3.common.Player
 import dev.cluvex.strata.R
 import kotlin.math.roundToInt
 
-private const val MIN_SPEED = 0.5f
-private const val MAX_SPEED = 2.0f
+private const val MIN_SPEED = 0.25f
+private const val MAX_SPEED = 3.0f
 private const val STEP = 0.05f
 
 /**
@@ -165,17 +167,25 @@ private fun SpeedRuler(speed: Float, onChange: (Float) -> Unit) {
             ) {
                 val pad = 6.dp.toPx()
                 val w = size.width - 2 * pad
-                for (i in 0..15) {
-                    val x = pad + w * i / 15f
+                val steps = Math.round((MAX_SPEED - MIN_SPEED) / STEP)
+                for (i in 0..steps) {
+                    val x = pad + w * i / steps.toFloat()
                     val major = i % 5 == 0
                     drawLine(tick, Offset(x, 0f), Offset(x, if (major) 28.dp.toPx() else 16.dp.toPx()), strokeWidth = 1.5.dp.toPx())
                 }
                 val tx = pad + w * ((speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)).coerceIn(0f, 1f)
                 drawRoundRect(thumb, Offset(tx - 2.dp.toPx(), 0f), Size(4.dp.toPx(), 36.dp.toPx()), CornerRadius(2.dp.toPx()))
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf("0.5", "1.0", "1.5", "2.0").forEach {
-                    Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+            // Each label sits under its own tick (the scale is not evenly numbered from the left edge).
+            Box(Modifier.fillMaxWidth()) {
+                listOf(0.25f to "0.25", 1f to "1.0", 2f to "2.0", 3f to "3.0").forEach { (value, text) ->
+                    val frac = (value - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
+                    Text(
+                        text,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.align(BiasAlignment.Horizontal(frac * 2f - 1f)),
+                    )
                 }
             }
         }
