@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.BrightnessMedium
 import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import kotlin.math.roundToInt
@@ -888,7 +889,7 @@ private fun GestureHud(hud: Hud) {
                 val corner = androidx.compose.ui.geometry.CornerRadius(size.width / 2f)
                 drawRoundRect(Color.White.copy(alpha = 0.3f), cornerRadius = corner)
                 val frac = (hud.fraction / VideoPlayerViewModel.MAX_LEVEL).coerceIn(0f, 1f)
-                androidx.compose.ui.graphics.drawscope.clipRect(top = size.height * (1f - frac)) {
+                clipRect(top = size.height * (1f - frac)) {
                     drawRoundRect(volumeBrush(0f, size.height), cornerRadius = corner)
                 }
             }
