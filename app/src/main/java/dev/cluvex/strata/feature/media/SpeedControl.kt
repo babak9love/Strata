@@ -184,7 +184,7 @@ private fun SpeedRuler(speed: Float, onChange: (Float) -> Unit) {
                         text,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.align(BiasAlignment.Horizontal(frac * 2f - 1f)),
+                        modifier = Modifier.align(BiasAlignment(horizontalBias = frac * 2f - 1f, verticalBias = 0f)),
                     )
                 }
             }
