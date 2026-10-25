@@ -55,8 +55,6 @@ data class PaneState(
     val revealSeq: Int = 0,
     val mount: MountEntry? = null,
     val readOnly: Boolean = false,
-    /** Bumped each time a fresh listing replaces [items]; lets folder-size work restart without reacting to its own size updates. */
-    val listing: Int = 0,
 ) {
     val hasSelection: Boolean get() = selected.isNotEmpty()
 }

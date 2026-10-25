@@ -54,10 +54,7 @@ import dev.cluvex.strata.core.fs.OpProgress
 import dev.cluvex.strata.core.model.ConflictChoice
 import dev.cluvex.strata.core.model.FileItem
 import dev.cluvex.strata.core.pdf.PdfMerger
-import dev.cluvex.strata.core.model.SortBy
 import dev.cluvex.strata.core.model.SortOrder
-import dev.cluvex.strata.core.fs.FolderSize
-import dev.cluvex.strata.core.data.sortFor
 import dev.cluvex.strata.core.open.IncomingFiles
 import dev.cluvex.strata.core.open.IncomingPaths
 import dev.cluvex.strata.core.plugin.PluginFiles
@@ -105,12 +102,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flow
@@ -176,16 +167,6 @@ class ExplorerViewModel(
                 _state.update { it.copy(settings = s) }
                 if (previousRoot != null && previousRoot != s.rootAccess) onRootModeChanged(s.rootAccess)
                 previousRoot = s.rootAccess
-            }
-        }
-        for (pane in Pane.entries) {
-            viewModelScope.launch {
-                _state.map { st ->
-                    val p = st.pane(pane)
-                    Triple(p.path, p.listing, st.settings.sortFor(p.path).by == SortBy.SIZE)
-                }.distinctUntilChanged().collectLatest { (path, _, bySize) ->
-                    if (bySize) computeFolderSizes(pane, path)
-                }
             }
         }
         viewModelScope.launch { bookmarkRepo.bookmarks.collect { b -> _state.update { it.copy(bookmarks = b) } } }
@@ -328,14 +309,13 @@ class ExplorerViewModel(
                 }
                 return@launch
             }
-            val items = listing.items.map { f -> if (f.isDirectory) folderSizes[f.path]?.let { f.copy(size = it) } ?: f else f }
+            val items = listing.items
             updatePane(pane) { p ->
                 val samePath = p.path == opened
                 val dir = directionOf(p.path, opened)
                 p.copy(
                     path = opened,
                     items = items,
-                    listing = p.listing + 1,
                     loading = false,
                     error = null,
                     viaRoot = listing.viaRoot,
@@ -1842,35 +1822,6 @@ class ExplorerViewModel(
 
     fun notifyPathsCopied(count: Int) =
         postMessage(if (count == 1) tr(R.string.props_path_copied) else trPlural(R.plurals.props_paths_copied, count, count))
-
-    /** Real content size of folders already measured, so a refresh doesn't flash them back to zero. */
-    private val folderSizes = java.util.concurrent.ConcurrentHashMap<String, Long>()
-
-    /** Measures every folder in the pane (local storage only) and feeds the sizes into the list so Sort by Size can rank folders. */
-    private suspend fun computeFolderSizes(pane: Pane, path: String) {
-        val ps = _state.value.pane(pane)
-        if (ps.path != path || ps.viaRoot || RemoteUri.isRemote(path) || Vault.isVault(path)) return
-        val dirs = ps.items.filter { it.isDirectory && !it.isSymlink }.map { it.path }
-        if (dirs.isEmpty()) return
-        coroutineScope {
-            val gate = Semaphore(3)
-            dirs.map { d ->
-                async(Dispatchers.IO) {
-                    gate.withPermit {
-                        val job = currentCoroutineContext()[Job]
-                        val size = FolderSize.of(File(d)) { job?.isActive != false }
-                        if (job?.isActive != false) {
-                            folderSizes[d] = size
-                            updatePane(pane) { p ->
-                                if (p.path != path) p
-                                else p.copy(items = p.items.map { f -> if (f.path == d && f.size != size) f.copy(size = size) else f })
-                            }
-                        }
-                    }
-                }
-            }.awaitAll()
-        }
-    }
 
     private fun postMessage(msg: String?) {
         if (msg != null) _state.update { it.copy(message = msg) }

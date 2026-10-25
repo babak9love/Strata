@@ -57,8 +57,7 @@ object SearchEngine {
                     }
                 }
 
-                // A symlinked folder is listed as a result but never entered: it can point back at an ancestor and loop.
-                if (item.isDirectory && !item.isSymlink && query.includeSubdirs && depth < query.maxDepth) {
+                if (item.isDirectory && query.includeSubdirs && depth < query.maxDepth) {
                     stack.addLast(child to depth + 1)
                 }
             }
