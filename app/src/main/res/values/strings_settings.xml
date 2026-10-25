@@ -54,7 +54,7 @@
     <string name="settings_kw_folders_first">sort directories</string>
     <string name="settings_kw_default_sort">sort name size date type</string>
     <string name="settings_kw_thumbnails">pictures videos previews</string>
-    <string name="settings_kw_apk_icons">apk icon</string>
+    <string name="settings_kw_folder_badges">folder badge corner icon</string>
     <string name="settings_kw_extensions">extension suffix</string>
     <string name="settings_kw_wrap_names">multiline file names</string>
     <string name="settings_kw_date_format">time relative iso 24 hour clock</string>
@@ -180,8 +180,8 @@
     <string name="settings_group_previews">Previews</string>
     <string name="settings_thumbnails">Thumbnails</string>
     <string name="settings_thumbnails_summary">Pictures and videos show a small preview</string>
-    <string name="settings_apk_icons">App icons for APK files</string>
-    <string name="settings_apk_icons_summary">An APK shows the icon of the app inside</string>
+    <string name="settings_folder_badges">Folder badges</string>
+    <string name="settings_folder_badges_summary">A small icon in the folder\'s corner, like the app or media it holds</string>
     <string name="settings_show_date">Show date</string>
     <string name="settings_show_size">Show size</string>
     <string name="settings_date_format">Date format</string>

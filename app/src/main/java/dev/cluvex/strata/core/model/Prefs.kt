@@ -23,7 +23,7 @@ enum class SizeUnits {
 data class ListPrefs(
     val viewMode: ViewMode = ViewMode.LIST,
     val thumbnails: Boolean = true,
-    val apkIcons: Boolean = true,
+    val folderBadges: Boolean = true,
     val showDate: Boolean = true,
     val showSize: Boolean = true,
     val dateStyle: DateStyle = DateStyle.COMPACT,

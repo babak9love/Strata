@@ -259,8 +259,7 @@ fun RemoteScreen(
                     onEdit = { if (it.protocol == RemoteProtocol.SAF) renameLocal = it else { editor = it; showEditor = true } },
                     onUpdate = { c ->
                         updateTarget = c
-                        val isTermux = runCatching { Uri.parse(c.host).authority }.getOrNull() == SafFileSystem.TERMUX_AUTHORITY
-                        val start = SafFileSystem.termuxHome(context).takeIf { isTermux }
+                        val start = SafFileSystem.termuxHome(context).takeIf { Uri.parse(c.host).authority == SafFileSystem.TERMUX_AUTHORITY }
                             ?: runCatching { Uri.parse(c.host) }.getOrNull()
                         updateLocal.launch(start)
                     },

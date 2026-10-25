@@ -137,7 +137,7 @@ class SettingsRepository(private val context: Context) {
         val SOUNDS_IN_SILENT = booleanPreferencesKey("ui_sounds_in_silent")
         val VIEW_MODE = stringPreferencesKey("view_mode")
         val THUMBNAILS = booleanPreferencesKey("thumbnails")
-        val APK_ICONS = booleanPreferencesKey("apk_icons")
+        val FOLDER_BADGES = booleanPreferencesKey("folder_badges")
         val SHOW_DATE = booleanPreferencesKey("show_date")
         val SHOW_SIZE = booleanPreferencesKey("show_size")
         val DATE_STYLE = stringPreferencesKey("date_style")
@@ -228,7 +228,7 @@ class SettingsRepository(private val context: Context) {
         val ACTION_LAYOUT = stringPreferencesKey("action_layout")
 
         val BOOLEANS = listOf(
-            SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, CUSTOM_FILE_ICONS, FOLDER_SHAPED, FOLDER_FIXED_COLOR, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, APK_ICONS, SHOW_DATE,
+            SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, CUSTOM_FILE_ICONS, FOLDER_SHAPED, FOLDER_FIXED_COLOR, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, FOLDER_BADGES, SHOW_DATE,
             SHOW_SIZE, USE_24H, WRAP_NAMES, TILE_FRAME, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, KEEP_SCREEN_TASKS, KEEP_MTIME, UNDO_ENABLED, SECURE_SCREEN,
             DUAL_PANE, TRASH_DEFAULT, ROOT_ACCESS, SHIZUKU_ACCESS, VERIFY_BEFORE_INSTALL, INSTALL_WITH_ROOT, EDITOR_WRAP,
             EDITOR_LINE_NUMBERS, EDITOR_WHITESPACE, EDITOR_SYMBOL_BAR, EDITOR_AUTO_INDENT, EDITOR_AUTO_PAIRS, EDITOR_HIGHLIGHT_LINE,
@@ -514,7 +514,7 @@ class SettingsRepository(private val context: Context) {
         internal fun readList(p: Preferences) = ListPrefs(
             viewMode = enumOf(p[Keys.VIEW_MODE], ViewMode.LIST),
             thumbnails = p[Keys.THUMBNAILS] ?: true,
-            apkIcons = p[Keys.APK_ICONS] ?: true,
+            folderBadges = p[Keys.FOLDER_BADGES] ?: true,
             showDate = p[Keys.SHOW_DATE] ?: true,
             showSize = p[Keys.SHOW_SIZE] ?: true,
             dateStyle = enumOf(p[Keys.DATE_STYLE], DateStyle.COMPACT),
@@ -535,7 +535,7 @@ class SettingsRepository(private val context: Context) {
         private fun writeList(p: MutablePreferences, l: ListPrefs) {
             p[Keys.VIEW_MODE] = l.viewMode.name
             p[Keys.THUMBNAILS] = l.thumbnails
-            p[Keys.APK_ICONS] = l.apkIcons
+            p[Keys.FOLDER_BADGES] = l.folderBadges
             p[Keys.SHOW_DATE] = l.showDate
             p[Keys.SHOW_SIZE] = l.showSize
             p[Keys.DATE_STYLE] = l.dateStyle.name

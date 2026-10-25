@@ -142,7 +142,7 @@ object SettingsIndex {
         SettingEntry(R.string.settings_folders_first, SettingsPage.FILE_LIST, R.string.settings_kw_folders_first),
         SettingEntry(R.string.settings_default_sort, SettingsPage.FILE_LIST, R.string.settings_kw_default_sort),
         SettingEntry(R.string.settings_thumbnails, SettingsPage.FILE_LIST, R.string.settings_kw_thumbnails),
-        SettingEntry(R.string.settings_apk_icons, SettingsPage.FILE_LIST, R.string.settings_kw_apk_icons),
+        SettingEntry(R.string.settings_folder_badges, SettingsPage.FILE_LIST, R.string.settings_kw_folder_badges),
         SettingEntry(R.string.settings_show_extensions, SettingsPage.FILE_LIST, R.string.settings_kw_extensions),
         SettingEntry(R.string.settings_wrap_names, SettingsPage.FILE_LIST, R.string.settings_kw_wrap_names),
         SettingEntry(R.string.settings_date_format, SettingsPage.FILE_LIST, R.string.settings_kw_date_format),

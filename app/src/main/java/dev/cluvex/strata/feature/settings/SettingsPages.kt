@@ -21,7 +21,6 @@ import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.automirrored.rounded.ExitToApp
 import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.automirrored.rounded.WrapText
-import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.AutoDelete
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -193,7 +192,7 @@ fun FileListPage(settings: StrataSettings, act: SettingsActions, onBack: () -> U
         }
         SettingsGroup(stringResource(R.string.settings_group_previews)) {
             switch(tr(R.string.settings_thumbnails), l.thumbnails, { v -> act.list { it.copy(thumbnails = v) } }, summary = tr(R.string.settings_thumbnails_summary), icon = Icons.Rounded.Image)
-            switch(tr(R.string.settings_apk_icons), l.apkIcons, { v -> act.list { it.copy(apkIcons = v) } }, summary = tr(R.string.settings_apk_icons_summary), icon = Icons.Rounded.Android)
+            switch(tr(R.string.settings_folder_badges), l.folderBadges, { v -> act.list { it.copy(folderBadges = v) } }, summary = tr(R.string.settings_folder_badges_summary), leading = { FolderBadgePreview() })
         }
         SettingsGroup(stringResource(R.string.common_details)) {
             val frameless = l.viewMode == ViewMode.GRID && !settings.dualPanePreferred && !l.tileFrame

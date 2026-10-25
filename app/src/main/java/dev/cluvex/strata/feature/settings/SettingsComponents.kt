@@ -1,6 +1,11 @@
 package dev.cluvex.strata.feature.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -96,6 +101,33 @@ fun SettingIcon(icon: ImageVector, tint: Tint = Tint.SECONDARY, size: Int = 40) 
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size((size * 0.55f).dp))
+    }
+}
+
+/** Small preview for the "Folder badges" setting: a folder with a gallery badge in its bottom corner. */
+@Composable
+fun FolderBadgePreview(size: Int = 40) {
+    val c = MaterialTheme.colorScheme
+    val badge = (size * 0.5f).dp
+    Box(Modifier.size(size.dp)) {
+        Icon(
+            Icons.Rounded.Folder,
+            contentDescription = null,
+            tint = c.primary,
+            modifier = Modifier.size(size.dp),
+        )
+        Box(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 3.dp, y = 3.dp)
+                .size(badge)
+                .clip(RoundedCornerShape(30))
+                .background(c.tertiaryContainer)
+                .border(1.5.dp, c.surfaceBright, RoundedCornerShape(30)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Rounded.Image, contentDescription = null, tint = c.onTertiaryContainer, modifier = Modifier.size(badge * 0.6f))
+        }
     }
 }
 

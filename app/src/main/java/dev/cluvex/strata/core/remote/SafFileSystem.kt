@@ -223,7 +223,7 @@ class SafFileSystem(private val c: RemoteConnection, context: Context) : RemoteF
 
         fun termuxHome(context: Context): Uri? = runCatching {
             context.packageManager.getPackageInfo("com.termux", 0)
-            DocumentsContract.buildTreeDocumentUri(TERMUX_AUTHORITY, TERMUX_HOME)
+            DocumentsContract.buildDocumentUri(TERMUX_AUTHORITY, TERMUX_HOME)
         }.getOrNull()
 
         /** True when [oldHost] (a stored tree URI) points at the same storage as [new]: any Termux tree, or an identical authority + tree id. */

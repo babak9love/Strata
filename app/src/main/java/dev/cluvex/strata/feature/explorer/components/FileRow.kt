@@ -234,8 +234,8 @@ fun FileTile(
     val shape = LocalSettings.current.appearance.iconShape.toShape()
     val kind = FileKinds.of(item)
     val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)
-    val apk = showThumbnail && list.apkIcons && FileKinds.hasApkIcon(item)
-    val folderBadge = showThumbnail && list.apkIcons && item.isDirectory
+    val apk = showThumbnail && FileKinds.hasApkIcon(item)
+    val folderBadge = showThumbnail && list.folderBadges && item.isDirectory
     val compact = !list.tileFrame && !picture
     val iconSize = (if (list.gridColumns == 4) 56.dp else 66.dp) * ((if (item.isDirectory) list.folderScale else list.itemScale) / 100f)
     val nameScale = list.nameScale / 100f
@@ -409,8 +409,8 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
                         modifier = Modifier.size(iconSize).clip(shape),
                     )
                 }
-                showThumbnail && settings.list.apkIcons && FileKinds.hasApkIcon(item) -> ApkIconOrKind(item, iconSize, shape)
-                showThumbnail && settings.list.apkIcons && item.isDirectory -> FolderIconWithBadge(item, iconSize, shape)
+                showThumbnail && FileKinds.hasApkIcon(item) -> ApkIconOrKind(item, iconSize, shape)
+                showThumbnail && settings.list.folderBadges && item.isDirectory -> FolderIconWithBadge(item, iconSize, shape)
                 else -> KindIcon(item, iconSize, shape)
             }
         }
