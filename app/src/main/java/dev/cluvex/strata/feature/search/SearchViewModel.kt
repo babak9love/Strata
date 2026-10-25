@@ -20,7 +20,7 @@ enum class TypeFilter { ALL, FILES, DIRS }
 data class SearchUiState(
     val root: String = "",
     val namePattern: String = "",
-    val nameMode: NameMatchMode = NameMatchMode.REGEX,
+    val nameMode: NameMatchMode = NameMatchMode.GLOB,
     val content: String = "",
     val contentRegex: Boolean = false,
     val caseSensitive: Boolean = false,
@@ -41,6 +41,9 @@ class SearchViewModel : ViewModel() {
     val state: StateFlow<SearchUiState> = _state.asStateFlow()
 
     private var job: Job? = null
+
+    /** Every result found so far; the UI list is only refreshed in batches, so Stop flushes this. */
+    private var found = ArrayList<SearchResult>()
 
     fun initRoot(root: String) {
         if (_state.value.root.isEmpty()) _state.update { it.copy(root = root) }
@@ -72,8 +75,9 @@ class SearchViewModel : ViewModel() {
             contentRegex = s.contentRegex,
         )
         _state.update { it.copy(running = true, results = emptyList(), scanned = 0, finished = false, stoppedEarly = false, selected = emptySet()) }
+        val acc = ArrayList<SearchResult>()
+        found = acc
         job = viewModelScope.launch {
-            val acc = ArrayList<SearchResult>()
             SearchEngine.search(query).collect { event ->
                 when (event) {
                     is SearchEvent.Progress -> _state.update { it.copy(scanned = event.scanned) }
@@ -118,7 +122,8 @@ class SearchViewModel : ViewModel() {
 
     fun stop() {
         job?.cancel()
-        _state.update { it.copy(running = false, finished = true) }
+        val all = found.toList()
+        _state.update { if (it.running) it.copy(results = all, running = false, finished = true) else it.copy(running = false, finished = true) }
     }
 
     override fun onCleared() {

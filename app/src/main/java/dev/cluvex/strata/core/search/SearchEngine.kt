@@ -57,7 +57,8 @@ object SearchEngine {
                     }
                 }
 
-                if (item.isDirectory && query.includeSubdirs && depth < query.maxDepth) {
+                // A symlinked folder is listed as a result but never entered: it can point back at an ancestor and loop.
+                if (item.isDirectory && !item.isSymlink && query.includeSubdirs && depth < query.maxDepth) {
                     stack.addLast(child to depth + 1)
                 }
             }
@@ -69,7 +70,10 @@ object SearchEngine {
         if (query.namePattern.isBlank()) return true
         val opts = if (query.caseSensitive) emptySet() else setOf(RegexOption.IGNORE_CASE)
         return when (query.nameMode) {
-            NameMatchMode.GLOB -> globToRegex(query.namePattern, query.caseSensitive).matches(name)
+            // A bare word with no wildcard ("exclave") means "name contains it"; a full-name match would find nothing.
+            NameMatchMode.GLOB ->
+                if ('*' !in query.namePattern && '?' !in query.namePattern) name.contains(query.namePattern, ignoreCase = !query.caseSensitive)
+                else globToRegex(query.namePattern, query.caseSensitive).matches(name)
             NameMatchMode.REGEX -> runCatching { Regex(query.namePattern, opts).containsMatchIn(name) }.getOrDefault(false)
             NameMatchMode.PLAIN -> name.contains(query.namePattern, ignoreCase = !query.caseSensitive)
         }
