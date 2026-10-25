@@ -276,8 +276,19 @@ class ExplorerViewModel(
         navigate(pane, target, history = HistoryOp.FORWARD)
     }
 
-    fun refresh(pane: Pane, reveal: Collection<String> = emptyList()) =
-        navigate(pane, _state.value.pane(pane).path, refresh = true, history = HistoryOp.NONE, reveal = reveal)
+    fun refresh(pane: Pane, reveal: Collection<String> = emptyList()) {
+        val path = _state.value.pane(pane).path
+        if (!RemoteUri.isRemote(path)) {
+            navigate(pane, path, refresh = true, history = HistoryOp.NONE, reveal = reveal)
+            return
+        }
+        navJobs[pane]?.cancel()
+        updatePane(pane) { it.copy(loading = true) }
+        navJobs[pane] = viewModelScope.launch {
+            runCatching { sessions.reset(RemoteUri.id(path)) }
+            navigate(pane, path, refresh = true, history = HistoryOp.NONE, reveal = reveal)
+        }
+    }
 
     fun refreshAll() {
         refresh(Pane.LEFT)

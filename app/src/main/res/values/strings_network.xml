@@ -303,4 +303,5 @@
     <string name="remote_scan_network">Scan network</string>
     <string name="remote_scanning">Scanning…</string>
     <string name="remote_scan_none">No SMB servers found</string>
+    <string name="remote_update_access">Update access</string>
 </resources>

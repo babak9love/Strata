@@ -226,6 +226,16 @@ class SafFileSystem(private val c: RemoteConnection, context: Context) : RemoteF
             DocumentsContract.buildDocumentUri(TERMUX_AUTHORITY, TERMUX_HOME)
         }.getOrNull()
 
+        /** True when [oldHost] (a stored tree URI) points at the same storage as [new]: any Termux tree, or an identical authority + tree id. */
+        fun sameStorage(oldHost: String, new: Uri): Boolean {
+            val old = runCatching { Uri.parse(oldHost) }.getOrNull() ?: return false
+            if (old.authority != new.authority) return false
+            if (new.authority == TERMUX_AUTHORITY) return true
+            return runCatching {
+                DocumentsContract.getTreeDocumentId(old) == DocumentsContract.getTreeDocumentId(new)
+            }.getOrDefault(false)
+        }
+
         fun label(context: Context, tree: Uri): String {
             if (tree.authority == TERMUX_AUTHORITY) return "Termux"
             val resolver = context.contentResolver

@@ -105,6 +105,7 @@ import dev.cluvex.strata.core.util.Formatters
 import dev.cluvex.strata.feature.termux.TerminalGate
 import dev.cluvex.strata.feature.termux.TermuxViewModel
 import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
@@ -138,8 +139,14 @@ fun RemoteScreen(
         runCatching {
             context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         }
+        val existing = ui.connections.firstOrNull { c ->
+            c.protocol == RemoteProtocol.SAF && SafFileSystem.sameStorage(c.host, uri)
+        }
+        if (existing != null && existing.host != uri.toString()) {
+            SafFileSystem.release(context, existing.host)
+        }
         vm.saveConnection(
-            RemoteConnection(
+            existing?.copy(host = uri.toString()) ?: RemoteConnection(
                 id = UUID.randomUUID().toString(),
                 name = SafFileSystem.label(context, uri),
                 protocol = RemoteProtocol.SAF,
@@ -149,6 +156,17 @@ fun RemoteScreen(
                 savePassword = false,
             ),
         )
+    }
+    var updateTarget by remember { mutableStateOf<RemoteConnection?>(null) }
+    val updateLocal = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        val target = updateTarget
+        updateTarget = null
+        if (uri == null || target == null) return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+        if (target.host != uri.toString()) SafFileSystem.release(context, target.host)
+        vm.saveConnection(target.copy(host = uri.toString()))
     }
     val termux = viewModel<TermuxViewModel>().session
     fun openSsh(c: RemoteConnection, dir: String?) = termux.openSsh(c.host, c.port, c.username, dir)
@@ -239,6 +257,12 @@ fun RemoteScreen(
                     onConnect = { vm.connect(it) },
                     onSsh = { openSsh(it, null) },
                     onEdit = { if (it.protocol == RemoteProtocol.SAF) renameLocal = it else { editor = it; showEditor = true } },
+                    onUpdate = { c ->
+                        updateTarget = c
+                        val start = SafFileSystem.termuxHome(context).takeIf { Uri.parse(c.host).authority == SafFileSystem.TERMUX_AUTHORITY }
+                            ?: runCatching { Uri.parse(c.host) }.getOrNull()
+                        updateLocal.launch(start)
+                    },
                     onDelete = {
                         if (it.protocol == RemoteProtocol.SAF) SafFileSystem.release(context, it.host)
                         vm.deleteConnection(it.id)
@@ -338,6 +362,7 @@ private fun ConnectionsList(
     onConnect: (RemoteConnection) -> Unit,
     onSsh: (RemoteConnection) -> Unit,
     onEdit: (RemoteConnection) -> Unit,
+    onUpdate: (RemoteConnection) -> Unit,
     onDelete: (RemoteConnection) -> Unit,
 ) {
     if (connections.isEmpty()) {
@@ -364,7 +389,10 @@ private fun ConnectionsList(
                             if (c.protocol == RemoteProtocol.SFTP) {
                                 DropdownMenuItem(text = { Text(stringResource(R.string.remote_ssh_terminal)) }, leadingIcon = { Icon(Icons.Rounded.Terminal, null) }, onClick = { menu = false; onSsh(c) })
                             }
-                            DropdownMenuItem(text = { Text(stringResource(R.string.common_edit)) }, leadingIcon = { Icon(Icons.Rounded.Edit, null) }, onClick = { menu = false; onEdit(c) })
+                            if (c.protocol == RemoteProtocol.SAF) {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.remote_update_access)) }, leadingIcon = { Icon(Icons.Rounded.Refresh, null) }, onClick = { menu = false; onUpdate(c) })
+                            }
+                            DropdownMenuItem(text = { Text(stringResource(if (c.protocol == RemoteProtocol.SAF) R.string.common_rename else R.string.common_edit)) }, leadingIcon = { Icon(Icons.Rounded.Edit, null) }, onClick = { menu = false; onEdit(c) })
                             DropdownMenuItem(text = { Text(stringResource(R.string.common_delete)) }, leadingIcon = { Icon(Icons.Rounded.Delete, null) }, onClick = { menu = false; onDelete(c) })
                         }
                     }

@@ -74,6 +74,11 @@ class SmbFileSystem(private val c: RemoteConnection) : RemoteFileSystem {
         s
     }
 
+    /** Closes the cached tree connect so the next use opens a fresh one; a long-lived share handle can serve a stale directory view. */
+    private fun dropShare(name: String) {
+        shares.remove(name)?.let { runCatching { it.close() } }
+    }
+
     private fun translate(e: SMBApiException): IOException = when (e.status) {
         NtStatus.STATUS_ACCESS_DENIED -> IOException(tr(R.string.remote_access_denied))
         NtStatus.STATUS_OBJECT_NAME_NOT_FOUND, NtStatus.STATUS_OBJECT_PATH_NOT_FOUND -> IOException(tr(R.string.remote_not_found))
@@ -93,6 +98,7 @@ class SmbFileSystem(private val c: RemoteConnection) : RemoteFileSystem {
         val (shareName, inner) = split(path)
         if (shareName == null) return listShares()
         val base = RemotePaths.normalize(path)
+        dropShare(shareName)
         return smb {
             share(shareName).list(inner).filter { it.fileName != "." && it.fileName != ".." }.map { f ->
                 RemoteEntry(

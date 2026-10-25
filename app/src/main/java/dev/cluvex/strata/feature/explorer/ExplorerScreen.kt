@@ -89,6 +89,7 @@ import dev.cluvex.strata.core.util.IntentUtils
 import dev.cluvex.strata.feature.explorer.dnd.DragLayer
 import dev.cluvex.strata.feature.explorer.dnd.FileDragState
 import dev.cluvex.strata.feature.explorer.dnd.LocalFileDrag
+import dev.cluvex.strata.feature.explorer.components.LocalCutPaths
 import dev.cluvex.strata.feature.explorer.dnd.dragHost
 import dev.cluvex.strata.feature.apk.SignApkDialog
 import dev.cluvex.strata.feature.explorer.components.BatchRenameDialog
@@ -343,7 +344,10 @@ fun ExplorerScreen(
             .onGloballyPositioned { host[0] = it }
             .dragHost(drag) { host[0] },
     ) {
-    CompositionLocalProvider(LocalFileDrag provides drag) {
+    val cutPaths = remember(ui.clipboards) {
+        ui.clipboards.filter { it.move }.flatMapTo(HashSet<String>()) { c -> c.items.map { it.path } }
+    }
+    CompositionLocalProvider(LocalFileDrag provides drag, LocalCutPaths provides cutPaths) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {

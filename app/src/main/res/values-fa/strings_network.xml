@@ -303,4 +303,5 @@
     <string name="remote_scan_network">اسکن شبکه</string>
     <string name="remote_scanning">در حال اسکن…</string>
     <string name="remote_scan_none">سرور SMB پیدا نشد</string>
+    <string name="remote_update_access">به‌روزرسانی دسترسی</string>
 </resources>

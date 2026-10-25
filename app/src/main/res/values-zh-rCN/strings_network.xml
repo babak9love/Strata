@@ -300,4 +300,5 @@
     <string name="remote_scan_network">扫描网络</string>
     <string name="remote_scanning">正在扫描…</string>
     <string name="remote_scan_none">未找到 SMB 服务器</string>
+    <string name="remote_update_access">更新访问权限</string>
 </resources>

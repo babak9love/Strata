@@ -309,4 +309,5 @@
     <string name="remote_scan_network">Сканировать сеть</string>
     <string name="remote_scanning">Сканирование…</string>
     <string name="remote_scan_none">SMB-серверы не найдены</string>
+    <string name="remote_update_access">Обновить доступ</string>
 </resources>

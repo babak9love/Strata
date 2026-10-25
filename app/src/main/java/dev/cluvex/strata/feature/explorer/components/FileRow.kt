@@ -91,6 +91,11 @@ import dev.cluvex.strata.ui.theme.toShape
 import okio.Path.Companion.toPath
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
+/** Paths currently waiting in a Cut (move) clipboard entry; their rows are drawn dimmed until the move is pasted or dropped. */
+val LocalCutPaths = androidx.compose.runtime.compositionLocalOf<Set<String>> { emptySet() }
+
+private const val CUT_ALPHA = 0.45f
+
 @Composable
 fun FileRow(
     item: FileItem,
@@ -127,6 +132,7 @@ fun FileRow(
         label = "rowBg",
     )
     val ghostAlpha by animateFloatAsState(if (drop.ghosted) 0.36f else 1f, motion.defaultEffectsSpec(), label = "rowGhost")
+    val cutAlpha by animateFloatAsState(if (item.path in LocalCutPaths.current) CUT_ALPHA else 1f, motion.defaultEffectsSpec(), label = "rowCut")
     val flash = rememberFlash(flashKey, flashPulses)
     val flashColor = colors.primary.copy(alpha = 0.32f)
 
@@ -137,7 +143,7 @@ fun FileRow(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                alpha = ghostAlpha
+                alpha = ghostAlpha * cutAlpha
             }
             .clip(MaterialTheme.shapes.medium)
             .background(background)
@@ -222,6 +228,7 @@ fun FileTile(
         label = "tileBg",
     )
     val ghostAlpha by animateFloatAsState(if (drop.ghosted) 0.36f else 1f, motion.defaultEffectsSpec(), label = "tileGhost")
+    val cutAlpha by animateFloatAsState(if (item.path in LocalCutPaths.current) CUT_ALPHA else 1f, motion.defaultEffectsSpec(), label = "tileCut")
     val flash = rememberFlash(flashKey, flashPulses)
     val flashColor = colors.primary.copy(alpha = 0.32f)
     val shape = LocalSettings.current.appearance.iconShape.toShape()
@@ -240,7 +247,7 @@ fun FileTile(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                alpha = ghostAlpha
+                alpha = ghostAlpha * cutAlpha
             }
             .clip(MaterialTheme.shapes.large)
             .background(background)

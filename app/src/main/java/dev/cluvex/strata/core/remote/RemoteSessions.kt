@@ -37,6 +37,16 @@ class RemoteSessions(
         }
     }
 
+    /** Drops the live SMB connection so the next call reconnects from scratch; other protocols are left alone. */
+    suspend fun reset(connectionId: String) {
+        val session = session(connectionId) ?: return
+        if (session.connection.protocol != RemoteProtocol.SMB) return
+        session.lock.withLock {
+            session.fs?.let { runCatching { it.close() } }
+            session.fs = null
+        }
+    }
+
     suspend fun unlock(connectionId: String, password: String) = reconfigure(connectionId) { it.copy(password = password) }
 
     suspend fun trust(connectionId: String, presented: String) = reconfigure(connectionId) { it.copy(hostKey = presented) }
