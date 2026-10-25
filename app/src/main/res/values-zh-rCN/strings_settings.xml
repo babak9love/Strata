@@ -140,7 +140,7 @@
     <string name="settings_corners">圆角</string>
     <string name="settings_corners_summary">卡片、面板和按钮的圆润程度</string>
     <string name="settings_group_folder_icons">文件夹图标</string>
-    <string name="settings_group_file_icons">文件图标</string>
+    <string name="settings_group_icons">图标</string>
     <string name="settings_colorful_icons">彩色图标</string>
     <string name="settings_colorful_icons_summary">图片、视频、音乐、应用和代码各有专属颜色</string>
     <string name="settings_group_motion">动效与反馈</string>

@@ -140,7 +140,7 @@
     <string name="settings_corners">Углы</string>
     <string name="settings_corners_summary">Насколько скруглены карточки, панели и кнопки</string>
     <string name="settings_group_folder_icons">Значки папок</string>
-    <string name="settings_group_file_icons">Значки файлов</string>
+    <string name="settings_group_icons">Значки</string>
     <string name="settings_colorful_icons">Цветные значки</string>
     <string name="settings_colorful_icons_summary">У изображений, видео, музыки, приложений и кода — свои цвета</string>
     <string name="settings_group_motion">Анимация и отклик</string>

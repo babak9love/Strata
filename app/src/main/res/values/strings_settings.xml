@@ -141,7 +141,7 @@
     <string name="settings_corners">Corners</string>
     <string name="settings_corners_summary">How round cards, sheets and buttons are</string>
     <string name="settings_group_folder_icons">Folder icons</string>
-    <string name="settings_group_file_icons">File icons</string>
+    <string name="settings_group_icons">Icons</string>
     <string name="settings_colorful_icons">Colorful icons</string>
     <string name="settings_colorful_icons_summary">Pictures, videos, music, apps and code each get their own color</string>
     <string name="settings_group_motion">Motion and feel</string>

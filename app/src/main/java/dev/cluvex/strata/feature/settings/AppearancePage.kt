@@ -141,7 +141,7 @@ fun AppearancePage(settings: StrataSettings, act: SettingsActions, onBack: () ->
             }
         }
         val folderTint = rememberFolderTint()
-        SettingsGroup(stringResource(R.string.settings_group_file_icons)) {
+        SettingsGroup(stringResource(R.string.settings_group_icons)) {
             switch(
                 tr(R.string.settings_strata_file_icons),
                 a.customFileIcons,

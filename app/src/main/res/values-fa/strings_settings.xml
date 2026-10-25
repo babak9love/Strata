@@ -140,7 +140,7 @@
     <string name="settings_corners">گوشه‌ها</string>
     <string name="settings_corners_summary">میزان گردی کارت‌ها، برگه‌ها و دکمه‌ها</string>
     <string name="settings_group_folder_icons">آیکون پوشه‌ها</string>
-    <string name="settings_group_file_icons">نماد فایل‌ها</string>
+    <string name="settings_group_icons">آیکون‌ها</string>
     <string name="settings_colorful_icons">نمادهای رنگی</string>
     <string name="settings_colorful_icons_summary">تصاویر، ویدیوها، موسیقی، برنامه‌ها و کد هرکدام رنگ خودشان را دارند</string>
     <string name="settings_group_motion">حرکت و بازخورد</string>
