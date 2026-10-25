@@ -96,8 +96,10 @@ import dev.cluvex.strata.R
 import dev.cluvex.strata.core.remote.LanHost
 import dev.cluvex.strata.core.remote.LanScanner
 import dev.cluvex.strata.core.remote.RemoteConnection
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import dev.cluvex.strata.core.remote.RemoteEntry
 import dev.cluvex.strata.core.remote.RemotePaths
 import dev.cluvex.strata.core.remote.RemoteProtocol
@@ -134,6 +136,7 @@ fun RemoteScreen(
     var showNewFolder by remember { mutableStateOf(false) }
     var renameLocal by remember { mutableStateOf<RemoteConnection?>(null) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val addLocal = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         runCatching {
@@ -210,7 +213,12 @@ fun RemoteScreen(
                 },
                 actions = {
                     if (ui.session == null) {
-                        IconButton(onClick = { addLocal.launch(SafFileSystem.termuxHome(context)) }) {
+                        IconButton(onClick = {
+                            scope.launch {
+                                withContext(Dispatchers.IO) { SafFileSystem.warmUp(context) }
+                                addLocal.launch(SafFileSystem.termuxHome(context))
+                            }
+                        }) {
                             Icon(Icons.Rounded.CreateNewFolder, contentDescription = stringResource(R.string.remote_add_local))
                         }
                     }
@@ -259,9 +267,13 @@ fun RemoteScreen(
                     onEdit = { if (it.protocol == RemoteProtocol.SAF) renameLocal = it else { editor = it; showEditor = true } },
                     onUpdate = { c ->
                         updateTarget = c
-                        val start = SafFileSystem.termuxHome(context).takeIf { Uri.parse(c.host).authority == SafFileSystem.TERMUX_AUTHORITY }
-                            ?: runCatching { Uri.parse(c.host) }.getOrNull()
-                        updateLocal.launch(start)
+                        scope.launch {
+                            val isTermux = runCatching { Uri.parse(c.host).authority }.getOrNull() == SafFileSystem.TERMUX_AUTHORITY
+                            if (isTermux) withContext(Dispatchers.IO) { SafFileSystem.warmUp(context) }
+                            val start = SafFileSystem.termuxHome(context).takeIf { isTermux }
+                                ?: runCatching { Uri.parse(c.host) }.getOrNull()
+                            updateLocal.launch(start)
+                        }
                     },
                     onDelete = {
                         if (it.protocol == RemoteProtocol.SAF) SafFileSystem.release(context, it.host)
