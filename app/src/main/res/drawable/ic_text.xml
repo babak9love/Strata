@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+    <!-- Page with folded corner -->
+    <path
+        android:pathData="M38,8H74L102,36V108A12,12 0 0 1 90,120H38A12,12 0 0 1 26,108V20A12,12 0 0 1 38,8Z"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="8"
+                android:endX="0"
+                android:endY="120"
+                android:type="linear">
+                <item android:color="#FFF7F9FC" android:offset="0" />
+                <item android:color="#FFDDE4EF" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Fold -->
+    <path
+        android:fillColor="#FFB9C6DB"
+        android:pathData="M74,8V36H102Z"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round" />
+    <!-- Text lines -->
+    <path
+        android:pathData="M40,58H90M40,72H90M40,86H90M40,100H68"
+        android:strokeColor="#FF5B6B84"
+        android:strokeWidth="6.5"
+        android:strokeLineCap="round" />
+</vector>

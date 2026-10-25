@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+    <!-- Page with folded corner -->
+    <path
+        android:pathData="M38,8H74L102,36V108A12,12 0 0 1 90,120H38A12,12 0 0 1 26,108V20A12,12 0 0 1 38,8Z"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="8"
+                android:endX="0"
+                android:endY="120"
+                android:type="linear">
+                <item android:color="#FFF7F9FC" android:offset="0" />
+                <item android:color="#FFDDE4EF" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#FFB9C6DB"
+        android:pathData="M74,8V36H102Z"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M40,50H76"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="6"
+        android:strokeLineCap="round" />
+    <!-- Red PDF banner -->
+    <path
+        android:fillColor="#FFE53935"
+        android:pathData="M22,66H106A6,6 0 0 1 112,72V96A6,6 0 0 1 106,102H22A6,6 0 0 1 16,96V72A6,6 0 0 1 22,66Z" />
+    <!-- Letters P D F (outlines of Liberation Sans Bold) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M52.86 79.96Q52.86 82.09 51.89 83.76Q50.92 85.43 49.12 86.34Q47.32 87.26 44.83 87.26H39.37V95H34.76V73H44.65Q48.6 73 50.73 74.82Q52.86 76.64 52.86 79.96ZM48.22 80.04Q48.22 76.58 44.13 76.58H39.37V83.71H44.26Q46.16 83.71 47.19 82.77Q48.22 81.82 48.22 80.04ZM75.1 83.84Q75.1 87.24 73.77 89.78Q72.43 92.31 69.99 93.66Q67.54 95 64.39 95H55.49V73H63.45Q69.01 73 72.06 75.8Q75.1 78.61 75.1 83.84ZM70.46 83.84Q70.46 80.29 68.62 78.43Q66.78 76.56 63.36 76.56H60.1V91.44H64Q66.97 91.44 68.72 89.39Q70.46 87.35 70.46 83.84ZM82.59 76.56V83.37H93.85V86.93H82.59V95H77.98V73H94.21V76.56Z" />
+</vector>

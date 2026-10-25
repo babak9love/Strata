@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+    <!-- Page with folded corner -->
+    <path
+        android:pathData="M38,8H74L102,36V108A12,12 0 0 1 90,120H38A12,12 0 0 1 26,108V20A12,12 0 0 1 38,8Z"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="8"
+                android:endX="0"
+                android:endY="120"
+                android:type="linear">
+                <item android:color="#FFF7F9FC" android:offset="0" />
+                <item android:color="#FFDDE4EF" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#FFB9C6DB"
+        android:pathData="M74,8V36H102Z"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M40,50H76"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="6"
+        android:strokeLineCap="round" />
+    <!-- Blue RTF banner -->
+    <path
+        android:fillColor="#FF2F6FD0"
+        android:pathData="M22,66H106A6,6 0 0 1 112,72V96A6,6 0 0 1 106,102H22A6,6 0 0 1 16,96V72A6,6 0 0 1 22,66Z" />
+    <!-- Letters R T F (outlines of Liberation Sans Bold) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M50.27 95 45.21 86.71H39.84V95H35.27V73.16H46.18Q50.09 73.16 52.21 74.84Q54.34 76.52 54.34 79.67Q54.34 81.96 53.03 83.63Q51.73 85.3 49.52 85.82L55.42 95ZM49.73 79.86Q49.73 76.71 45.7 76.71H39.84V83.16H45.83Q47.75 83.16 48.74 82.29Q49.73 81.42 49.73 79.86ZM68.05 76.69V95H63.48V76.69H56.43V73.16H75.12V76.69ZM82.16 76.69V83.45H93.33V86.99H82.16V95H77.59V73.16H93.69V76.69Z" />
+</vector>

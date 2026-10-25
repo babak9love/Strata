@@ -1,0 +1,239 @@
+{
+  "name": "Smali",
+  "scopeName": "source.smali",
+  "fileTypes": [
+    "smali"
+  ],
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#class-declaration"
+    },
+    {
+      "include": "#method-declaration"
+    },
+    {
+      "include": "#field-declaration"
+    },
+    {
+      "include": "#directive"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#char"
+    },
+    {
+      "include": "#label"
+    },
+    {
+      "include": "#instruction"
+    },
+    {
+      "include": "#register"
+    },
+    {
+      "include": "#member"
+    },
+    {
+      "include": "#type"
+    },
+    {
+      "include": "#primitive"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#constant"
+    },
+    {
+      "include": "#modifier"
+    },
+    {
+      "match": "->|=|\\.\\.",
+      "name": "keyword.operator.smali"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "match": "#.*$",
+      "name": "comment.line.number-sign.smali"
+    },
+    "class-declaration": {
+      "begin": "^\\s*(\\.(?:class|super|implements|source))\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.directive.smali"
+        }
+      },
+      "end": "$",
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#modifier"
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "match": "\\[*L[\\w$/\\-]+;",
+          "name": "entity.name.type.class.smali"
+        }
+      ]
+    },
+    "method-declaration": {
+      "begin": "^\\s*(\\.method)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.directive.smali"
+        }
+      },
+      "end": "$",
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#modifier"
+        },
+        {
+          "match": "([\\w$<>\\-]+)(?=\\()",
+          "name": "entity.name.function.smali"
+        },
+        {
+          "include": "#type"
+        },
+        {
+          "include": "#primitive"
+        }
+      ]
+    },
+    "field-declaration": {
+      "begin": "^\\s*(\\.field)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.directive.smali"
+        }
+      },
+      "end": "$",
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#modifier"
+        },
+        {
+          "match": "([\\w$\\-]+)(?=:)",
+          "name": "variable.other.member.smali"
+        },
+        {
+          "include": "#type"
+        },
+        {
+          "include": "#primitive-alone"
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "include": "#number"
+        },
+        {
+          "include": "#constant"
+        }
+      ]
+    },
+    "directive": {
+      "match": "(?<![\\w\\-])\\.(?:end\\s+)?(?:class|super|source|implements|field|method|registers|locals|param|local|restart\\s+local|prologue|epilogue|line|annotation|subannotation|enum|array-data|packed-switch|sparse-switch|catchall|catch)\\b",
+      "name": "keyword.control.directive.smali"
+    },
+    "string": {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.smali",
+      "patterns": [
+        {
+          "match": "\\\\(?:u[0-9a-fA-F]{4}|.)",
+          "name": "constant.character.escape.smali"
+        }
+      ]
+    },
+    "char": {
+      "match": "'(?:\\\\(?:u[0-9a-fA-F]{4}|.)|[^'\\\\])'",
+      "name": "string.quoted.single.smali"
+    },
+    "label": {
+      "match": ":[A-Za-z_$][\\w$]*",
+      "name": "variable.other.constant.label.smali"
+    },
+    "instruction": {
+      "match": "^\\s*((?:nop|move|return|const|monitor|check-cast|instance-of|array-length|new-instance|new-array|filled-new-array|fill-array-data|throw|goto|packed-switch|sparse-switch|cmp|if|aget|aput|iget|iput|sget|sput|invoke|neg|not|int-to|long-to|float-to|double-to|add|sub|mul|div|rem|and|or|xor|shl|shr|ushr|rsub)[a-z0-9\\-]*(?:/[a-z0-9]+)?)(?=\\s+[vp{:\\-\"]|\\s*(?:#|$))",
+      "captures": {
+        "1": {
+          "name": "keyword.other.instruction.smali"
+        }
+      }
+    },
+    "register": {
+      "match": "\\b[vp]\\d+\\b",
+      "name": "variable.parameter.register.smali"
+    },
+    "member": {
+      "patterns": [
+        {
+          "match": "(->)\\s*([\\w$<>\\-]+)(?=\\()",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.smali"
+            },
+            "2": {
+              "name": "entity.name.function.smali"
+            }
+          }
+        },
+        {
+          "match": "(->)\\s*([\\w$\\-]+)(?=:)",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.smali"
+            },
+            "2": {
+              "name": "variable.other.member.smali"
+            }
+          }
+        }
+      ]
+    },
+    "type": {
+      "match": "\\[*L[\\w$/\\-]+;",
+      "name": "entity.name.type.class.smali"
+    },
+    "primitive": {
+      "match": "(?<=[(\\[)]|;)\\[*[ZBSCIJFDV]+",
+      "name": "storage.type.primitive.smali"
+    },
+    "primitive-alone": {
+      "match": "(?<=:)\\[*[ZBSCIJFD]\\b",
+      "name": "storage.type.primitive.smali"
+    },
+    "number": {
+      "match": "(?<![\\w.$])-?(?:0x[0-9a-fA-F]+|\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)[LlTtSsFfDd]?\\b",
+      "name": "constant.numeric.smali"
+    },
+    "constant": {
+      "match": "\\b(?:true|false|null)\\b",
+      "name": "constant.language.smali"
+    },
+    "modifier": {
+      "match": "(?<![\\w\\-])(?:public|private|protected|static|final|synchronized|volatile|bridge|transient|varargs|native|interface|abstract|strict|synthetic|annotation|enum|constructor|declared-synchronized|build|runtime|system)(?![\\w\\-])",
+      "name": "storage.modifier.smali"
+    }
+  }
+}

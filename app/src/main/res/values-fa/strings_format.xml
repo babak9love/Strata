@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="unit_b">\u200F\u2068%1$s\u2069 بایت</string>
+    <string name="unit_kb">\u200F\u2068%1$s\u2069 کیلوبایت</string>
+    <string name="unit_kb_decimal">\u200F\u2068%1$s\u2069 کیلوبایت</string>
+    <string name="unit_mb">\u200F\u2068%1$s\u2069 مگابایت</string>
+    <string name="unit_gb">\u200F\u2068%1$s\u2069 گیگابایت</string>
+    <string name="unit_tb">\u200F\u2068%1$s\u2069 ترابایت</string>
+    <string name="unit_kib">\u200F\u2068%1$s\u2069 کیلوبایت</string>
+    <string name="unit_mib">\u200F\u2068%1$s\u2069 مگابایت</string>
+    <string name="unit_gib">\u200F\u2068%1$s\u2069 گیگابایت</string>
+    <string name="unit_tib">\u200F\u2068%1$s\u2069 ترابایت</string>
+    <string name="unit_pib">\u200F\u2068%1$s\u2069 پتابایت</string>
+    <string name="unit_pb">\u200F\u2068%1$s\u2069 پتابایت</string>
+    <string name="date_just_now">همین حالا</string>
+    <string name="date_minutes_ago">\u200F\u2068%1$s\u2069 دقیقه پیش</string>
+    <string name="date_hours_ago">\u200F\u2068%1$s\u2069 ساعت پیش</string>
+    <string name="date_yesterday">دیروز \u2068%1$s\u2069</string>
+    <string name="date_weekday_time">\u2068%1$s\u2069 \u2068%2$s\u2069</string>
+    <string name="date_long_time">\u200F\u2068%1$s\u2069، \u2068%2$s\u2069</string>
+</resources>

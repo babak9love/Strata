@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="unit_b">%1$s B</string>
+    <string name="unit_kb">%1$s KB</string>
+    <string name="unit_kb_decimal">%1$s kB</string>
+    <string name="unit_mb">%1$s MB</string>
+    <string name="unit_gb">%1$s GB</string>
+    <string name="unit_tb">%1$s TB</string>
+    <string name="unit_kib">%1$s KiB</string>
+    <string name="unit_mib">%1$s MiB</string>
+    <string name="unit_gib">%1$s GiB</string>
+    <string name="unit_tib">%1$s TiB</string>
+    <string name="unit_pib">%1$s PiB</string>
+    <string name="unit_pb">%1$s PB</string>
+    <string name="date_just_now">Just now</string>
+    <string name="date_minutes_ago">%1$s min ago</string>
+    <string name="date_hours_ago">%1$s h ago</string>
+    <string name="date_yesterday">Yesterday %1$s</string>
+    <string name="date_weekday_time">%1$s %2$s</string>
+    <string name="date_long_time">%1$s %2$s</string>
+    <string name="jalali_month_1" translatable="false">فروردین</string>
+    <string name="jalali_month_2" translatable="false">اردیبهشت</string>
+    <string name="jalali_month_3" translatable="false">خرداد</string>
+    <string name="jalali_month_4" translatable="false">تیر</string>
+    <string name="jalali_month_5" translatable="false">مرداد</string>
+    <string name="jalali_month_6" translatable="false">شهریور</string>
+    <string name="jalali_month_7" translatable="false">مهر</string>
+    <string name="jalali_month_8" translatable="false">آبان</string>
+    <string name="jalali_month_9" translatable="false">آذر</string>
+    <string name="jalali_month_10" translatable="false">دی</string>
+    <string name="jalali_month_11" translatable="false">بهمن</string>
+    <string name="jalali_month_12" translatable="false">اسفند</string>
+    <string name="persian_weekday_1" translatable="false">شنبه</string>
+    <string name="persian_weekday_2" translatable="false">یکشنبه</string>
+    <string name="persian_weekday_3" translatable="false">دوشنبه</string>
+    <string name="persian_weekday_4" translatable="false">سه‌شنبه</string>
+    <string name="persian_weekday_5" translatable="false">چهارشنبه</string>
+    <string name="persian_weekday_6" translatable="false">پنجشنبه</string>
+    <string name="persian_weekday_7" translatable="false">جمعه</string>
+</resources>

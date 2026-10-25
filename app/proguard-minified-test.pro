@@ -1,0 +1,8 @@
+-keep class dev.cluvex.strata.** { *; }
+-keep class org.apache.commons.compress.archivers.sevenz.StrataAesDecoder { *; }
+-keep class androidx.tracing.** { *; }
+-keep class kotlin.** { *; }
+-keep class kotlinx.coroutines.** { *; }
+-keep class com.google.common.** { *; }
+-dontwarn kotlin.ExperimentalContextParameters
+-dontwarn sun.net.spi.nameservice.NameServiceDescriptor

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+    <!-- Page with folded corner -->
+    <path
+        android:pathData="M38,8H74L102,36V108A12,12 0 0 1 90,120H38A12,12 0 0 1 26,108V20A12,12 0 0 1 38,8Z"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="8"
+                android:endX="0"
+                android:endY="120"
+                android:type="linear">
+                <item android:color="#FFF7F9FC" android:offset="0" />
+                <item android:color="#FFDDE4EF" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#FFB9C6DB"
+        android:pathData="M74,8V36H102Z"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M40,50H76"
+        android:strokeColor="#FF9AA7BB"
+        android:strokeWidth="6"
+        android:strokeLineCap="round" />
+    <!-- Green XLS banner -->
+    <path
+        android:fillColor="#FF1E8E3E"
+        android:pathData="M22,66H106A6,6 0 0 1 112,72V96A6,6 0 0 1 106,102H22A6,6 0 0 1 16,96V72A6,6 0 0 1 22,66Z" />
+    <!-- Letters X L S (outlines of Liberation Sans Bold) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M49.71 95 44.18 86.24 38.66 95H33.79L41.41 83.43L34.43 73H39.3L44.18 80.78L49.07 73H53.91L47.23 83.43L54.55 95ZM56.37 95V73H60.98V91.44H72.78V95ZM93.25 88.66Q93.25 91.89 90.85 93.6Q88.45 95.31 83.82 95.31Q79.58 95.31 77.18 93.81Q74.77 92.31 74.09 89.27L78.54 88.54Q78.99 90.28 80.3 91.07Q81.61 91.86 83.94 91.86Q88.76 91.86 88.76 88.93Q88.76 87.99 88.21 87.38Q87.66 86.77 86.65 86.37Q85.64 85.96 82.78 85.38Q80.32 84.8 79.35 84.45Q78.38 84.1 77.6 83.63Q76.82 83.15 76.27 82.48Q75.73 81.81 75.42 80.9Q75.12 80 75.12 78.82Q75.12 75.84 77.36 74.26Q79.6 72.67 83.88 72.67Q87.97 72.67 90.02 73.95Q92.07 75.23 92.67 78.18L88.2 78.79Q87.86 77.37 86.81 76.65Q85.75 75.94 83.78 75.94Q79.6 75.94 79.6 78.56Q79.6 79.42 80.04 79.96Q80.49 80.51 81.36 80.89Q82.24 81.28 84.91 81.85Q88.08 82.52 89.44 83.09Q90.81 83.66 91.61 84.42Q92.4 85.18 92.82 86.23Q93.25 87.29 93.25 88.66Z" />
+</vector>

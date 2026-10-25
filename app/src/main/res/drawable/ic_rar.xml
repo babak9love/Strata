@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+    <!-- Purple book -->
+    <path android:pathData="M21,82H105A9,9 0 0 1 114,91V101A9,9 0 0 1 105,110H21A9,9 0 0 1 12,101V91A9,9 0 0 1 21,82Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="82"
+                android:endX="0"
+                android:endY="110"
+                android:type="linear">
+                <item android:color="#FF9B5FC8" android:offset="0" />
+                <item android:color="#FF622F91" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#46FFFFFF"
+        android:pathData="M20.5,86H81.5A2.5,2.5 0 0 1 84,88.5V88.5A2.5,2.5 0 0 1 81.5,91H20.5A2.5,2.5 0 0 1 18,88.5V88.5A2.5,2.5 0 0 1 20.5,86Z" />
+    <path
+        android:fillColor="#FFF6ECDD"
+        android:pathData="M92,88H104A4,4 0 0 1 108,92V100A4,4 0 0 1 104,104H92A4,4 0 0 1 88,100V92A4,4 0 0 1 92,88Z" />
+    <!-- Red book -->
+    <path android:pathData="M27,52H111A9,9 0 0 1 120,61V71A9,9 0 0 1 111,80H27A9,9 0 0 1 18,71V61A9,9 0 0 1 27,52Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="52"
+                android:endX="0"
+                android:endY="80"
+                android:type="linear">
+                <item android:color="#FFE04B5A" android:offset="0" />
+                <item android:color="#FFA81F33" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#46FFFFFF"
+        android:pathData="M26.5,56H87.5A2.5,2.5 0 0 1 90,58.5V58.5A2.5,2.5 0 0 1 87.5,61H26.5A2.5,2.5 0 0 1 24,58.5V58.5A2.5,2.5 0 0 1 26.5,56Z" />
+    <path
+        android:fillColor="#FFF6ECDD"
+        android:pathData="M98,58H110A4,4 0 0 1 114,62V70A4,4 0 0 1 110,74H98A4,4 0 0 1 94,70V62A4,4 0 0 1 98,58Z" />
+    <!-- Green book -->
+    <path android:pathData="M19,22H101A9,9 0 0 1 110,31V41A9,9 0 0 1 101,50H19A9,9 0 0 1 10,41V31A9,9 0 0 1 19,22Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="22"
+                android:endX="0"
+                android:endY="50"
+                android:type="linear">
+                <item android:color="#FF4FC08D" android:offset="0" />
+                <item android:color="#FF1E8A5E" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#46FFFFFF"
+        android:pathData="M18.5,26H77.5A2.5,2.5 0 0 1 80,28.5V28.5A2.5,2.5 0 0 1 77.5,31H18.5A2.5,2.5 0 0 1 16,28.5V28.5A2.5,2.5 0 0 1 18.5,26Z" />
+    <path
+        android:fillColor="#FFF6ECDD"
+        android:pathData="M88,28H100A4,4 0 0 1 104,32V40A4,4 0 0 1 100,44H88A4,4 0 0 1 84,40V32A4,4 0 0 1 88,28Z" />
+    <!-- Strap -->
+    <path
+        android:fillColor="#FFF2C14E"
+        android:pathData="M69,16H75A3,3 0 0 1 78,19V113A3,3 0 0 1 75,116H69A3,3 0 0 1 66,113V19A3,3 0 0 1 69,16Z" />
+    <path
+        android:fillColor="#5AFFFFFF"
+        android:pathData="M70,16H70A1,1 0 0 1 71,17V115A1,1 0 0 1 70,116H70A1,1 0 0 1 69,115V17A1,1 0 0 1 70,16Z" />
+</vector>

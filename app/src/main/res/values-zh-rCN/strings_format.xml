@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="unit_b">%1$s B</string>
+    <string name="unit_kb">%1$s KB</string>
+    <string name="unit_kb_decimal">%1$s kB</string>
+    <string name="unit_mb">%1$s MB</string>
+    <string name="unit_gb">%1$s GB</string>
+    <string name="unit_tb">%1$s TB</string>
+    <string name="unit_kib">%1$s KiB</string>
+    <string name="unit_mib">%1$s MiB</string>
+    <string name="unit_gib">%1$s GiB</string>
+    <string name="unit_tib">%1$s TiB</string>
+    <string name="unit_pib">%1$s PiB</string>
+    <string name="unit_pb">%1$s PB</string>
+    <string name="date_just_now">刚刚</string>
+    <string name="date_minutes_ago">%1$s 分钟前</string>
+    <string name="date_hours_ago">%1$s 小时前</string>
+    <string name="date_yesterday">昨天 %1$s</string>
+    <string name="date_weekday_time">%1$s %2$s</string>
+    <string name="date_long_time">%1$s %2$s</string>
+</resources>

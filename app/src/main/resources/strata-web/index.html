@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strata · Wi-Fi access</title>
+<style>
+  :root { --bg:#fdf8fd; --surface:#f3edf7; --card:#fff; --text:#1d1b20; --muted:#625b71; --accent:#6750a4; --accent-text:#fff; --line:#e7e0ec; --danger:#b3261e; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141218; --surface:#1d1b20; --card:#211f26; --text:#e6e0e9; --muted:#cac4d0; --accent:#d0bcff; --accent-text:#381e72; --line:#36343b; --danger:#f2b8b5; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--text); }
+  header { position:sticky; top:0; background:var(--surface); padding:14px 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; border-bottom:1px solid var(--line); z-index:1; }
+  header h1 { font-size:18px; margin:0 12px 0 0; }
+  .crumbs { display:flex; flex-wrap:wrap; gap:2px; align-items:center; flex:1; min-width:200px; }
+  .crumbs button { background:none; border:0; color:var(--accent); font:inherit; cursor:pointer; padding:4px 6px; border-radius:8px; }
+  .crumbs button:hover { background:var(--line); }
+  .crumbs span { color:var(--muted); }
+  button.act, label.act { background:var(--accent); color:var(--accent-text); border:0; border-radius:20px; padding:8px 16px; font:inherit; font-weight:600; cursor:pointer; }
+  button.ghost { background:none; border:1px solid var(--line); color:var(--text); border-radius:20px; padding:6px 12px; font:inherit; cursor:pointer; }
+  main { max-width:1000px; margin:0 auto; padding:16px 20px 60px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:16px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; font-size:13px; }
+  td.size, td.date, th.size, th.date { white-space:nowrap; color:var(--muted); }
+  td.name a, td.name button { color:var(--text); text-decoration:none; background:none; border:0; font:inherit; cursor:pointer; padding:0; text-align:left; }
+  td.name .icon { display:inline-block; width:22px; }
+  td.ops { white-space:nowrap; text-align:right; }
+  td.ops button { background:none; border:0; color:var(--muted); cursor:pointer; font:inherit; padding:4px 6px; border-radius:8px; }
+  td.ops button:hover { background:var(--line); color:var(--text); }
+  td.ops button.del:hover { color:var(--danger); }
+  #login { max-width:360px; margin:12vh auto; background:var(--card); padding:28px; border-radius:24px; }
+  #login input { width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--text); font:inherit; margin:12px 0; }
+  .muted { color:var(--muted); font-size:13px; }
+  .err { color:var(--danger); min-height:1.4em; }
+  #drop { border:2px dashed var(--line); border-radius:16px; padding:14px; text-align:center; color:var(--muted); margin-bottom:12px; }
+  #drop.over { border-color:var(--accent); color:var(--accent); }
+  #progress { height:4px; background:var(--accent); width:0; transition:width .2s; border-radius:2px; margin-bottom:8px; }
+  .hidden { display:none !important; }
+  input[type=file] { display:none; }
+  @media (max-width: 600px) { td.date, th.date { display:none; } }
+</style>
+</head>
+<body>
+<div id="login" class="hidden">
+  <h2>Strata</h2>
+  <p class="muted">Enter the password shown on the phone.</p>
+  <form id="loginForm"><input id="pw" type="password" autocomplete="current-password" autofocus placeholder="Password"><button class="act" type="submit">Open</button></form>
+  <p id="loginErr" class="err"></p>
+</div>
+<div id="app" class="hidden">
+  <header>
+    <h1>Strata</h1>
+    <nav class="crumbs" id="crumbs"></nav>
+    <span id="writeOps">
+      <button class="ghost" id="newFolder">New folder</button>
+      <label class="act" for="files">Upload</label><input id="files" type="file" multiple>
+    </span>
+  </header>
+  <main>
+    <div id="progress"></div>
+    <div id="drop" class="writeOnly">Drop files here to upload them to this folder</div>
+    <p id="msg" class="err"></p>
+    <table><thead><tr><th>Name</th><th class="size">Size</th><th class="date">Modified</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    <p class="muted" id="readOnlyNote"></p>
+  </main>
+</div>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+let cwd = "/", readOnly = false;
+
+function el(tag, props, ...kids) { const e = document.createElement(tag); Object.assign(e, props || {}); kids.forEach(k => e.append(k)); return e; }
+function size(n) { if (n < 1024) return n + " B"; const u = ["KB","MB","GB","TB"]; let i = -1; do { n /= 1024; i++; } while (n >= 1024 && i < 3); return n.toFixed(n < 10 ? 1 : 0) + " " + u[i]; }
+function join(dir, name) { return (dir.endsWith("/") ? dir : dir + "/") + name; }
+function q(params) { return Object.entries(params).map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&"); }
+
+async function api(path, opts) {
+  const r = await fetch(path, Object.assign({ credentials: "same-origin" }, opts || {}));
+  if (r.status === 401) { show(false); throw new Error("Sign in again"); }
+  return r;
+}
+async function post(path) {
+  const r = await api(path, { method: "POST", headers: { "X-Strata": "1" } });
+  if (!r.ok) throw new Error(r.status === 409 ? "Already exists" : r.status === 403 ? "Not allowed" : "Failed (" + r.status + ")");
+}
+function say(t) { $("msg").textContent = t || ""; }
+
+function show(app) { $("app").classList.toggle("hidden", !app); $("login").classList.toggle("hidden", app); if (!app) $("pw").focus(); }
+
+async function load(dir) {
+  say("");
+  const r = await api("/api/list?" + q({ path: dir }));
+  if (!r.ok) { say("Can't open that folder"); return; }
+  cwd = dir;
+  const items = await r.json();
+  const crumbs = $("crumbs"); crumbs.replaceChildren();
+  const parts = dir.split("/").filter(Boolean);
+  crumbs.append(el("button", { textContent: "Home", onclick: () => load("/") }));
+  parts.forEach((p, i) => { crumbs.append(el("span", { textContent: "/" })); const to = "/" + parts.slice(0, i + 1).join("/"); crumbs.append(el("button", { textContent: p, onclick: () => load(to) })); });
+  const rows = $("rows"); rows.replaceChildren();
+  if (parts.length) rows.append(el("tr", {}, el("td", { className: "name" }, el("button", { textContent: "↩  ..", onclick: () => load("/" + parts.slice(0, -1).join("/")) })), el("td"), el("td"), el("td")));
+  for (const it of items) {
+    const path = join(dir, it.name);
+    const name = it.dir
+      ? el("button", { onclick: () => load(path) }, el("span", { className: "icon", textContent: "📁" }), it.name)
+      : el("a", { href: "/api/download?" + q({ path }), download: it.name }, el("span", { className: "icon", textContent: "📄" }), it.name);
+    const ops = el("td", { className: "ops" });
+    if (!readOnly) {
+      ops.append(el("button", { textContent: "Rename", onclick: async () => {
+        const to = prompt("New name", it.name); if (!to || to === it.name) return;
+        try { await post("/api/rename?" + q({ path, to })); load(cwd); } catch (e) { say(e.message); } } }));
+      ops.append(el("button", { className: "del", textContent: "Delete", onclick: async () => {
+        if (!confirm("Delete " + it.name + (it.dir ? " and everything in it" : "") + "?")) return;
+        try { await post("/api/delete?" + q({ path })); load(cwd); } catch (e) { say(e.message); } } }));
+    }
+    rows.append(el("tr", {}, el("td", { className: "name" }, name), el("td", { className: "size", textContent: it.dir ? "" : size(it.size) }),
+      el("td", { className: "date", textContent: new Date(it.mtime).toLocaleString() }), ops));
+  }
+  if (!items.length) rows.append(el("tr", {}, el("td", { className: "muted", colSpan: 4, textContent: "Empty folder" })));
+}
+
+function upload(files) {
+  if (!files.length || readOnly) return;
+  const form = new FormData();
+  for (const f of files) form.append("file", f, f.name);
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/api/upload?" + q({ dir: cwd }));
+  xhr.setRequestHeader("X-Strata", "1");
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable) $("progress").style.width = (100 * e.loaded / e.total) + "%"; };
+  xhr.onload = () => { $("progress").style.width = "0"; if (xhr.status === 409) say("Some files already existed and were skipped"); else if (xhr.status !== 200) say("Upload failed (" + xhr.status + ")"); load(cwd); };
+  xhr.onerror = () => { $("progress").style.width = "0"; say("Upload failed"); };
+  xhr.send(form);
+}
+
+$("loginForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const r = await fetch("/api/login", { method: "POST", headers: { "X-Strata": "1", "Content-Type": "application/x-www-form-urlencoded" }, body: q({ password: $("pw").value }) });
+  if (r.status === 204) { $("pw").value = ""; $("loginErr").textContent = ""; await start(); }
+  else if (r.status === 429) $("loginErr").textContent = "Too many tries — wait " + (r.headers.get("Retry-After") || "a few") + " s";
+  else $("loginErr").textContent = "Wrong password";
+};
+$("newFolder").onclick = async () => { const name = prompt("Folder name"); if (!name) return; try { await post("/api/mkdir?" + q({ dir: cwd, name })); load(cwd); } catch (e) { say(e.message); } };
+$("files").onchange = (e) => { upload(e.target.files); e.target.value = ""; };
+const drop = $("drop");
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); upload(e.dataTransfer.files); };
+
+async function start() {
+  const r = await fetch("/api/info", { credentials: "same-origin" });
+  if (r.status === 401) { show(false); return; }
+  const info = await r.json();
+  readOnly = info.readOnly;
+  document.querySelectorAll("#writeOps, .writeOnly").forEach(n => n.classList.toggle("hidden", readOnly));
+  $("readOnlyNote").textContent = readOnly ? "Read-only: the phone shares this folder for downloading only." : "";
+  show(true);
+  load("/");
+}
+start();
+</script>
+</body>
+</html>

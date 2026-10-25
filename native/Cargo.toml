@@ -1,0 +1,31 @@
+[package]
+name = "strata_native"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Strata native core — small, fast file utilities written in Rust and exposed to the app over JNI."
+license = "Apache-2.0"
+
+[lib]
+name = "strata_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+jni = "0.21"
+memchr = "2"
+crc32fast = "1"
+md-5 = "0.10"
+sha1 = "0.10"
+sha2 = "0.10"
+argon2 = { version = "0.6", default-features = false, features = ["alloc"] }
+chacha20poly1305 = { version = "0.11", default-features = false, features = ["alloc"] }
+zeroize = "1"
+unrar_sys = "=0.5.8"
+libc = "0.2"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
