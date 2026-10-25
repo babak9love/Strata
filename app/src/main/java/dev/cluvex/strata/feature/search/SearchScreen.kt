@@ -299,6 +299,7 @@ private fun QueryForm(ui: SearchUiState, vm: SearchViewModel) {
                 label = { Text(stringResource(R.string.search_file_name)) },
                 placeholder = { Text(stringResource(R.string.search_file_name_hint)) },
                 singleLine = true,
+                isError = ui.nameMode == NameMatchMode.REGEX && ui.namePattern.isNotBlank() && runCatching { Regex(ui.namePattern.trim()) }.isFailure,
                 textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { startSearch() }),
