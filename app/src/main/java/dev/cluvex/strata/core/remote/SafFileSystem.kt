@@ -221,21 +221,9 @@ class SafFileSystem(private val c: RemoteConnection, context: Context) : RemoteF
         const val TERMUX_AUTHORITY = "com.termux.documents"
         private const val TERMUX_HOME = "/data/data/com.termux/files/home"
 
-        /**
-         * Wakes Termux's documents provider before the system folder picker opens. The picker only honours the
-         * initial-folder hint once it can reach the provider, which on a cold start it often can't.
-         */
-        fun warmUp(context: Context) {
-            runCatching {
-                val resolver = context.applicationContext.contentResolver
-                resolver.query(DocumentsContract.buildRootsUri(TERMUX_AUTHORITY), null, null, null, null)?.close()
-                resolver.query(DocumentsContract.buildDocumentUri(TERMUX_AUTHORITY, TERMUX_HOME), arrayOf(Document.COLUMN_DOCUMENT_ID), null, null, null)?.close()
-            }
-        }
-
         fun termuxHome(context: Context): Uri? = runCatching {
             context.packageManager.getPackageInfo("com.termux", 0)
-            DocumentsContract.buildDocumentUri(TERMUX_AUTHORITY, TERMUX_HOME)
+            DocumentsContract.buildTreeDocumentUri(TERMUX_AUTHORITY, TERMUX_HOME)
         }.getOrNull()
 
         /** True when [oldHost] (a stored tree URI) points at the same storage as [new]: any Termux tree, or an identical authority + tree id. */
