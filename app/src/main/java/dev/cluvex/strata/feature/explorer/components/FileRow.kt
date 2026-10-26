@@ -378,7 +378,8 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
         Modifier
             .size(iconSize)
             // Folders are not clipped to the rounded tile: their corner badge would get its corner cut off (grid tiles never clip them).
-            .then(if (item.isDirectory) Modifier else Modifier.clip(shape))
+            // Only the generic tile (Custom file icons off) takes the chosen icon shape. Dedicated ic_* icons and extension tiles keep their own geometry.
+            .then(if (item.isDirectory || settings.appearance.customFileIcons) Modifier else Modifier.clip(shape))
             .then(if (onIconClick != null) Modifier.clickable(onClickLabel = stringResource(R.string.common_select)) { onIconClick() } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
