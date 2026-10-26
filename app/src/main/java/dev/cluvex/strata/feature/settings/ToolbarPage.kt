@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
@@ -346,16 +349,15 @@ private fun SheetPreview(sheet: Zoned<SheetAction>) {
                         textAlign = TextAlign.Center,
                     )
                 } else {
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(IntrinsicSize.Max),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        userScrollEnabled = false,
                     ) {
-                        items(quick, key = { it.name }) { a ->
+                        quick.forEach { a ->
                             Surface(
                                 shape = RoundedCornerShape(18.dp),
                                 color = colors.primaryContainer,
-                                modifier = Modifier.animateItem().width(76.dp).height(76.dp),
+                                modifier = Modifier.weight(1f).fillMaxHeight().heightIn(min = 76.dp),
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Icon(a.icon, contentDescription = null, tint = colors.onPrimaryContainer, modifier = Modifier.size(20.dp))
@@ -363,9 +365,7 @@ private fun SheetPreview(sheet: Zoned<SheetAction>) {
                                         stringResource(a.label),
                                         style = MaterialTheme.typography.labelSmall,
                                         textAlign = TextAlign.Center,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                        modifier = Modifier.padding(horizontal = 2.dp, vertical = 6.dp),
                                     )
                                 }
                             }

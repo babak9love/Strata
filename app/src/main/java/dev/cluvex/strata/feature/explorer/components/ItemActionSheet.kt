@@ -7,6 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -164,7 +167,7 @@ fun ItemActionSheet(
         Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
             Header(item, kind, local, onCustomize)
             if (primary.isNotEmpty()) {
-                Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth().padding(top = 14.dp).height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     primary.forEach { a -> PrimaryButton(a, Modifier.weight(1f)) }
                 }
             }
@@ -242,11 +245,11 @@ private fun PrimaryButton(a: SheetEntry, modifier: Modifier) {
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        modifier = modifier.heightIn(min = 68.dp),
+        modifier = modifier.fillMaxHeight().heightIn(min = 68.dp),
     ) {
         Column(Modifier.padding(vertical = 10.dp, horizontal = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Icon(a.icon, contentDescription = null)
-            Text(stringResource(a.label), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+            Text(stringResource(a.label), style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
         }
     }
 }
@@ -261,8 +264,8 @@ private fun Group(title: String, items: List<SheetEntry>) {
         modifier = Modifier.padding(top = 18.dp, bottom = 8.dp, start = 4.dp),
     )
     items.chunked(3).forEach { row ->
-        Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            row.forEach { a -> Tile(a, Modifier.weight(1f)) }
+        Row(Modifier.fillMaxWidth().padding(bottom = 8.dp).height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            row.forEach { a -> Tile(a, Modifier.weight(1f).fillMaxHeight()) }
             repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
         }
     }
@@ -284,8 +287,6 @@ private fun Tile(a: SheetEntry, modifier: Modifier) {
                 stringResource(a.label),
                 style = MaterialTheme.typography.labelMedium,
                 textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 6.dp),
             )
         }
