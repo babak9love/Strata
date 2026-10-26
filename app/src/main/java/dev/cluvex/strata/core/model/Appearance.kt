@@ -78,6 +78,9 @@ data class ThemeSeed(@StringRes val name: Int, val argb: Int)
 object ThemeSeeds {
     const val STRATA = 0xFF2D6A4F.toInt()
 
+    /** Seed colour a fresh install starts with (0xFF890000). */
+    const val DEFAULT = 0xFF890000.toInt()
+
     val presets = listOf(
         ThemeSeed(R.string.model_seed_strata, STRATA),
         ThemeSeed(R.string.model_seed_ocean, 0xFF1565C0.toInt()),
@@ -97,15 +100,15 @@ object ThemeSeeds {
 }
 
 data class AppearancePrefs(
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val themeMode: ThemeMode = ThemeMode.DARK,
     val wallpaperColors: Boolean = true,
-    val seed: Int = ThemeSeeds.STRATA,
+    val seed: Int = ThemeSeeds.DEFAULT,
     val style: ThemeStyle = ThemeStyle.TONAL_SPOT,
     val contrast: ContrastLevel = ContrastLevel.STANDARD,
     val pureBlack: Boolean = false,
     val textScale: Float = 1f,
     val corners: CornerStyle = CornerStyle.ROUND,
-    val iconShape: IconShape = IconShape.ROUNDED,
+    val iconShape: IconShape = IconShape.SUNNY,
     /** On: files use the dedicated (branded / extension) icons. Off: the classic tile of the chosen shape with a simple symbol. */
     val customFileIcons: Boolean = true,
     /** On: folders use a real folder shape (with its corner badges). Off: the classic folder tile of the chosen shape. */
@@ -113,12 +116,12 @@ data class AppearancePrefs(
     /** Folder-shaped icons only: on keeps the artwork's own colours, off tints the folder with the theme colour. */
     val folderFixedColor: Boolean = true,
     /** Which folder artwork is used while folder-shaped icons are on. */
-    val folderStyle: FolderStyle = FolderStyle.STRATA,
+    val folderStyle: FolderStyle = FolderStyle.NEBULA,
     val colorfulIcons: Boolean = true,
     val motion: MotionStyle = MotionStyle.EXPRESSIVE,
-    val haptics: Boolean = true,
-    val sounds: Boolean = false,
-    val soundsInSilent: Boolean = true,
+    val haptics: Boolean = false,
+    val sounds: Boolean = true,
+    val soundsInSilent: Boolean = false,
 ) {
     companion object {
         const val MIN_TEXT_SCALE = 0.85f

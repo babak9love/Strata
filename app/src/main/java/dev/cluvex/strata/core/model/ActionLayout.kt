@@ -309,38 +309,25 @@ data class ActionLayout(
 
         val DEFAULT_BROWSE = Zoned(
             listOf(
-                listOf(BrowseAction.BACK, BrowseAction.FORWARD, BrowseAction.NEW, BrowseAction.PASTE, BrowseAction.SWAP, BrowseAction.UP),
-                listOf(
-                    BrowseAction.RUN_PROJECT, BrowseAction.TERMINAL, BrowseAction.BOOKMARKS, BrowseAction.PROTECTED_FOLDERS,
-                    BrowseAction.HOME, BrowseAction.UNDO, BrowseAction.REFRESH, BrowseAction.BOOKMARK_FOLDER, BrowseAction.SELECT_ALL,
-                ),
-                listOf(BrowseAction.FILTER, BrowseAction.SEARCH, BrowseAction.SORT, BrowseAction.JUMP, BrowseAction.HIDDEN_FILES),
+                listOf(BrowseAction.BACK, BrowseAction.FORWARD, BrowseAction.NEW, BrowseAction.PASTE, BrowseAction.REFRESH, BrowseAction.SELECT_ALL),
+                listOf(BrowseAction.HOME, BrowseAction.UNDO, BrowseAction.BOOKMARKS, BrowseAction.BOOKMARK_FOLDER, BrowseAction.PROTECTED_FOLDERS, BrowseAction.TERMINAL, BrowseAction.SWAP),
+                listOf(BrowseAction.SEARCH, BrowseAction.FILTER, BrowseAction.SORT, BrowseAction.JUMP, BrowseAction.HIDDEN_FILES, BrowseAction.UP, BrowseAction.RUN_PROJECT),
             ),
         )
 
         val DEFAULT_SELECTION = Zoned(
             listOf(
-                listOf(SelectionAction.COPY, SelectionAction.MOVE, SelectionAction.DELETE, SelectionAction.RESTORE),
-                listOf(
-                    SelectionAction.OPEN_WITH, SelectionAction.EXTRACT, SelectionAction.RENAME, SelectionAction.BATCH_RENAME, SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD,
-                    SelectionAction.COMPRESS, SelectionAction.MERGE, SelectionAction.COMPARE, SelectionAction.SMALI_TO_DEX,
-                    SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARKS, SelectionAction.BOOKMARK, SelectionAction.PROTECTED_FOLDERS, SelectionAction.PROTECT, SelectionAction.FOLDER_BADGE, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
-                    SelectionAction.COPY_PATH, SelectionAction.PROPERTIES, SelectionAction.SELECT_ALL, SelectionAction.INVERT,
-                ),
-                emptyList(),
+                listOf(SelectionAction.SHARE, SelectionAction.MOVE, SelectionAction.COPY, SelectionAction.RENAME, SelectionAction.DELETE),
+                listOf(SelectionAction.OPEN_WITH, SelectionAction.COPY_PATH, SelectionAction.COMPRESS, SelectionAction.EXTRACT, SelectionAction.BOOKMARKS, SelectionAction.BOOKMARK, SelectionAction.PROTECTED_FOLDERS, SelectionAction.PROTECT, SelectionAction.BATCH_RENAME, SelectionAction.SELECT_ALL, SelectionAction.INVERT, SelectionAction.PROPERTIES, SelectionAction.FOLDER_BADGE),
+                listOf(SelectionAction.RESTORE, SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD, SelectionAction.MERGE, SelectionAction.COMPARE, SelectionAction.SMALI_TO_DEX, SelectionAction.JAR_TO_DEX, SelectionAction.LINKS, SelectionAction.VAULT),
             ),
         )
 
         val DEFAULT_SHEET = Zoned(
             listOf(
-                listOf(SheetAction.OPEN, SheetAction.OPEN_WITH, SheetAction.SHARE, SheetAction.RENAME),
-                listOf(
-                    SheetAction.RESTORE, SheetAction.OPEN_AS_TEXT, SheetAction.HEX, SheetAction.VIEW, SheetAction.APK_INFO, SheetAction.AUDIO_INFO, SheetAction.VIDEO_INFO, SheetAction.EXTRACT,
-                    SheetAction.COMPRESS, SheetAction.SIGN_APK, SheetAction.SMALI_TO_DEX, SheetAction.JAR_TO_DEX, SheetAction.CHECKSUM,
-                    SheetAction.SPLIT, SheetAction.CIPHER, SheetAction.SELECT, SheetAction.BOOKMARK, SheetAction.PROTECT,
-                    SheetAction.LINK, SheetAction.VAULT, SheetAction.PROPERTIES,
-                ),
-                emptyList(),
+                listOf(SheetAction.OPEN_WITH, SheetAction.OPEN_AS_TEXT, SheetAction.RENAME, SheetAction.SHARE),
+                listOf(SheetAction.AUDIO_INFO, SheetAction.VIDEO_INFO, SheetAction.APK_INFO, SheetAction.COMPRESS, SheetAction.EXTRACT, SheetAction.HEX, SheetAction.VIEW, SheetAction.SIGN_APK, SheetAction.SMALI_TO_DEX, SheetAction.JAR_TO_DEX, SheetAction.CHECKSUM, SheetAction.BOOKMARK, SheetAction.PROTECT, SheetAction.PROPERTIES),
+                listOf(SheetAction.OPEN, SheetAction.RESTORE, SheetAction.LINK, SheetAction.CIPHER, SheetAction.VAULT, SheetAction.SPLIT, SheetAction.SELECT),
             ),
         )
 

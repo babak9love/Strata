@@ -87,8 +87,8 @@ data class StrataSettings(
     val behavior: BehaviorPrefs = BehaviorPrefs(),
     val operations: OperationPrefs = OperationPrefs(),
     val security: SecurityPrefs = SecurityPrefs(),
-    val dualPanePreferred: Boolean = true,
-    val trashByDefault: Boolean = true,
+    val dualPanePreferred: Boolean = false,
+    val trashByDefault: Boolean = false,
     val trashAutoCleanDays: Int = 0,
     val rootAccess: Boolean = false,
     val shizukuAccess: Boolean = false,
@@ -442,8 +442,8 @@ class SettingsRepository(private val context: Context) {
             behavior = readBehavior(p),
             operations = readOperations(p),
             security = readSecurity(p),
-            dualPanePreferred = p[Keys.DUAL_PANE] ?: true,
-            trashByDefault = p[Keys.TRASH_DEFAULT] ?: true,
+            dualPanePreferred = p[Keys.DUAL_PANE] ?: false,
+            trashByDefault = p[Keys.TRASH_DEFAULT] ?: false,
             trashAutoCleanDays = p[Keys.TRASH_CLEAN_DAYS] ?: 0,
             rootAccess = p[Keys.ROOT_ACCESS] ?: false,
             shizukuAccess = p[Keys.SHIZUKU_ACCESS] ?: false,
@@ -470,24 +470,24 @@ class SettingsRepository(private val context: Context) {
         }
 
         internal fun readAppearance(p: Preferences) = AppearancePrefs(
-            themeMode = enumOf(p[Keys.THEME_MODE], ThemeMode.SYSTEM),
+            themeMode = enumOf(p[Keys.THEME_MODE], ThemeMode.DARK),
             wallpaperColors = p[Keys.DYNAMIC] ?: true,
-            seed = p[Keys.SEED] ?: ThemeSeeds.STRATA,
+            seed = p[Keys.SEED] ?: ThemeSeeds.DEFAULT,
             style = enumOf(p[Keys.THEME_STYLE], ThemeStyle.TONAL_SPOT),
             contrast = enumOf(p[Keys.CONTRAST], ContrastLevel.STANDARD),
             pureBlack = p[Keys.PURE_BLACK] ?: false,
             textScale = AppearancePrefs.textScale(p[Keys.TEXT_SCALE] ?: 1f),
             corners = enumOf(p[Keys.CORNERS], CornerStyle.ROUND),
-            iconShape = enumOf(p[Keys.ICON_SHAPE], IconShape.ROUNDED),
+            iconShape = enumOf(p[Keys.ICON_SHAPE], IconShape.SUNNY),
             customFileIcons = p[Keys.CUSTOM_FILE_ICONS] ?: true,
             folderShaped = p[Keys.FOLDER_SHAPED] ?: true,
             folderFixedColor = p[Keys.FOLDER_FIXED_COLOR] ?: true,
-            folderStyle = enumOf(p[Keys.FOLDER_STYLE], FolderStyle.STRATA),
+            folderStyle = enumOf(p[Keys.FOLDER_STYLE], FolderStyle.NEBULA),
             colorfulIcons = p[Keys.COLORFUL_ICONS] ?: true,
             motion = enumOf(p[Keys.MOTION], MotionStyle.EXPRESSIVE),
-            haptics = p[Keys.HAPTICS] ?: true,
-            sounds = p[Keys.SOUNDS] ?: false,
-            soundsInSilent = p[Keys.SOUNDS_IN_SILENT] ?: true,
+            haptics = p[Keys.HAPTICS] ?: false,
+            sounds = p[Keys.SOUNDS] ?: true,
+            soundsInSilent = p[Keys.SOUNDS_IN_SILENT] ?: false,
         )
 
         private fun writeAppearance(p: MutablePreferences, a: AppearancePrefs) {
@@ -512,7 +512,7 @@ class SettingsRepository(private val context: Context) {
         }
 
         internal fun readList(p: Preferences) = ListPrefs(
-            viewMode = enumOf(p[Keys.VIEW_MODE], ViewMode.LIST),
+            viewMode = enumOf(p[Keys.VIEW_MODE], ViewMode.GRID),
             thumbnails = p[Keys.THUMBNAILS] ?: true,
             folderBadges = p[Keys.FOLDER_BADGES] ?: true,
             showDate = p[Keys.SHOW_DATE] ?: true,
@@ -523,13 +523,13 @@ class SettingsRepository(private val context: Context) {
             wrapNames = p[Keys.WRAP_NAMES] ?: false,
             showExtensions = p[Keys.SHOW_EXTENSIONS] ?: true,
             persianCalendar = p[Keys.PERSIAN_CALENDAR] ?: true,
-            tileFrame = p[Keys.TILE_FRAME] ?: true,
-            gridColumns = (p[Keys.GRID_COLUMNS] ?: 0).let { if (it == 4) 4 else 0 },
+            tileFrame = p[Keys.TILE_FRAME] ?: false,
+            gridColumns = (p[Keys.GRID_COLUMNS] ?: 4).let { if (it == 4) 4 else 0 },
             itemScale = ItemScale.clamp(p[Keys.ITEM_SCALE] ?: DEFAULT_ITEM_SCALE),
             folderScale = ItemScale.clamp(p[Keys.FOLDER_SCALE] ?: DEFAULT_FOLDER_SCALE),
             nameScale = ItemScale.clamp(p[Keys.NAME_SCALE] ?: 100),
             metaScale = ItemScale.clamp(p[Keys.META_SCALE] ?: 100),
-            showParentEntry = p[Keys.SHOW_PARENT_ENTRY] ?: true,
+            showParentEntry = p[Keys.SHOW_PARENT_ENTRY] ?: false,
         )
 
         private fun writeList(p: MutablePreferences, l: ListPrefs) {

@@ -21,7 +21,7 @@ enum class SizeUnits {
 }
 
 data class ListPrefs(
-    val viewMode: ViewMode = ViewMode.LIST,
+    val viewMode: ViewMode = ViewMode.GRID,
     val thumbnails: Boolean = true,
     val folderBadges: Boolean = true,
     val showDate: Boolean = true,
@@ -32,22 +32,22 @@ data class ListPrefs(
     val wrapNames: Boolean = false,
     val showExtensions: Boolean = true,
     val persianCalendar: Boolean = true,
-    val tileFrame: Boolean = true,
-    val gridColumns: Int = 0,
+    val tileFrame: Boolean = false,
+    val gridColumns: Int = 4,
     /** Size of file icons (not folders) in the list and grid, in percent (100 = default). */
     val itemScale: Int = DEFAULT_ITEM_SCALE,
-    /** Size of folder icons only, in percent (100 = default). */
+    /** Size of folder icons only, in percent. */
     val folderScale: Int = DEFAULT_FOLDER_SCALE,
     /** Size of the file name text, in percent. */
     val nameScale: Int = 100,
     /** Size of the date / size text under each name, in percent. */
     val metaScale: Int = 100,
-    val showParentEntry: Boolean = true,
+    val showParentEntry: Boolean = false,
 )
 
 /** Default icon size, in percent. */
 const val DEFAULT_ITEM_SCALE = 100
-const val DEFAULT_FOLDER_SCALE = 100
+const val DEFAULT_FOLDER_SCALE = 111
 
 object ItemScale {
     const val MIN = 70
