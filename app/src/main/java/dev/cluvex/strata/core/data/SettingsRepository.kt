@@ -401,7 +401,7 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun exportBackup(): String {
         val values = context.dataStore.data.first().asMap()
-            .filterKeys { it.name !in Keys.PRIVATE }
+            .filterKeys { it.name !in Keys.PRIVATE && SettingsBackup.known(it.name) != null }
             .mapKeys { it.key.name }
         return SettingsBackup.encode(values)
     }
