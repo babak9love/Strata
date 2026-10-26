@@ -529,14 +529,12 @@ private fun ZoneRow(
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(label, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(label, style = MaterialTheme.typography.bodyLarge)
                 if (hint != null) {
                     Text(
                         hint,
                         style = MaterialTheme.typography.labelMedium,
                         color = colors.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
