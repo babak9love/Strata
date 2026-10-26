@@ -272,18 +272,16 @@ private fun BarPreview(buttons: List<PreviewButton>, selecting: Boolean) {
                     buttons.forEach { b -> add(PreviewItem(b.label, b.icon, b.label, b.conditional)) }
                     add(PreviewItem("more", Icons.Rounded.MoreVert, moreLabel))
                 }
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    userScrollEnabled = false,
                 ) {
-                    items(items, key = { it.key }) { p ->
+                    items.forEach { p ->
                         val description = stringResource(R.string.settings_toolbar_preview_item, p.label)
                         Box(
                             Modifier
-                                .animateItem()
-                                .size(44.dp)
+                                .weight(1f)
+                                .height(44.dp)
                                 .graphicsLayer { alpha = if (p.conditional) 0.4f else 1f }
                                 .semantics { contentDescription = description },
                             contentAlignment = Alignment.Center,
