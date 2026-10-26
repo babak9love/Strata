@@ -199,8 +199,7 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
     var apkLoaded by remember(item.path, item.lastModified) { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
-            if (apkLoaded) Modifier.size(56.dp)
-            else Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(colors.secondaryContainer),
+            Modifier.size(56.dp),
             contentAlignment = Alignment.Center,
         ) {
             val look = dev.cluvex.strata.ui.LocalSettings.current.appearance
@@ -215,12 +214,12 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
                     painter = androidx.compose.ui.res.painterResource(custom),
                     contentDescription = null,
                     colorFilter = if (tintFolder) folderTint else null,
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(56.dp),
                 )
             } else if (dedicated && FileKinds.autoIconLabel(item) != null) {
-                ExtensionIcon(extension = FileKinds.autoIconLabel(item).orEmpty(), modifier = Modifier.size(36.dp))
+                ExtensionIcon(extension = FileKinds.autoIconLabel(item).orEmpty(), modifier = Modifier.size(56.dp))
             } else {
-                Icon(kind.icon, contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(28.dp))
+                Icon(kind.icon, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(48.dp))
             }
             if (local && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)) {
                 val model = remember(item.path) { item.path.toPath() }
