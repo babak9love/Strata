@@ -95,6 +95,26 @@ fun Modifier.bookmarkSwipe(
     fun isForward(delta: Float) = if (rtl) delta > 0f else delta < 0f
     fun allowed(delta: Float) = if (isForward(delta)) hasNext else hasPrevious
 
+    // Kept out of the pointer-input block: that block is restricted and cannot call these suspending functions.
+    fun settleAfter(committed: Float, go: Boolean) {
+        settle = scope.launch {
+            if (go) {
+                val out = if (committed > 0f) width else -width
+                free = true
+                animate(drag, out, animationSpec = tween(140)) { value, _ -> drag = value }
+                val before = key
+                swipe(isForward(committed))
+                // Wait for the new folder; if it never opens (missing bookmark), slide the old page back.
+                val opened = withTimeoutOrNull(700) { snapshotFlow { key }.first { it != before } } != null
+                if (opened) drag = -out
+                animate(drag, 0f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { value, _ -> drag = value }
+                free = false
+            } else {
+                animate(drag, 0f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { value, _ -> drag = value }
+            }
+        }
+    }
+
     return this
         .onSizeChanged { width = it.width.toFloat().coerceAtLeast(1f) }
         .pointerInput(Unit) {
@@ -130,23 +150,7 @@ fun Modifier.bookmarkSwipe(
                     abs(velocity) > flick && raw != 0f && (velocity > 0f) == (raw > 0f) -> raw
                     else -> 0f
                 }
-                val go = committed != 0f && allowed(committed)
-                settle = scope.launch {
-                    if (go) {
-                        val out = if (committed > 0f) width else -width
-                        free = true
-                        animate(drag, out, animationSpec = tween(140)) { value, _ -> drag = value }
-                        val before = key
-                        swipe(isForward(committed))
-                        // Wait for the new folder; if it never opens (missing bookmark), slide the old page back.
-                        val opened = withTimeoutOrNull(700) { snapshotFlow { key }.first { it != before } } != null
-                        if (opened) drag = -out
-                        animate(drag, 0f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { value, _ -> drag = value }
-                        free = false
-                    } else {
-                        animate(drag, 0f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { value, _ -> drag = value }
-                    }
-                }
+                settleAfter(committed, committed != 0f && allowed(committed))
             }
         }
         .graphicsLayer {
