@@ -166,7 +166,32 @@ object FileKinds {
         if (item.isDirectory || customIcon(item) != null) return null
         val kind = of(item)
         if (kind == FileKind.IMAGE || kind == FileKind.VIDEO) return null
-        return item.extension.ifEmpty { null }
+        if (item.extension.isNotEmpty()) return nameLabels[item.name.lowercase()] ?: item.extension
+        return nameLabel(item.name)
+    }
+
+    /** Short labels for well-known files that have no (useful) extension. */
+    private val nameLabels = mapOf(
+        ".gitignore" to "GIT",
+        ".gitattributes" to "GIT",
+        ".gitmodules" to "GIT",
+        "license" to "LIC",
+        "licence" to "LIC",
+        "dockerfile" to "DOCK",
+        "makefile" to "MAKE",
+        "readme" to "READ",
+        "changelog" to "CHAN…",
+        "authors" to "AUTH…",
+        "notice" to "NOTE",
+        "procfile" to "PROC",
+        "gradlew" to "GRAD…",
+    )
+
+    /** Label for a file without extension: a known short label, the whole name up to 4 letters, or its first 4 letters + "…". */
+    private fun nameLabel(name: String): String? {
+        val clean = name.trimStart('.').uppercase()
+        if (clean.isEmpty()) return null
+        return nameLabels[name.lowercase()] ?: if (clean.length <= 4) clean else clean.take(4) + "…"
     }
 
     fun isImage(item: FileItem) = of(item) == FileKind.IMAGE
