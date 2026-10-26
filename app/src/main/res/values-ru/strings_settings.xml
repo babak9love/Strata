@@ -475,4 +475,10 @@
     <string name="settings_kw_folder_fixed_color">постоянный цвет папка тема исходный</string>
     <string name="settings_undo">Отмена действий</string>
     <string name="settings_undo_summary">Отмена переименований, копирований и перемещений в течение 3 минут. Неизменённые копии удаляются; изменённые копии и заменённые файлы попадают в корзину</string>
+    <string name="settings_bookmark_swipe">Свайп для смены закладок</string>
+    <string name="settings_bookmark_swipe_summary">Проведите влево или вправо по списку файлов, чтобы переключаться между закладками</string>
+    <string name="settings_swipe_drawer">Свайп вправо открывает меню</string>
+    <string name="settings_swipe_drawer_summary">Свайп вправо от края экрана открывает боковое меню</string>
+    <string name="settings_kw_bookmark_swipe">свайп закладки переключение жест</string>
+    <string name="settings_kw_swipe_drawer">меню боковое свайп край жест</string>
 </resources>

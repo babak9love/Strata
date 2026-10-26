@@ -303,6 +303,7 @@ class ExplorerViewModel(
         history: HistoryOp = HistoryOp.VISIT,
         reveal: Collection<String> = emptyList(),
         fallbacks: List<String> = emptyList(),
+        slide: NavDirection? = null,
     ) {
         navJobs[pane]?.cancel()
         updatePane(pane) { it.copy(loading = true) }
@@ -331,8 +332,8 @@ class ExplorerViewModel(
                     error = null,
                     viaRoot = listing.viaRoot,
                     selected = if (samePath) p.selected.filterTo(HashSet()) { s -> items.any { it.path == s } } else emptySet(),
-                    direction = if (initial || refresh || samePath) NavDirection.NONE else dir,
-                    cameFrom = if (!samePath && dir == NavDirection.BACK) childTowards(opened, p.path) else null,
+                    direction = if (initial || refresh || samePath) NavDirection.NONE else slide ?: dir,
+                    cameFrom = if (slide == null && !samePath && dir == NavDirection.BACK) childTowards(opened, p.path) else null,
                     history = if (samePath) p.history else when (history) {
                         HistoryOp.VISIT -> p.history.visit(p.path, opened)
                         HistoryOp.BACK -> p.history.afterBack(p.path)
@@ -1430,12 +1431,12 @@ class ExplorerViewModel(
 
     fun renameBookmarkGroup(from: String, to: String) = viewModelScope.launch { bookmarkRepo.edit { Bookmarks.renameGroup(it, from, to) } }
 
-    fun openBookmark(pane: Pane, bookmark: Bookmark) = viewModelScope.launch {
+    fun openBookmark(pane: Pane, bookmark: Bookmark, slide: NavDirection? = null) = viewModelScope.launch {
         setActive(pane)
         val path = bookmark.path
         when (kindOf(path)) {
-            PathKind.FOLDER -> navigate(pane, path)
-            PathKind.FILE -> navigate(pane, File(path).parent ?: "/", reveal = listOf(path))
+            PathKind.FOLDER -> navigate(pane, path, slide = slide)
+            PathKind.FILE -> navigate(pane, File(path).parent ?: "/", reveal = listOf(path), slide = slide)
             PathKind.MISSING -> postMessage(tr(R.string.explorer_bookmark_missing, bookmark.name, bookmark.path))
         }
     }

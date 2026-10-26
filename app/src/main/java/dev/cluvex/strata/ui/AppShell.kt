@@ -364,7 +364,7 @@ fun AppShell(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = route == Route.Files,
+        gesturesEnabled = route == Route.Files && (settings.behavior.swipeOpensDrawer || drawerState.isOpen),
         drawerContent = {
             ModalDrawerSheet(
                 drawerShape = RoundedCornerShape(topEnd = 40.dp, bottomEnd = 40.dp),

@@ -67,6 +67,10 @@ data class BehaviorPrefs(
     val startPath: String = "",
     val doubleBackToExit: Boolean = true,
     val iconTapSelects: Boolean = true,
+    /** Swiping right from the left edge opens the side menu (drawer). Off by default so it does not clash with the bookmark swipe. */
+    val swipeOpensDrawer: Boolean = false,
+    /** Swiping left or right on the file list switches between bookmarks. */
+    val bookmarkSwipe: Boolean = true,
     val keepScreenOnTasks: Boolean = false,
     val videoAutoHide: Boolean = true,
     val resumeAudio: Boolean = true,

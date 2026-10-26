@@ -98,6 +98,8 @@ import dev.cluvex.strata.feature.explorer.components.RenameDialog
 import dev.cluvex.strata.feature.explorer.components.UndoListDialog
 import dev.cluvex.strata.feature.explorer.components.BookmarkActions
 import dev.cluvex.strata.feature.explorer.components.BookmarkChipsBar
+import dev.cluvex.strata.feature.explorer.components.bookmarkSwipe
+import dev.cluvex.strata.feature.explorer.components.currentBookmarkIndex
 import dev.cluvex.strata.feature.explorer.components.isStorageRoot
 import dev.cluvex.strata.feature.explorer.components.BookmarkEditDialog
 import dev.cluvex.strata.core.bookmarks.Bookmark
@@ -529,6 +531,9 @@ fun ExplorerScreen(
             for (pane in panes) {
                 val state = ui.pane(pane)
                 val visible = remember(state.items, ui.settings, ui.query) { visibleItems(state, ui.settings, ui.query) }
+                val bookmarkIndex = currentBookmarkIndex(ui.bookmarks, state.path)
+                // With the side-menu swipe off, bookmarks wrap around: past the first comes the last, and the other way round.
+                val wrapBookmarks = !ui.settings.behavior.swipeOpensDrawer && ui.bookmarks.size > 1
                 PaneColumn(
                     state = state,
                     visible = visible,
@@ -542,7 +547,23 @@ fun ExplorerScreen(
                     onItemMenu = { dialog = Dialog.ItemSheet(pane, it) },
                     onJumpTo = { dialog = Dialog.JumpTo(pane) },
                     onRefresh = { vm.setActive(pane); vm.refresh(pane) },
-                    modifier = Modifier.weight(1f).fillMaxSize(),
+                    modifier = Modifier.weight(1f).fillMaxSize().then(
+                        if (dual) {
+                            Modifier
+                        } else {
+                            Modifier.bookmarkSwipe(
+                                enabled = ui.settings.behavior.bookmarkSwipe && bookmarkIndex >= 0 && state.selected.isEmpty(),
+                                canPrevious = wrapBookmarks || bookmarkIndex > 0,
+                                canNext = wrapBookmarks || bookmarkIndex in 0 until ui.bookmarks.lastIndex,
+                                passBackToDrawer = ui.settings.behavior.swipeOpensDrawer,
+                                onSwipe = { forward ->
+                                    ui.bookmarks.getOrNull(Math.floorMod(bookmarkIndex + if (forward) 1 else -1, ui.bookmarks.size))?.let {
+                                        vm.openBookmark(pane, it, if (forward) NavDirection.FORWARD else NavDirection.BACK)
+                                    }
+                                },
+                            )
+                        },
+                    ),
                     displayPath = if (RemoteUri.isRemote(state.path)) ui.displayPath(state.path) else null,
                     pane = pane,
                 )

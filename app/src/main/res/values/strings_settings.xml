@@ -458,4 +458,10 @@
     <string name="settings_kw_folder_fixed_color">fixed folder color theme original</string>
     <string name="settings_undo">Undo</string>
     <string name="settings_undo_summary">Undo recent renames, copies and moves for 3 minutes. Unchanged copies are deleted; changed copies and replaced files go to the recycle bin</string>
+    <string name="settings_bookmark_swipe">Swipe to switch bookmarks</string>
+    <string name="settings_bookmark_swipe_summary">Swipe left or right on the file list to move between bookmarks</string>
+    <string name="settings_swipe_drawer">Swipe right to open the menu</string>
+    <string name="settings_swipe_drawer_summary">Swipe right from the edge of the screen to open the side menu</string>
+    <string name="settings_kw_bookmark_swipe">bookmark swipe gesture switch page</string>
+    <string name="settings_kw_swipe_drawer">drawer menu side swipe edge gesture</string>
 </resources>

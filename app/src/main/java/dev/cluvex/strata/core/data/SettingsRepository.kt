@@ -178,6 +178,8 @@ class SettingsRepository(private val context: Context) {
         val START_PATH = stringPreferencesKey("start_path")
         val DOUBLE_BACK = booleanPreferencesKey("double_back_exit")
         val ICON_SELECTS = booleanPreferencesKey("icon_tap_selects")
+        val SWIPE_OPENS_DRAWER = booleanPreferencesKey("swipe_opens_drawer")
+        val BOOKMARK_SWIPE = booleanPreferencesKey("bookmark_swipe")
         val KEEP_SCREEN_TASKS = booleanPreferencesKey("keep_screen_on_tasks")
         val CONFLICT = stringPreferencesKey("conflict_choice")
         val KEEP_MTIME = booleanPreferencesKey("keep_modified_time")
@@ -229,7 +231,7 @@ class SettingsRepository(private val context: Context) {
 
         val BOOLEANS = listOf(
             SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, CUSTOM_FILE_ICONS, FOLDER_SHAPED, FOLDER_FIXED_COLOR, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, FOLDER_BADGES, SHOW_DATE,
-            SHOW_SIZE, USE_24H, WRAP_NAMES, TILE_FRAME, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, KEEP_SCREEN_TASKS, KEEP_MTIME, UNDO_ENABLED, SECURE_SCREEN,
+            SHOW_SIZE, USE_24H, WRAP_NAMES, TILE_FRAME, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, SWIPE_OPENS_DRAWER, BOOKMARK_SWIPE, KEEP_SCREEN_TASKS, KEEP_MTIME, UNDO_ENABLED, SECURE_SCREEN,
             DUAL_PANE, TRASH_DEFAULT, ROOT_ACCESS, SHIZUKU_ACCESS, VERIFY_BEFORE_INSTALL, INSTALL_WITH_ROOT, EDITOR_WRAP,
             EDITOR_LINE_NUMBERS, EDITOR_WHITESPACE, EDITOR_SYMBOL_BAR, EDITOR_AUTO_INDENT, EDITOR_AUTO_PAIRS, EDITOR_HIGHLIGHT_LINE,
             EDITOR_HIGHLIGHT_BRACKETS, EDITOR_PINCH_ZOOM, EDITOR_STICKY_SCROLL, EDITOR_INDENT_GUIDES, EDITOR_PIN_LINE_NUMBERS,
@@ -558,6 +560,8 @@ class SettingsRepository(private val context: Context) {
             startPath = p[Keys.START_PATH] ?: "",
             doubleBackToExit = p[Keys.DOUBLE_BACK] ?: true,
             iconTapSelects = p[Keys.ICON_SELECTS] ?: true,
+            swipeOpensDrawer = p[Keys.SWIPE_OPENS_DRAWER] ?: false,
+            bookmarkSwipe = p[Keys.BOOKMARK_SWIPE] ?: true,
             keepScreenOnTasks = p[Keys.KEEP_SCREEN_TASKS] ?: false,
             videoAutoHide = p[Keys.VIDEO_AUTO_HIDE] ?: true,
             resumeAudio = p[Keys.RESUME_AUDIO] ?: true,
@@ -587,6 +591,8 @@ class SettingsRepository(private val context: Context) {
             p[Keys.START_PATH] = b.startPath.trim()
             p[Keys.DOUBLE_BACK] = b.doubleBackToExit
             p[Keys.ICON_SELECTS] = b.iconTapSelects
+            p[Keys.SWIPE_OPENS_DRAWER] = b.swipeOpensDrawer
+            p[Keys.BOOKMARK_SWIPE] = b.bookmarkSwipe
             p[Keys.KEEP_SCREEN_TASKS] = b.keepScreenOnTasks
             p[Keys.VIDEO_AUTO_HIDE] = b.videoAutoHide
             p[Keys.RESUME_AUDIO] = b.resumeAudio

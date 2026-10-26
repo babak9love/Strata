@@ -154,6 +154,8 @@ object SettingsIndex {
         SettingEntry(R.string.settings_two_panes, SettingsPage.BEHAVIOR, R.string.settings_kw_two_panes),
         SettingEntry(R.string.settings_double_back, SettingsPage.BEHAVIOR, R.string.settings_kw_double_back),
         SettingEntry(R.string.settings_icon_tap, SettingsPage.BEHAVIOR, R.string.settings_kw_icon_tap),
+        SettingEntry(R.string.settings_bookmark_swipe, SettingsPage.BEHAVIOR, R.string.settings_kw_bookmark_swipe),
+        SettingEntry(R.string.settings_swipe_drawer, SettingsPage.BEHAVIOR, R.string.settings_kw_swipe_drawer),
         SettingEntry(R.string.settings_screen_on_tasks, SettingsPage.BEHAVIOR, R.string.settings_kw_screen_on_tasks),
         SettingEntry(R.string.settings_conflict, SettingsPage.OPERATIONS, R.string.settings_kw_conflict),
         SettingEntry(R.string.settings_keep_mtime, SettingsPage.OPERATIONS, R.string.settings_kw_keep_mtime),

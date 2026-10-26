@@ -448,4 +448,10 @@
     <string name="settings_kw_folder_fixed_color">固定 文件夹 颜色 主题 原色</string>
     <string name="settings_undo">撤销</string>
     <string name="settings_undo_summary">3 分钟内可撤销重命名、复制和移动。未修改的副本会被删除；已修改的副本和被替换的文件会进入回收站</string>
+    <string name="settings_bookmark_swipe">滑动切换书签</string>
+    <string name="settings_bookmark_swipe_summary">在文件列表上向左或向右滑动，可在书签之间切换</string>
+    <string name="settings_swipe_drawer">右滑打开菜单</string>
+    <string name="settings_swipe_drawer_summary">从屏幕边缘向右滑动可打开侧边菜单</string>
+    <string name="settings_kw_bookmark_swipe">滑动 书签 切换 手势</string>
+    <string name="settings_kw_swipe_drawer">菜单 侧边 滑动 边缘 手势</string>
 </resources>

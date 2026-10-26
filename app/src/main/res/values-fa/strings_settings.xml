@@ -457,4 +457,10 @@
     <string name="settings_kw_folder_fixed_color">رنگ ثابت پوشه تم اصلی</string>
     <string name="settings_undo">واگرد</string>
     <string name="settings_undo_summary">واگرد تغییر نام، کپی و انتقال تا ۳ دقیقه. کپی دست‌نخورده حذف می‌شود؛ کپی تغییریافته و فایل‌های جایگزین‌شده به سطل بازیافت می‌روند</string>
+    <string name="settings_bookmark_swipe">سوایپ برای جابه‌جایی بین بوکمارک‌ها</string>
+    <string name="settings_bookmark_swipe_summary">کشیدن انگشت به چپ یا راست روی لیست فایل‌ها، بین بوکمارک‌ها جابه‌جا می‌شود</string>
+    <string name="settings_swipe_drawer">سوایپ به راست برای باز شدن منو</string>
+    <string name="settings_swipe_drawer_summary">کشیدن انگشت به راست از لبه‌ی صفحه، منوی کناری را باز می‌کند</string>
+    <string name="settings_kw_bookmark_swipe">سوایپ بوکمارک جابه‌جایی صفحه کشیدن</string>
+    <string name="settings_kw_swipe_drawer">منو داراور کناری سوایپ لبه کشیدن</string>
 </resources>

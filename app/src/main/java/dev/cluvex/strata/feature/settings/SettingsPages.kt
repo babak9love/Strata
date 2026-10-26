@@ -45,6 +45,8 @@ import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.ScreenLockPortrait
 import androidx.compose.material.icons.rounded.SdStorage
+import androidx.compose.material.icons.rounded.Bookmarks
+import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.SettingsBackupRestore
 import androidx.compose.material.icons.rounded.Shield
@@ -242,6 +244,8 @@ fun BehaviorPage(settings: StrataSettings, act: SettingsActions, activeFolder: S
         SettingsGroup(stringResource(R.string.settings_group_gestures)) {
             switch(tr(R.string.settings_double_back), b.doubleBackToExit, { v -> act.behavior { it.copy(doubleBackToExit = v) } }, summary = tr(R.string.settings_double_back_summary), icon = Icons.AutoMirrored.Rounded.ExitToApp)
             switch(tr(R.string.settings_icon_tap), b.iconTapSelects, { v -> act.behavior { it.copy(iconTapSelects = v) } }, summary = tr(R.string.settings_icon_tap_summary), icon = Icons.Rounded.SelectAll)
+            switch(tr(R.string.settings_bookmark_swipe), b.bookmarkSwipe, { v -> act.behavior { it.copy(bookmarkSwipe = v) } }, summary = tr(R.string.settings_bookmark_swipe_summary), icon = Icons.Rounded.Bookmarks)
+            switch(tr(R.string.settings_swipe_drawer), b.swipeOpensDrawer, { v -> act.behavior { it.copy(swipeOpensDrawer = v) } }, summary = tr(R.string.settings_swipe_drawer_summary), icon = Icons.Rounded.Menu)
         }
         SettingsGroup(stringResource(R.string.settings_group_working)) {
             switch(
