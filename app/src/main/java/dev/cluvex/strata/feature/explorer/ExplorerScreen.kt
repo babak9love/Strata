@@ -556,9 +556,10 @@ fun ExplorerScreen(
                                 canPrevious = wrapBookmarks || bookmarkIndex > 0,
                                 canNext = wrapBookmarks || bookmarkIndex in 0 until ui.bookmarks.lastIndex,
                                 passBackToDrawer = ui.settings.behavior.swipeOpensDrawer,
+                                contentKey = state.path,
                                 onSwipe = { forward ->
                                     ui.bookmarks.getOrNull(Math.floorMod(bookmarkIndex + if (forward) 1 else -1, ui.bookmarks.size))?.let {
-                                        vm.openBookmark(pane, it, if (forward) NavDirection.FORWARD else NavDirection.BACK)
+                                        vm.openBookmark(pane, it, NavDirection.JUMP)
                                     }
                                 },
                             )
