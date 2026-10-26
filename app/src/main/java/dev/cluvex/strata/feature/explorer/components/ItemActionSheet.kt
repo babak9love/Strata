@@ -197,14 +197,16 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
     val colors = MaterialTheme.colorScheme
     val showApk = local && FileKinds.hasApkIcon(item)
     var apkLoaded by remember(item.path, item.lastModified) { mutableStateOf(false) }
+    val look = dev.cluvex.strata.ui.LocalSettings.current.appearance
+    val dedicated = if (item.isDirectory) look.folderShaped else look.customFileIcons
+    // Custom icons on: no frame. Off: a framed tile, except the real APK icon (and image / video thumbnails, which fill the tile).
+    val framed = !dedicated && !apkLoaded
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
-            if (apkLoaded) Modifier.size(56.dp)
-            else Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(colors.secondaryContainer),
+            if (framed) Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(colors.secondaryContainer)
+            else Modifier.size(56.dp),
             contentAlignment = Alignment.Center,
         ) {
-            val look = dev.cluvex.strata.ui.LocalSettings.current.appearance
-            val dedicated = if (item.isDirectory) look.folderShaped else look.customFileIcons
             val custom = if (dedicated) FileKinds.customIcon(item, look.folderStyle) else null
             val folderTint = rememberFolderTint()
             val tintFolder = item.isDirectory && look.folderShaped && !look.folderFixedColor
@@ -215,12 +217,16 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
                     painter = androidx.compose.ui.res.painterResource(custom),
                     contentDescription = null,
                     colorFilter = if (tintFolder) folderTint else null,
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(56.dp),
                 )
             } else if (dedicated && FileKinds.autoIconLabel(item) != null) {
-                ExtensionIcon(extension = FileKinds.autoIconLabel(item).orEmpty(), modifier = Modifier.size(36.dp))
+                ExtensionIcon(extension = FileKinds.autoIconLabel(item).orEmpty(), modifier = Modifier.size(56.dp))
             } else {
-                Icon(kind.icon, contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(28.dp))
+                if (framed) {
+                    Icon(kind.icon, contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(28.dp))
+                } else {
+                    Icon(kind.icon, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(48.dp))
+                }
             }
             if (local && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)) {
                 val model = remember(item.path) { item.path.toPath() }
