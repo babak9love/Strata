@@ -37,7 +37,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.layout.ContentScale
+import dev.cluvex.strata.core.media.ApkIcon
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -196,11 +201,15 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
             contentAlignment = Alignment.Center,
         ) {
             val look = dev.cluvex.strata.ui.LocalSettings.current.appearance
+            val showApk = local && FileKinds.hasApkIcon(item)
+            var apkLoaded by remember(item.path, item.lastModified) { mutableStateOf(false) }
             val dedicated = if (item.isDirectory) look.folderShaped else look.customFileIcons
             val custom = if (dedicated) FileKinds.customIcon(item, look.folderStyle) else null
             val folderTint = rememberFolderTint()
             val tintFolder = item.isDirectory && look.folderShaped && !look.folderFixedColor
-            if (custom != null) {
+            if (apkLoaded) {
+                // the real app icon is drawn on top below
+            } else if (custom != null) {
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(custom),
                     contentDescription = null,
@@ -214,7 +223,21 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
             }
             if (local && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)) {
                 val model = remember(item.path) { item.path.toPath() }
-                AsyncImage(model = model, contentDescription = null, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)))
+                AsyncImage(
+                    model = model,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)),
+                )
+            }
+            if (showApk) {
+                AsyncImage(
+                    model = remember(item.path, item.lastModified) { ApkIcon(item.path, item.lastModified) },
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    onSuccess = { apkLoaded = true },
+                    modifier = Modifier.size(56.dp),
+                )
             }
         }
         Column(Modifier.weight(1f).padding(start = 14.dp)) {
