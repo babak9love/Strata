@@ -166,7 +166,7 @@ object FileKinds {
         if (item.isDirectory || customIcon(item) != null) return null
         val kind = of(item)
         if (kind == FileKind.IMAGE || kind == FileKind.VIDEO) return null
-        if (item.extension.isNotEmpty()) return nameLabels[item.name.lowercase()] ?: item.extension
+        if (item.extension.isNotEmpty()) return nameLabels[item.name.lowercase()] ?: shorten(item.extension)
         return nameLabel(item.name)
     }
 
@@ -191,8 +191,11 @@ object FileKinds {
     private fun nameLabel(name: String): String? {
         val clean = name.trimStart('.').uppercase()
         if (clean.isEmpty()) return null
-        return nameLabels[name.lowercase()] ?: if (clean.length <= 4) clean else clean.take(4) + "…"
+        return nameLabels[name.lowercase()] ?: shorten(clean)
     }
+
+    /** Up to 4 letters are shown whole; longer text keeps its first 4 letters followed by "…". */
+    private fun shorten(text: String): String = if (text.length <= 4) text else text.take(4) + "…"
 
     fun isImage(item: FileItem) = of(item) == FileKind.IMAGE
     fun isVideo(item: FileItem) = of(item) == FileKind.VIDEO
