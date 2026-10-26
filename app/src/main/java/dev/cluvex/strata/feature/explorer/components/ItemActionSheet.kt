@@ -195,14 +195,15 @@ fun ItemActionSheet(
 @Composable
 private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: (() -> Unit)?) {
     val colors = MaterialTheme.colorScheme
+    val showApk = local && FileKinds.hasApkIcon(item)
+    var apkLoaded by remember(item.path, item.lastModified) { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
-            Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(colors.secondaryContainer),
+            if (apkLoaded) Modifier.size(56.dp)
+            else Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(colors.secondaryContainer),
             contentAlignment = Alignment.Center,
         ) {
             val look = dev.cluvex.strata.ui.LocalSettings.current.appearance
-            val showApk = local && FileKinds.hasApkIcon(item)
-            var apkLoaded by remember(item.path, item.lastModified) { mutableStateOf(false) }
             val dedicated = if (item.isDirectory) look.folderShaped else look.customFileIcons
             val custom = if (dedicated) FileKinds.customIcon(item, look.folderStyle) else null
             val folderTint = rememberFolderTint()
