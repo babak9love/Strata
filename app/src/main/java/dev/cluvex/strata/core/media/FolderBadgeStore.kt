@@ -12,7 +12,7 @@ import java.io.File
 
 /** One folder icon as written to a settings backup: [type] is "app" (uses [packageName]) or "file" (a file inside the folder). */
 @Serializable
-data class FolderIconEntry(
+data class FolderBadgeEntry(
     val path: String,
     val name: String,
     val type: String,
@@ -26,10 +26,10 @@ data class FolderIconEntry(
  *  - "img:<file>"     a PNG the user picked (copied into the app's private storage)
  * A folder with no entry keeps the automatic icon. Entries are keyed by path, so renaming or moving a folder drops its icon.
  */
-object FolderIconStore {
+object FolderBadgeStore {
 
-    private const val INDEX = "folder_icons.json"
-    private const val DIR = "folder_icons"
+    private const val INDEX = "folder_badges.json"
+    private const val DIR = "folder_badges"
     private const val MAX_SIDE = 256
     private const val TYPE_APP = "app"
     private const val TYPE_FILE = "file"
@@ -78,12 +78,12 @@ object FolderIconStore {
     }
 
     /** The app / file choices for the settings backup. Own pictures are private files and are not included. */
-    fun exportEntries(): List<FolderIconEntry> = _specs.value.entries.sortedBy { it.key }.mapNotNull { (path, spec) ->
+    fun exportEntries(): List<FolderBadgeEntry> = _specs.value.entries.sortedBy { it.key }.mapNotNull { (path, spec) ->
         val name = File(path).name
         when {
             spec.startsWith("app:") -> spec.removePrefix("app:").takeIf { it.isNotBlank() }
-                ?.let { FolderIconEntry(path, name, TYPE_APP, it) }
-            spec == "auto" -> FolderIconEntry(path, name, TYPE_FILE)
+                ?.let { FolderBadgeEntry(path, name, TYPE_APP, it) }
+            spec == "auto" -> FolderBadgeEntry(path, name, TYPE_FILE)
             else -> null
         }
     }
@@ -92,7 +92,7 @@ object FolderIconStore {
      * Applies entries from a backup. A folder that doesn't exist here (or an entry that can't be read) is skipped silently;
      * nothing is thrown. Returns how many were applied.
      */
-    fun restore(entries: List<FolderIconEntry>): Int {
+    fun restore(entries: List<FolderBadgeEntry>): Int {
         var next = _specs.value
         var applied = 0
         for (e in entries) {

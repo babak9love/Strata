@@ -91,7 +91,7 @@ import dev.cluvex.strata.core.bookmarks.BookmarkRepository
 import dev.cluvex.strata.core.data.BackupLocations
 import dev.cluvex.strata.core.data.EditorPrefs
 import dev.cluvex.strata.core.data.SettingsBackup
-import dev.cluvex.strata.core.media.FolderIconStore
+import dev.cluvex.strata.core.media.FolderBadgeStore
 import dev.cluvex.strata.core.data.StrataSettings
 import dev.cluvex.strata.core.remote.RemoteConnectionRepository
 import dev.cluvex.strata.core.remote.RemoteConnections
@@ -548,8 +548,8 @@ fun BackupPage(act: SettingsActions, activeFolder: String, onBack: () -> Unit) {
                     remoteRepo.edit { current -> saved.fold(current) { acc, c -> RemoteConnections.upsert(acc, c) } }
                 }
                 // Folder icons: folders missing on this device are skipped, and a failure here never stops the restore.
-                extras.folderIcons?.let { saved ->
-                    runCatching { withContext(Dispatchers.IO) { FolderIconStore.restore(saved) } }
+                extras.folderBadges?.let { saved ->
+                    runCatching { withContext(Dispatchers.IO) { FolderBadgeStore.restore(saved) } }
                 }
                 applied
             }
@@ -578,7 +578,7 @@ fun BackupPage(act: SettingsActions, activeFolder: String, onBack: () -> Unit) {
             link(tr(R.string.settings_export), summary = tr(R.string.settings_export_summary, target.path), icon = Icons.Rounded.Upload, tint = Tint.PRIMARY) {
                 scope.launch {
                     val result = runCatching {
-                        val text = SettingsBackup.attach(act.repo.exportBackup(), bookmarkRepo.bookmarks.first(), remoteRepo.connections.first(), FolderIconStore.exportEntries())
+                        val text = SettingsBackup.attach(act.repo.exportBackup(), bookmarkRepo.bookmarks.first(), remoteRepo.connections.first(), FolderBadgeStore.exportEntries())
                         withContext(Dispatchers.IO) {
                             target.mkdirs()
                             val file = LocalFileAccess.file(File(target, SettingsBackup.fileName(System.currentTimeMillis())).path)

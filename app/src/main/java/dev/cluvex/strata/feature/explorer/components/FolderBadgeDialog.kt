@@ -30,7 +30,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
-import dev.cluvex.strata.core.media.FolderIconStore
+import dev.cluvex.strata.core.media.FolderBadgeStore
 
 private enum class IconChoice { APP, AUTO, IMAGE }
 
@@ -39,9 +39,9 @@ private enum class IconChoice { APP, AUTO, IMAGE }
  * a file inside the folder (its image / video / APK, else the file's own default icon), or a picture of their own.
  */
 @Composable
-fun FolderIconDialog(path: String, onDismiss: () -> Unit) {
+fun FolderBadgeDialog(path: String, onDismiss: () -> Unit) {
     val context = LocalContext.current
-    val current = remember(path) { FolderIconStore.spec(path) }
+    val current = remember(path) { FolderBadgeStore.spec(path) }
     var choice by remember {
         mutableStateOf<IconChoice?>(
             when {
@@ -56,10 +56,10 @@ fun FolderIconDialog(path: String, onDismiss: () -> Unit) {
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
-            if (FolderIconStore.setImage(context, path, uri)) {
+            if (FolderBadgeStore.setImage(context, path, uri)) {
                 onDismiss()
             } else {
-                Toast.makeText(context, context.getString(R.string.folder_icon_image_failed), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.folder_badge_image_failed), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -72,37 +72,37 @@ fun FolderIconDialog(path: String, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.model_folder_icon)) },
+        title = { Text(stringResource(R.string.model_folder_badge)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                ChoiceRow(choice == IconChoice.APP, stringResource(R.string.folder_icon_app)) { choice = IconChoice.APP }
+                ChoiceRow(choice == IconChoice.APP, stringResource(R.string.folder_badge_app)) { choice = IconChoice.APP }
                 if (choice == IconChoice.APP) {
                     OutlinedTextField(
                         value = packageName,
                         onValueChange = { packageName = it.trim() },
-                        label = { Text(stringResource(R.string.folder_icon_package)) },
+                        label = { Text(stringResource(R.string.folder_badge_package)) },
                         placeholder = { Text("com.example.app") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                         modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
                     )
                 }
-                ChoiceRow(choice == IconChoice.AUTO, stringResource(R.string.folder_icon_auto)) { choice = IconChoice.AUTO }
-                ChoiceRow(choice == IconChoice.IMAGE, stringResource(R.string.folder_icon_image)) { choice = IconChoice.IMAGE }
+                ChoiceRow(choice == IconChoice.AUTO, stringResource(R.string.folder_badge_auto)) { choice = IconChoice.AUTO }
+                ChoiceRow(choice == IconChoice.IMAGE, stringResource(R.string.folder_badge_image)) { choice = IconChoice.IMAGE }
                 if (choice == IconChoice.IMAGE) {
                     OutlinedButton(
                         onClick = { picker.launch("image/*") },
                         modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
-                    ) { Text(stringResource(R.string.folder_icon_choose_image)) }
+                    ) { Text(stringResource(R.string.folder_badge_choose_image)) }
                 }
                 if (current != null) {
                     TextButton(
                         onClick = {
-                            FolderIconStore.clear(path)
+                            FolderBadgeStore.clear(path)
                             onDismiss()
                         },
                         modifier = Modifier.padding(top = 8.dp),
-                    ) { Text(stringResource(R.string.folder_icon_reset)) }
+                    ) { Text(stringResource(R.string.folder_badge_reset)) }
                 }
             }
         },
@@ -111,8 +111,8 @@ fun FolderIconDialog(path: String, onDismiss: () -> Unit) {
                 enabled = valid,
                 onClick = {
                     when (choice) {
-                        IconChoice.APP -> FolderIconStore.setApp(path, packageName)
-                        IconChoice.AUTO -> FolderIconStore.setAuto(path)
+                        IconChoice.APP -> FolderBadgeStore.setApp(path, packageName)
+                        IconChoice.AUTO -> FolderBadgeStore.setAuto(path)
                         else -> Unit
                     }
                     onDismiss()

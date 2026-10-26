@@ -93,7 +93,7 @@ import dev.cluvex.strata.feature.explorer.components.LocalCutPaths
 import dev.cluvex.strata.feature.explorer.dnd.dragHost
 import dev.cluvex.strata.feature.apk.SignApkDialog
 import dev.cluvex.strata.feature.explorer.components.BatchRenameDialog
-import dev.cluvex.strata.feature.explorer.components.FolderIconDialog
+import dev.cluvex.strata.feature.explorer.components.FolderBadgeDialog
 import dev.cluvex.strata.feature.explorer.components.RenameDialog
 import dev.cluvex.strata.feature.explorer.components.UndoListDialog
 import dev.cluvex.strata.feature.explorer.components.BookmarkActions
@@ -159,7 +159,7 @@ private sealed interface Dialog {
     data class Transfer(val move: Boolean) : Dialog
     data class JumpTo(val pane: Pane) : Dialog
     data class Rename(val pane: Pane, val item: FileItem) : Dialog
-    data class FolderIcon(val item: FileItem) : Dialog
+    data class FolderBadge(val item: FileItem) : Dialog
     data class Unprotect(val item: FileItem) : Dialog
     data class ItemSheet(val pane: Pane, val item: FileItem) : Dialog
     data class Checksum(val item: FileItem) : Dialog
@@ -465,7 +465,7 @@ fun ExplorerScreen(
                     undoCount = undoCount,
                     onUndo = { if (vm.onUndoRequested()) dialog = Dialog.UndoList },
                     onBookmarkSelection = { vm.addSelectionToBookmarks(ui.active) },
-                    onFolderIcon = { single?.takeIf { it.isDirectory }?.let { dialog = Dialog.FolderIcon(it); vm.clearSelection(ui.active) } },
+                    onFolderBadge = { single?.takeIf { it.isDirectory }?.let { dialog = Dialog.FolderBadge(it); vm.clearSelection(ui.active) } },
                     onProtectedFolders = { dialog = Dialog.ProtectedFolders },
                     onProtect = {
                         single?.takeIf { it.isDirectory }?.let {
@@ -676,7 +676,7 @@ fun ExplorerScreen(
             onConfirm = { vm.openPath(d.pane, it.trim()); dialog = Dialog.None },
             onDismiss = { dialog = Dialog.None },
         )
-        is Dialog.FolderIcon -> FolderIconDialog(d.item.path) { dialog = Dialog.None }
+        is Dialog.FolderBadge -> FolderBadgeDialog(d.item.path) { dialog = Dialog.None }
         is Dialog.Unprotect -> AlertDialog(
             onDismissRequest = { dialog = Dialog.None },
             title = { Text(stringResource(R.string.explorer_protected_remove_title)) },

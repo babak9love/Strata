@@ -175,7 +175,7 @@
     <string name="model_protocol_webdavs">基于 HTTPS 的 WebDAV</string>
     <string name="model_protocol_saf">本地存储</string>
     <string name="model_protocol_vault">保险箱</string>
-    <string name="model_folder_icon">文件夹图标</string>
+    <string name="model_folder_badge">文件夹角标</string>
     <string name="model_shape_rounded">圆角矩形</string>
     <string name="model_shape_circle">圆形</string>
     <string name="model_shape_cookie">饼干</string>

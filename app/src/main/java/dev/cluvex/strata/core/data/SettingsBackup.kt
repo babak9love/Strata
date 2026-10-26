@@ -5,7 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.i18n.tr
-import dev.cluvex.strata.core.media.FolderIconEntry
+import dev.cluvex.strata.core.media.FolderBadgeEntry
 import dev.cluvex.strata.core.remote.RemoteConnection
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -53,22 +53,22 @@ object SettingsBackup {
 
     const val BOOKMARKS_KEY = "bookmarks"
     const val CONNECTIONS_KEY = "connections"
-    const val FOLDER_ICONS_KEY = "folderIcons"
+    const val FOLDER_BADGES_KEY = "folderBadges"
 
-    class Extras(val bookmarks: List<Bookmark>?, val connections: List<RemoteConnection>?, val folderIcons: List<FolderIconEntry>? = null)
+    class Extras(val bookmarks: List<Bookmark>?, val connections: List<RemoteConnection>?, val folderBadges: List<FolderBadgeEntry>? = null)
 
     fun attach(
         text: String,
         bookmarks: List<Bookmark>,
         connections: List<RemoteConnection>,
-        folderIcons: List<FolderIconEntry> = emptyList(),
+        folderBadges: List<FolderBadgeEntry> = emptyList(),
     ): String {
         val root = Json.parseToJsonElement(text).jsonObject
         val extended = JsonObject(
             root + mapOf(
                 BOOKMARKS_KEY to lenient.encodeToJsonElement(bookmarks),
                 CONNECTIONS_KEY to lenient.encodeToJsonElement(connections),
-                FOLDER_ICONS_KEY to lenient.encodeToJsonElement(folderIcons),
+                FOLDER_BADGES_KEY to lenient.encodeToJsonElement(folderBadges),
             ),
         )
         return pretty.encodeToString(JsonObject.serializer(), extended)
@@ -79,7 +79,7 @@ object SettingsBackup {
         return Extras(
             bookmarks = root.list<Bookmark>(BOOKMARKS_KEY),
             connections = root.list<RemoteConnection>(CONNECTIONS_KEY),
-            folderIcons = root.tolerantList<FolderIconEntry>(FOLDER_ICONS_KEY),
+            folderBadges = root.tolerantList<FolderBadgeEntry>(FOLDER_BADGES_KEY),
         )
     }
 

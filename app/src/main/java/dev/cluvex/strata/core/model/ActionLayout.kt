@@ -43,7 +43,7 @@ enum class SelectionAction(@StringRes val label: Int, val asks: Boolean = false)
     JAR_TO_DEX(R.string.model_jar_to_dex),
     BOOKMARKS(R.string.model_browse_bookmarks),
     BOOKMARK(R.string.model_add_bookmark),
-    FOLDER_ICON(R.string.model_folder_icon),
+    FOLDER_BADGE(R.string.model_folder_badge),
     PROTECT(R.string.model_protect_folder),
     PROTECTED_FOLDERS(R.string.settings_group_protected),
     LINKS(R.string.model_selection_links, asks = true),
@@ -181,7 +181,7 @@ fun SelectionAction.available(c: SelectionContext): Boolean = when (this) {
     SelectionAction.SELECT_ALL, SelectionAction.INVERT, SelectionAction.PROTECTED_FOLDERS, SelectionAction.BOOKMARKS -> true
     SelectionAction.RENAME -> c.count == 1
     SelectionAction.BOOKMARK -> c.files == 0
-    SelectionAction.FOLDER_ICON, SelectionAction.PROTECT -> !c.remote && c.count == 1 && c.files == 0
+    SelectionAction.FOLDER_BADGE, SelectionAction.PROTECT -> !c.remote && c.count == 1 && c.files == 0
     SelectionAction.OPEN_WITH -> c.count == 1 && c.files == 1
     SelectionAction.EXTRACT -> !c.remote && c.count == 1 && c.archive
     SelectionAction.BATCH_RENAME, SelectionAction.COMPRESS, SelectionAction.LINKS, SelectionAction.SHARE,
@@ -324,7 +324,7 @@ data class ActionLayout(
                 listOf(
                     SelectionAction.OPEN_WITH, SelectionAction.EXTRACT, SelectionAction.RENAME, SelectionAction.BATCH_RENAME, SelectionAction.COPY_CLIPBOARD, SelectionAction.CUT_CLIPBOARD,
                     SelectionAction.COMPRESS, SelectionAction.MERGE, SelectionAction.COMPARE, SelectionAction.SMALI_TO_DEX,
-                    SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARKS, SelectionAction.BOOKMARK, SelectionAction.PROTECTED_FOLDERS, SelectionAction.PROTECT, SelectionAction.FOLDER_ICON, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
+                    SelectionAction.JAR_TO_DEX, SelectionAction.BOOKMARKS, SelectionAction.BOOKMARK, SelectionAction.PROTECTED_FOLDERS, SelectionAction.PROTECT, SelectionAction.FOLDER_BADGE, SelectionAction.LINKS, SelectionAction.VAULT, SelectionAction.SHARE,
                     SelectionAction.COPY_PATH, SelectionAction.PROPERTIES, SelectionAction.SELECT_ALL, SelectionAction.INVERT,
                 ),
                 emptyList(),

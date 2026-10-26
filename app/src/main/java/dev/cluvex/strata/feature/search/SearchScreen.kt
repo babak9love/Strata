@@ -266,7 +266,7 @@ private sealed interface SearchDialog {
 // These need a single destination folder of the explorer pane, which search results don't have.
 private val SearchHiddenActions = setOf(
     SelectionAction.BATCH_RENAME,
-    SelectionAction.FOLDER_ICON,
+    SelectionAction.FOLDER_BADGE,
     SelectionAction.PROTECT,
     SelectionAction.PROTECTED_FOLDERS,
     SelectionAction.BOOKMARKS,

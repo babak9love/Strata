@@ -11,7 +11,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -300,7 +302,7 @@ private class PreviewItem(val key: String, val icon: ImageVector?, val label: St
 
 class PreviewButton(val icon: ImageVector, val label: String, val conditional: Boolean)
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun SheetPreview(sheet: Zoned<SheetAction>) {
     val colors = MaterialTheme.colorScheme
@@ -353,14 +355,15 @@ private fun SheetPreview(sheet: Zoned<SheetAction>) {
                             Surface(
                                 shape = RoundedCornerShape(18.dp),
                                 color = colors.primaryContainer,
-                                modifier = Modifier.animateItem().width(72.dp).height(64.dp),
+                                modifier = Modifier.animateItem().width(76.dp).height(76.dp),
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Icon(a.icon, contentDescription = null, tint = colors.onPrimaryContainer, modifier = Modifier.size(20.dp))
                                     Text(
                                         stringResource(a.label),
                                         style = MaterialTheme.typography.labelSmall,
-                                        maxLines = 1,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                                     )
@@ -370,7 +373,11 @@ private fun SheetPreview(sheet: Zoned<SheetAction>) {
                     }
                 }
             }
-            Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            FlowRow(
+                Modifier.padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 SheetGroup.entries.forEach { g ->
                     val n = sheet.zones[1].count { it.group == g }
                     PreviewChip(stringResource(g.title), n)
@@ -390,6 +397,8 @@ private fun PreviewChip(label: String, count: Int) {
             "$label · ${Formatters.number(count.toLong())}",
             style = MaterialTheme.typography.labelMedium,
             color = colors.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
         )
     }

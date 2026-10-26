@@ -56,7 +56,7 @@ object FolderBadges {
      */
     fun load(context: Context, path: String): Bitmap? {
         val dir = File(path)
-        val spec = FolderIconStore.spec(path)
+        val spec = FolderBadgeStore.spec(path)
         // "A file inside the folder" is final: if it has no image / video / APK, no automatic app icon takes its place
         // (the explorer then shows the default icon of the folder's first file).
         if (spec == "auto") return customIcon(context, dir, spec)
@@ -124,7 +124,7 @@ object FolderBadges {
     private fun customIcon(context: Context, dir: File, spec: String): Bitmap? = runCatching {
         when {
             spec.startsWith("app:") -> installedAppIcon(context, listOf(spec.removePrefix("app:")))
-            spec.startsWith("img:") -> BitmapFactory.decodeFile(FolderIconStore.imageFile(context, spec.removePrefix("img:")).path)
+            spec.startsWith("img:") -> BitmapFactory.decodeFile(FolderBadgeStore.imageFile(context, spec.removePrefix("img:")).path)
             spec == "auto" -> contentIcon(context, dir)
             else -> null
         }

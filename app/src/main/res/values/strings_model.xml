@@ -189,7 +189,7 @@
     <string name="model_protocol_webdavs">WebDAV over HTTPS</string>
     <string name="model_protocol_saf">Local storage</string>
     <string name="model_protocol_vault">Vault</string>
-    <string name="model_folder_icon">Folder icon</string>
+    <string name="model_folder_badge">Folder badge</string>
     <string name="model_shape_rounded">Rounded</string>
     <string name="model_shape_circle">Circle</string>
     <string name="model_shape_cookie">Cookie</string>

@@ -175,7 +175,7 @@
     <string name="model_protocol_webdavs">WebDAV через HTTPS</string>
     <string name="model_protocol_saf">Локальное хранилище</string>
     <string name="model_protocol_vault">Сейф</string>
-    <string name="model_folder_icon">Значок папки</string>
+    <string name="model_folder_badge">Значок на папке</string>
     <string name="model_shape_rounded">Скруглённая</string>
     <string name="model_shape_circle">Круг</string>
     <string name="model_shape_cookie">Печенье</string>

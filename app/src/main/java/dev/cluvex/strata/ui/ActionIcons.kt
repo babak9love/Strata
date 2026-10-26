@@ -101,7 +101,7 @@ val SelectionAction.icon: ImageVector
         SelectionAction.JAR_TO_DEX -> Icons.Rounded.Coffee
         SelectionAction.BOOKMARK -> Icons.Rounded.BookmarkAdd
         SelectionAction.BOOKMARKS -> Icons.Rounded.Bookmarks
-        SelectionAction.FOLDER_ICON -> Icons.Rounded.FolderSpecial
+        SelectionAction.FOLDER_BADGE -> Icons.Rounded.FolderSpecial
         SelectionAction.PROTECT -> Icons.Rounded.Lock
         SelectionAction.PROTECTED_FOLDERS -> Icons.Rounded.Shield
         SelectionAction.LINKS -> Icons.Rounded.AddLink

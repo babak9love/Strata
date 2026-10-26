@@ -105,7 +105,7 @@ class BottomBarActions(
     val undoCount: Int = 0,
     val onUndo: () -> Unit = {},
     val onBookmarkSelection: () -> Unit = {},
-    val onFolderIcon: () -> Unit = {},
+    val onFolderBadge: () -> Unit = {},
     val onProtect: () -> Unit = {},
     val onProtectedFolders: () -> Unit = {},
     val onBatchRename: () -> Unit = {},
@@ -377,7 +377,7 @@ private fun SelectionAction.run(a: BottomBarActions, dual: Boolean) = when (this
     SelectionAction.JAR_TO_DEX -> a.onJarToDex()
     SelectionAction.BOOKMARKS -> a.onBookmarks()
     SelectionAction.BOOKMARK -> a.onBookmarkSelection()
-    SelectionAction.FOLDER_ICON -> a.onFolderIcon()
+    SelectionAction.FOLDER_BADGE -> a.onFolderBadge()
     SelectionAction.PROTECT -> a.onProtect()
     SelectionAction.PROTECTED_FOLDERS -> a.onProtectedFolders()
     SelectionAction.LINKS -> a.onCreateLinks()

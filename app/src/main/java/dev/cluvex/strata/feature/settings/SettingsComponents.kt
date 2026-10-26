@@ -1,7 +1,6 @@
 package dev.cluvex.strata.feature.settings
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.rounded.Folder
@@ -63,6 +62,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -104,26 +110,45 @@ fun SettingIcon(icon: ImageVector, tint: Tint = Tint.SECONDARY, size: Int = 40) 
     }
 }
 
-/** Small preview for the "Folder badges" setting: a folder with a gallery badge in its bottom corner. */
+/**
+ * Small preview for the "Folder badges" setting: a folder with a gallery badge in its bottom corner.
+ * The gap around the badge is cut out of the folder (not painted in a background colour), so it stays clean on any row colour.
+ */
 @Composable
 fun FolderBadgePreview(size: Int = 40) {
     val c = MaterialTheme.colorScheme
     val badge = (size * 0.5f).dp
+    val overhang = 3.dp
+    val gap = 2.dp
     Box(Modifier.size(size.dp)) {
         Icon(
             Icons.Rounded.Folder,
             contentDescription = null,
             tint = c.primary,
-            modifier = Modifier.size(size.dp),
+            modifier = Modifier
+                .size(size.dp)
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    val b = badge.toPx()
+                    val g = gap.toPx()
+                    val out = b + 2 * g
+                    drawRoundRect(
+                        color = Color.Black,
+                        topLeft = Offset(this.size.width + overhang.toPx() - b - g, this.size.height + overhang.toPx() - b - g),
+                        size = Size(out, out),
+                        cornerRadius = CornerRadius(b * 0.3f + g),
+                        blendMode = BlendMode.Clear,
+                    )
+                },
         )
         Box(
             Modifier
                 .align(Alignment.BottomEnd)
-                .offset(x = 3.dp, y = 3.dp)
+                .offset(x = overhang, y = overhang)
                 .size(badge)
                 .clip(RoundedCornerShape(30))
-                .background(c.tertiaryContainer)
-                .border(1.5.dp, c.surfaceBright, RoundedCornerShape(30)),
+                .background(c.tertiaryContainer),
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Rounded.Image, contentDescription = null, tint = c.onTertiaryContainer, modifier = Modifier.size(badge * 0.6f))

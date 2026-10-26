@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -138,24 +137,27 @@ fun SplitInstallDialog(
                         LinearWavyProgressIndicator(Modifier.fillMaxWidth().padding(top = 6.dp))
                     }
                 }
-                Row(
-                    Modifier.fillMaxWidth().padding(start = 12.dp, end = 24.dp, top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
+                if (s.bundle != null) {
                     Text(
-                        if (s.bundle != null) stringResource(R.string.apk_split_count, s.selected.size, s.bundle.apks.size) + separator() + Formatters.size(s.selectedSize) else "",
-                        style = MaterialTheme.typography.labelMedium,
+                        stringResource(R.string.apk_split_count, s.selected.size, s.bundle.apks.size) + separator() + Formatters.size(s.selectedSize),
+                        style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 12.dp),
                     )
-                    Spacer(Modifier.weight(1f))
-                    TextButton(onClick = { onDismiss(); onView() }, shapes = ButtonDefaults.shapes(), enabled = !busy) { Text(stringResource(R.string.common_view)) }
+                }
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 12.dp, end = 24.dp, top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                ) {
+                    TextButton(onClick = { onDismiss(); onView() }, shapes = ButtonDefaults.shapes(), enabled = !busy) {
+                        Text(stringResource(R.string.common_view), maxLines = 1, softWrap = false)
+                    }
                     Button(
                         onClick = { vm.install(policy) },
                         shapes = ButtonDefaults.shapes(),
                         enabled = !busy && s.bundle?.base != null && s.error == null,
-                    ) { Text(stringResource(R.string.common_install)) }
+                    ) { Text(stringResource(R.string.common_install), maxLines = 1, softWrap = false) }
                 }
             }
         }
