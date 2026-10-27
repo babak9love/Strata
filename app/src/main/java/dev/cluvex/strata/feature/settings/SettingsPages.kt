@@ -257,6 +257,7 @@ fun BehaviorPage(settings: StrataSettings, act: SettingsActions, activeFolder: S
             switch(tr(R.string.settings_icon_tap), b.iconTapSelects, { v -> act.behavior { it.copy(iconTapSelects = v) } }, summary = tr(R.string.settings_icon_tap_summary), icon = Icons.Rounded.SelectAll)
             switch(tr(R.string.settings_bookmark_swipe), b.bookmarkSwipe, { v -> act.behavior { it.copy(bookmarkSwipe = v) } }, summary = tr(R.string.settings_bookmark_swipe_summary), icon = Icons.Rounded.Bookmarks, enabled = b.showBookmarkBar)
             switch(tr(R.string.settings_bookmark_wrap), b.bookmarkSwipeWrap, { v -> act.behavior { it.copy(bookmarkSwipeWrap = v) } }, summary = tr(R.string.settings_bookmark_wrap_summary), icon = Icons.Rounded.Repeat, enabled = b.bookmarkSwipe && b.showBookmarkBar)
+            switch(tr(R.string.settings_bookmark_slide), b.bookmarkSwipeSlide, { v -> act.behavior { it.copy(bookmarkSwipeSlide = v) } }, summary = tr(R.string.settings_bookmark_slide_summary), icon = Icons.Rounded.Bookmarks, enabled = b.bookmarkSwipe && b.showBookmarkBar)
             switch(tr(R.string.settings_swipe_drawer), b.swipeOpensDrawer, { v -> act.behavior { it.copy(swipeOpensDrawer = v) } }, summary = tr(R.string.settings_swipe_drawer_summary), icon = Icons.Rounded.Menu)
         }
         SettingsGroup(stringResource(R.string.settings_group_working)) {

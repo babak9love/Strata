@@ -159,6 +159,7 @@ object SettingsIndex {
         SettingEntry(R.string.settings_bookmark_style, SettingsPage.BEHAVIOR, R.string.settings_kw_bookmark_style),
         SettingEntry(R.string.settings_bookmark_swipe, SettingsPage.BEHAVIOR, R.string.settings_kw_bookmark_swipe),
         SettingEntry(R.string.settings_bookmark_wrap, SettingsPage.BEHAVIOR, R.string.settings_kw_bookmark_wrap),
+        SettingEntry(R.string.settings_bookmark_slide, SettingsPage.BEHAVIOR, R.string.settings_kw_bookmark_slide),
         SettingEntry(R.string.settings_swipe_drawer, SettingsPage.BEHAVIOR, R.string.settings_kw_swipe_drawer),
         SettingEntry(R.string.settings_screen_on_tasks, SettingsPage.BEHAVIOR, R.string.settings_kw_screen_on_tasks),
         SettingEntry(R.string.settings_conflict, SettingsPage.OPERATIONS, R.string.settings_kw_conflict),

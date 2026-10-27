@@ -576,6 +576,7 @@ fun ExplorerScreen(
                                 canPrevious = wrapBack || bookmarkIndex > 0,
                                 canNext = wrapBookmarks || bookmarkIndex in 0 until ui.bookmarks.lastIndex,
                                 passBackToDrawer = ui.settings.behavior.swipeOpensDrawer,
+                                slide = ui.settings.behavior.bookmarkSwipeSlide,
                                 contentKey = state.path,
                                 onSwipe = { forward ->
                                     ui.bookmarks.getOrNull(Math.floorMod(bookmarkIndex + if (forward) 1 else -1, ui.bookmarks.size))?.let {
