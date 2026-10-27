@@ -158,13 +158,13 @@ fun BookmarkChipsBar(
                     )
                 }
                 BookmarkStyle.PATH_CARD -> Box(
-                    contentAlignment = Alignment.CenterStart,
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .widthIn(min = 96.dp, max = 200.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
                         .then(common)
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
                 ) {
                     Text(
                         text = bookmark.name,
@@ -173,6 +173,7 @@ fun BookmarkChipsBar(
                         color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
                     )
                 }
                 else -> Row(
@@ -191,14 +192,14 @@ fun BookmarkChipsBar(
                         onLongClick = { onLongPress(bookmark) },
                     )
                     .then(
-                        if (classic) Modifier.padding(start = 6.dp, end = 16.dp, top = 6.dp, bottom = 6.dp)
+                        if (classic) Modifier.padding(start = 4.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
                         else Modifier.padding(start = 14.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
                     ),
             ) {
                 if (classic) {
                     Box(
                         Modifier
-                            .size(32.dp)
+                            .size(28.dp)
                             .clip(MaterialShapes.Cookie4Sided.toShape())
                             .background(MaterialTheme.colorScheme.tertiaryContainer),
                         contentAlignment = Alignment.Center,
