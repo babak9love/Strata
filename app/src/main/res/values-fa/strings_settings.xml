@@ -472,4 +472,7 @@
     <string name="settings_bookmark_bar_bottom">نوار بوکمارک‌ها در پایین صفحه</string>
     <string name="settings_bookmark_bar_bottom_summary">بوکمارک‌ها به جای زیر عنوان، زیر نوار ابزار پایین نمایش داده شوند</string>
     <string name="settings_kw_bookmark_bar_bottom">بوکمارک نوار چیپ پایین صفحه جابجایی جایگاه زیر نوار ابزار</string>
+    <string name="settings_bookmark_style">شکل بوکمارک‌ها</string>
+    <string name="settings_bookmark_style_summary">ظاهر چیپ‌های بوکمارک در صفحه اصلی</string>
+    <string name="settings_kw_bookmark_style">بوکمارک چیپ شکل ظاهر تب کاشی کلاسیک خط‌دار</string>
 </resources>

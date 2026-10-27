@@ -473,4 +473,7 @@
     <string name="settings_bookmark_bar_bottom">Bookmark bar at the bottom</string>
     <string name="settings_bookmark_bar_bottom_summary">Put the bookmark chips under the bottom toolbar instead of under the title</string>
     <string name="settings_kw_bookmark_bar_bottom">bookmarks bar chips bottom move position below toolbar</string>
+    <string name="settings_bookmark_style">Bookmark style</string>
+    <string name="settings_bookmark_style_summary">Look of the bookmark chips on the main screen</string>
+    <string name="settings_kw_bookmark_style">bookmarks chips style look shape tabs tiles classic outlined</string>
 </resources>

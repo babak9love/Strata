@@ -56,6 +56,21 @@ object ItemScale {
     fun clamp(v: Int) = v.coerceIn(MIN, MAX)
 }
 
+/** How the bookmark chips on the main screen look. */
+enum class BookmarkStyle(@StringRes val label: Int) {
+    /** Filled pill with a tile holding the bookmark's first letter. */
+    CLASSIC(R.string.model_bookmark_classic),
+
+    /** Pill with an outline and a folder icon. */
+    OUTLINED(R.string.model_bookmark_outlined),
+
+    /** Plain text with a line under the open bookmark. */
+    UNDERLINE(R.string.model_bookmark_underline),
+
+    /** Folder icon above the name, on a rounded tile. */
+    TILES(R.string.model_bookmark_tiles),
+}
+
 enum class StartFolder(@StringRes val label: Int) {
     HOME(R.string.model_start_home),
     LAST(R.string.model_start_last),
@@ -73,6 +88,8 @@ data class BehaviorPrefs(
     val showBookmarkBar: Boolean = true,
     /** Puts the bookmark chips under the bottom toolbar instead of under the title. */
     val bookmarkBarAtBottom: Boolean = false,
+    /** Look of the bookmark chips. Null follows the folder icon style: outlined with folder-shaped icons, classic without. */
+    val bookmarkStyle: BookmarkStyle? = null,
     /** Swiping left or right on the file list switches between bookmarks. */
     val bookmarkSwipe: Boolean = true,
     /** The bookmark swipe wraps around: the last bookmark is followed by the first, and the first is preceded by the last. */

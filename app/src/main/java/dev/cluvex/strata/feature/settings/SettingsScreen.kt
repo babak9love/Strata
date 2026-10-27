@@ -156,6 +156,7 @@ object SettingsIndex {
         SettingEntry(R.string.settings_icon_tap, SettingsPage.BEHAVIOR, R.string.settings_kw_icon_tap),
         SettingEntry(R.string.settings_bookmark_bar, SettingsPage.BEHAVIOR, R.string.settings_kw_bookmark_bar),
         SettingEntry(R.string.settings_bookmark_bar_bottom, SettingsPage.BEHAVIOR, R.string.settings_kw_bookmark_bar_bottom),
+        SettingEntry(R.string.settings_bookmark_style, SettingsPage.BEHAVIOR, R.string.settings_kw_bookmark_style),
         SettingEntry(R.string.settings_bookmark_swipe, SettingsPage.BEHAVIOR, R.string.settings_kw_bookmark_swipe),
         SettingEntry(R.string.settings_bookmark_wrap, SettingsPage.BEHAVIOR, R.string.settings_kw_bookmark_wrap),
         SettingEntry(R.string.settings_swipe_drawer, SettingsPage.BEHAVIOR, R.string.settings_kw_swipe_drawer),

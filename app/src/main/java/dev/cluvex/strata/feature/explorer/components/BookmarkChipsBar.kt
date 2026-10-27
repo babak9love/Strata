@@ -8,6 +8,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
@@ -49,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.bookmarks.Bookmarks
+import dev.cluvex.strata.core.model.BookmarkStyle
 import dev.cluvex.strata.ui.LocalSettings
 
 private val CHIP_ROW_PADDING = 12.dp
@@ -73,7 +76,8 @@ fun BookmarkChipsBar(
     // Classic Strata look: each chip starts with a tile holding the first letter of the bookmark, like the drawer.
     val look = LocalSettings.current.appearance
     // Letter tile only while folder-shaped icons are off; with them on the chip shows the folder like every folder.
-    val classic = !look.folderShaped
+    val style = LocalSettings.current.behavior.bookmarkStyle ?: if (look.folderShaped) BookmarkStyle.OUTLINED else BookmarkStyle.CLASSIC
+    val classic = style == BookmarkStyle.CLASSIC
     // "Fixed folder color" off: the folder takes the theme colour, bookmarks included.
     val tintFolder = look.folderShaped && !look.folderFixedColor
     val folderTint = rememberFolderTint()
@@ -121,7 +125,62 @@ fun BookmarkChipsBar(
                 classic -> MaterialTheme.colorScheme.onSurface
                 else -> MaterialTheme.colorScheme.onSurfaceVariant
             }
-            Row(
+            val common = Modifier
+                .onGloballyPositioned { bounds[Bookmarks.normalize(bookmark.path)] = it.positionInParent().x.toInt() }
+                .semantics { contentDescription = cd }
+                .combinedClickable(
+                    onClick = { onOpen(bookmark) },
+                    onLongClick = { onLongPress(bookmark) },
+                )
+            when (style) {
+                BookmarkStyle.UNDERLINE -> Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = common.padding(horizontal = 8.dp),
+                ) {
+                    Text(
+                        text = bookmark.name,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (selected) FontWeight.Bold else null,
+                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
+                            .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent),
+                    )
+                }
+                BookmarkStyle.TILES -> Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .width(76.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                        .then(common)
+                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                ) {
+                    Image(
+                        painter = painterResource(look.folderStyle.drawable),
+                        contentDescription = null,
+                        colorFilter = if (tintFolder) folderTint else null,
+                        modifier = Modifier.size(width = 32.dp, height = 25.dp),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = bookmark.name,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (selected) FontWeight.Bold else null,
+                        color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                else -> Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clip(shape)
@@ -173,6 +232,7 @@ fun BookmarkChipsBar(
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
                 )
+            }
             }
         }
     }

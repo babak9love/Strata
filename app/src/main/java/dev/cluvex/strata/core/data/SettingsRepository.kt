@@ -14,6 +14,7 @@ import dev.cluvex.strata.core.color.RecentColors
 import dev.cluvex.strata.core.model.ActionLayout
 import dev.cluvex.strata.core.model.AppearancePrefs
 import dev.cluvex.strata.core.model.BehaviorPrefs
+import dev.cluvex.strata.core.model.BookmarkStyle
 import dev.cluvex.strata.core.model.ConflictChoice
 import dev.cluvex.strata.core.model.ContrastLevel
 import dev.cluvex.strata.core.model.CornerStyle
@@ -181,6 +182,7 @@ class SettingsRepository(private val context: Context) {
         val SWIPE_OPENS_DRAWER = booleanPreferencesKey("swipe_opens_drawer")
         val SHOW_BOOKMARK_BAR = booleanPreferencesKey("show_bookmark_bar")
         val BOOKMARK_BAR_BOTTOM = booleanPreferencesKey("bookmark_bar_bottom")
+        val BOOKMARK_STYLE = stringPreferencesKey("bookmark_style")
         val BOOKMARK_SWIPE = booleanPreferencesKey("bookmark_swipe")
         val BOOKMARK_SWIPE_WRAP = booleanPreferencesKey("bookmark_swipe_wrap")
         val KEEP_SCREEN_TASKS = booleanPreferencesKey("keep_screen_on_tasks")
@@ -248,7 +250,7 @@ class SettingsRepository(private val context: Context) {
             SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, FOLDER_STYLE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
             START_FOLDER, START_PATH, CONFLICT, UI_DENSITY, OPEN_DEFAULTS, EDITOR_THEME, APK_EXTRACT_DIR, APK_NAME_PATTERN,
             RENAME_HISTORY, RECENT_COLORS, PLUGIN_PINS, LAST_LEFT, LAST_RIGHT, RUN_COMMANDS, READER_THEME, READER_SPOTS, READER_MARKS,
-            ACTION_LAYOUT, LOCK_DELAY, VAULT_LOCK_DELAY, PROTECTED_FOLDERS,
+            ACTION_LAYOUT, LOCK_DELAY, VAULT_LOCK_DELAY, PROTECTED_FOLDERS, BOOKMARK_STYLE,
         )
 
         val PRIVATE: Set<String> = setOf(
@@ -566,6 +568,7 @@ class SettingsRepository(private val context: Context) {
             swipeOpensDrawer = p[Keys.SWIPE_OPENS_DRAWER] ?: false,
             showBookmarkBar = p[Keys.SHOW_BOOKMARK_BAR] ?: true,
             bookmarkBarAtBottom = p[Keys.BOOKMARK_BAR_BOTTOM] ?: false,
+            bookmarkStyle = BookmarkStyle.entries.firstOrNull { it.name == p[Keys.BOOKMARK_STYLE] },
             bookmarkSwipe = p[Keys.BOOKMARK_SWIPE] ?: true,
             bookmarkSwipeWrap = p[Keys.BOOKMARK_SWIPE_WRAP] ?: true,
             keepScreenOnTasks = p[Keys.KEEP_SCREEN_TASKS] ?: false,
@@ -600,6 +603,7 @@ class SettingsRepository(private val context: Context) {
             p[Keys.SWIPE_OPENS_DRAWER] = b.swipeOpensDrawer
             p[Keys.SHOW_BOOKMARK_BAR] = b.showBookmarkBar
             p[Keys.BOOKMARK_BAR_BOTTOM] = b.bookmarkBarAtBottom
+            b.bookmarkStyle?.let { p[Keys.BOOKMARK_STYLE] = it.name } ?: p.remove(Keys.BOOKMARK_STYLE)
             p[Keys.BOOKMARK_SWIPE] = b.bookmarkSwipe
             p[Keys.BOOKMARK_SWIPE_WRAP] = b.bookmarkSwipeWrap
             p[Keys.KEEP_SCREEN_TASKS] = b.keepScreenOnTasks

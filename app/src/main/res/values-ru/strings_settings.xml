@@ -490,4 +490,7 @@
     <string name="settings_bookmark_bar_bottom">Панель закладок внизу</string>
     <string name="settings_bookmark_bar_bottom_summary">Показывать закладки под нижней панелью инструментов, а не под заголовком</string>
     <string name="settings_kw_bookmark_bar_bottom">закладки панель внизу положение под панелью</string>
+    <string name="settings_bookmark_style">Вид закладок</string>
+    <string name="settings_bookmark_style_summary">Внешний вид закладок на главном экране</string>
+    <string name="settings_kw_bookmark_style">закладки вид стиль вкладки плитки классика контур</string>
 </resources>

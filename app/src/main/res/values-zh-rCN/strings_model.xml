@@ -204,4 +204,8 @@
     <string name="model_folder_style_crimson">深红</string>
     <string name="model_folder_style_rose">玫瑰</string>
     <string name="model_browse_undo">撤销</string>
+    <string name="model_bookmark_classic">经典</string>
+    <string name="model_bookmark_outlined">描边</string>
+    <string name="model_bookmark_underline">标签页</string>
+    <string name="model_bookmark_tiles">方块</string>
 </resources>

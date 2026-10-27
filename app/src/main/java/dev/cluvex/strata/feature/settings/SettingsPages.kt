@@ -102,6 +102,7 @@ import dev.cluvex.strata.core.remote.RemoteConnections
 import dev.cluvex.strata.core.fs.LocalFileAccess
 import dev.cluvex.strata.core.i18n.tr
 import dev.cluvex.strata.core.i18n.trPlural
+import dev.cluvex.strata.core.model.BookmarkStyle
 import dev.cluvex.strata.core.model.ConflictChoice
 import dev.cluvex.strata.core.model.DateStyle
 import dev.cluvex.strata.core.model.ItemScale
@@ -244,6 +245,12 @@ fun BehaviorPage(settings: StrataSettings, act: SettingsActions, activeFolder: S
             switch(tr(R.string.settings_two_panes), settings.dualPanePreferred, { v -> act.run { setDualPanePreferred(v) }; if (v) act.list { it.copy(viewMode = ViewMode.LIST) } }, summary = tr(R.string.settings_two_panes_summary), icon = Icons.Rounded.ViewColumn)
             switch(tr(R.string.settings_bookmark_bar), b.showBookmarkBar, { v -> act.behavior { it.copy(showBookmarkBar = v) } }, summary = tr(R.string.settings_bookmark_bar_summary), icon = Icons.Rounded.Bookmarks)
             switch(tr(R.string.settings_bookmark_bar_bottom), b.bookmarkBarAtBottom, { v -> act.behavior { it.copy(bookmarkBarAtBottom = v) } }, summary = tr(R.string.settings_bookmark_bar_bottom_summary), icon = Icons.Rounded.VerticalAlignBottom, enabled = b.showBookmarkBar)
+            choice(
+                tr(R.string.settings_bookmark_style), BookmarkStyle.entries,
+                b.bookmarkStyle ?: if (settings.appearance.folderShaped) BookmarkStyle.OUTLINED else BookmarkStyle.CLASSIC,
+                { tr(it.label) }, { v -> act.behavior { it.copy(bookmarkStyle = v) } },
+                icon = Icons.Rounded.Bookmarks, enabled = b.showBookmarkBar,
+            )
         }
         SettingsGroup(stringResource(R.string.settings_group_gestures)) {
             switch(tr(R.string.settings_double_back), b.doubleBackToExit, { v -> act.behavior { it.copy(doubleBackToExit = v) } }, summary = tr(R.string.settings_double_back_summary), icon = Icons.AutoMirrored.Rounded.ExitToApp)

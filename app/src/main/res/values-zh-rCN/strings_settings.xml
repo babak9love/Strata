@@ -463,4 +463,7 @@
     <string name="settings_bookmark_bar_bottom">书签栏置于底部</string>
     <string name="settings_bookmark_bar_bottom_summary">将书签栏显示在底部工具栏下方，而不是标题下方</string>
     <string name="settings_kw_bookmark_bar_bottom">书签 栏 底部 位置 工具栏</string>
+    <string name="settings_bookmark_style">书签样式</string>
+    <string name="settings_bookmark_style_summary">主屏幕上书签的外观</string>
+    <string name="settings_kw_bookmark_style">书签 样式 外观 标签页 方块 经典 描边</string>
 </resources>
