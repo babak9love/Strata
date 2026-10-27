@@ -433,9 +433,13 @@ private fun SelectionActions(
 @Composable
 private fun DirectionalAction(icon: ImageVector, toRight: Boolean, description: String, onClick: () -> Unit) {
     val rightOnScreen = toRight != (LocalLayoutDirection.current == LayoutDirection.Rtl)
-    IconButton(onClick = onClick, shapes = IconButtonDefaults.shapes()) {
-        Box {
+    // The arrow is drawn over the button instead of inside it: the button clips its content to its round shape,
+    // which cut off the arrow's head in the corner when it pointed right.
+    Box(contentAlignment = Alignment.Center) {
+        IconButton(onClick = onClick, shapes = IconButtonDefaults.shapes()) {
             Icon(icon, contentDescription = description)
+        }
+        Box(Modifier.size(24.dp)) {
             Icon(
                 if (rightOnScreen) Icons.Rounded.East else Icons.Rounded.West,
                 contentDescription = null,
@@ -443,7 +447,7 @@ private fun DirectionalAction(icon: ImageVector, toRight: Boolean, description: 
                 modifier = Modifier
                     .size(14.dp)
                     .align(Alignment.BottomEnd)
-                    .offset(x = 6.dp, y = 8.dp),
+                    .offset(x = 6.dp, y = 10.dp),
             )
         }
     }
