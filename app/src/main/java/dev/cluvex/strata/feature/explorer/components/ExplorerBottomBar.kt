@@ -443,7 +443,7 @@ private fun DirectionalAction(icon: ImageVector, toRight: Boolean, description: 
                 modifier = Modifier
                     .size(14.dp)
                     .align(Alignment.BottomEnd)
-                    .offset(x = 6.dp, y = 4.dp),
+                    .offset(x = 6.dp, y = 8.dp),
             )
         }
     }

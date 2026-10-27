@@ -122,6 +122,7 @@ import com.materialkolor.ktx.toHct
 import com.materialkolor.temperature.TemperatureCache
 import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.model.MotionStyle
+import dev.cluvex.strata.core.model.SizeUnits
 import dev.cluvex.strata.core.remote.RemoteConnection
 import dev.cluvex.strata.core.util.Formatters
 import dev.cluvex.strata.ui.expressive.MorphShape
@@ -446,7 +447,8 @@ private fun StorageStrata(path: String, open: Boolean, reduced: Boolean, modifie
                     Text(stringResource(R.string.model_start_home), style = MaterialTheme.typography.titleMediumEmphasized)
                     if (usage != null && usage.second > 0) {
                         Text(
-                            stringResource(R.string.drawer_free_of, Formatters.size(usage.first), Formatters.size(usage.second)),
+                            // The device capacity is a binary figure (64 GiB, not 68.72 GB), so this line stays binary whatever the units setting says.
+                            stringResource(R.string.drawer_free_of, Formatters.size(usage.first, SizeUnits.BINARY), Formatters.size(usage.second, SizeUnits.BINARY)),
                             style = MaterialTheme.typography.bodySmall,
                             color = colors.onSurfaceVariant,
                         )
