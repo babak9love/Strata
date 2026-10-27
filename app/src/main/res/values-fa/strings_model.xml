@@ -208,4 +208,5 @@
     <string name="model_bookmark_outlined">خط‌دار</string>
     <string name="model_bookmark_underline">تب</string>
     <string name="model_bookmark_tiles">کاشی</string>
+    <string name="model_bookmark_path_card">کادر مسیر</string>
 </resources>

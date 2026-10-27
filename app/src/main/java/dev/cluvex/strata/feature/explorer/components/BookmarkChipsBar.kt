@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -152,6 +153,31 @@ fun BookmarkChipsBar(
                             .height(3.dp)
                             .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
                             .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent),
+                    )
+                }
+                BookmarkStyle.PATH_CARD -> Column(
+                    modifier = Modifier
+                        .widthIn(min = 110.dp, max = 220.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .then(common)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                ) {
+                    val text = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                    Text(
+                        text = bookmark.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = text,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = if (bookmark.path.startsWith("/storage/emulated/0")) "/sdcard" + bookmark.path.removePrefix("/storage/emulated/0") else bookmark.path,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = text.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.StartEllipsis,
                     )
                 }
                 BookmarkStyle.TILES -> Column(

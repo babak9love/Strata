@@ -69,6 +69,9 @@ enum class BookmarkStyle(@StringRes val label: Int) {
 
     /** Folder icon above the name, on a rounded tile. */
     TILES(R.string.model_bookmark_tiles),
+
+    /** Rounded box like the path box above the list: the name with the folder's path under it. */
+    PATH_CARD(R.string.model_bookmark_path_card),
 }
 
 enum class StartFolder(@StringRes val label: Int) {

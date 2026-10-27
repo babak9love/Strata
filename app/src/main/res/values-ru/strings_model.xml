@@ -208,4 +208,5 @@
     <string name="model_bookmark_outlined">С контуром</string>
     <string name="model_bookmark_underline">Вкладки</string>
     <string name="model_bookmark_tiles">Плитки</string>
+    <string name="model_bookmark_path_card">Рамка пути</string>
 </resources>
