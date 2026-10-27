@@ -472,6 +472,9 @@
     <string name="settings_bookmark_wrap">Circular bookmark swipe</string>
     <string name="settings_bookmark_wrap_summary">After the last bookmark comes the first. With the side-menu swipe on, swiping right on the first bookmark opens the menu instead</string>
     <string name="settings_kw_bookmark_wrap">bookmark swipe circular loop wrap around</string>
+    <string name="settings_bookmark_slide">Slide page on bookmark swipe</string>
+    <string name="settings_bookmark_slide_summary">On: the page follows your finger and slides out and in. Off: the bookmark simply opens, like tapping its chip</string>
+    <string name="settings_kw_bookmark_slide">bookmark swipe slide animation page follow finger</string>
     <string name="settings_bookmark_bar">Bookmark bar on the main screen</string>
     <string name="settings_bookmark_bar_summary">Show the bookmark chips under the title. This does not affect the side menu</string>
     <string name="settings_kw_bookmark_bar">bookmarks bar chips main screen hide</string>

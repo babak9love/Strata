@@ -94,6 +94,8 @@ data class BehaviorPrefs(
     val bookmarkSwipe: Boolean = true,
     /** The bookmark swipe wraps around: the last bookmark is followed by the first, and the first is preceded by the last. */
     val bookmarkSwipeWrap: Boolean = true,
+    /** The bookmark swipe drags the page with the finger and slides it out and in. Off: the bookmark just opens, like a tap on its chip. */
+    val bookmarkSwipeSlide: Boolean = false,
     val keepScreenOnTasks: Boolean = false,
     val videoAutoHide: Boolean = true,
     val resumeAudio: Boolean = true,
