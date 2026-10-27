@@ -97,22 +97,9 @@ fun Modifier.bookmarkSwipe(
 
     // Kept out of the pointer-input block: that block is restricted and cannot call these suspending functions.
     fun settleAfter(committed: Float, go: Boolean) {
-        settle = scope.launch {
-            if (go) {
-                val out = if (committed > 0f) width else -width
-                free = true
-                animate(drag, out, animationSpec = tween(140)) { value, _ -> drag = value }
-                val before = key
-                swipe(isForward(committed))
-                // Wait for the new folder; if it never opens (missing bookmark), slide the old page back.
-                val opened = withTimeoutOrNull(700) { snapshotFlow { key }.first { it != before } } != null
-                if (opened) drag = -out
-                animate(drag, 0f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { value, _ -> drag = value }
-                free = false
-            } else {
-                animate(drag, 0f, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { value, _ -> drag = value }
-            }
-        }
+        // No sliding: the page stays where it is and the bookmark opens exactly like a tap on its chip.
+        drag = 0f
+        if (go) swipe(isForward(committed))
     }
 
     return this
@@ -152,9 +139,5 @@ fun Modifier.bookmarkSwipe(
                 }
                 settleAfter(committed, committed != 0f && allowed(committed))
             }
-        }
-        .graphicsLayer {
-            val d = drag
-            translationX = if (free || d == 0f || allowed(d)) d else (d * 0.25f).coerceIn(-maxPull, maxPull)
         }
 }
