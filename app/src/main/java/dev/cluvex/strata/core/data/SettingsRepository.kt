@@ -573,7 +573,7 @@ class SettingsRepository(private val context: Context) {
             bookmarkStyle = BookmarkStyle.entries.firstOrNull { it.name == p[Keys.BOOKMARK_STYLE] },
             bookmarkSwipe = p[Keys.BOOKMARK_SWIPE] ?: true,
             bookmarkSwipeWrap = p[Keys.BOOKMARK_SWIPE_WRAP] ?: true,
-            bookmarkSwipeSlide = p[Keys.BOOKMARK_SWIPE_SLIDE] ?: false,
+            bookmarkSwipeSlide = p[Keys.BOOKMARK_SWIPE_SLIDE] ?: true,
             keepScreenOnTasks = p[Keys.KEEP_SCREEN_TASKS] ?: false,
             videoAutoHide = p[Keys.VIDEO_AUTO_HIDE] ?: true,
             resumeAudio = p[Keys.RESUME_AUDIO] ?: true,
