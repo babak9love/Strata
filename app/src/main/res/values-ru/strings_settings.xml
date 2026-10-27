@@ -489,9 +489,6 @@
     <string name="settings_bookmark_wrap">Круговой свайп закладок</string>
     <string name="settings_bookmark_wrap_summary">После последней закладки открывается первая. Если включён свайп меню, свайп вправо на первой закладке открывает меню</string>
     <string name="settings_kw_bookmark_wrap">свайп закладки круговой цикл</string>
-    <string name="settings_bookmark_slide">Сдвиг страницы при свайпе закладок</string>
-    <string name="settings_bookmark_slide_summary">Вкл.: страница следует за пальцем и выезжает. Выкл.: закладка просто открывается, как при нажатии на её чип</string>
-    <string name="settings_kw_bookmark_slide">свайп закладки анимация сдвиг страница</string>
     <string name="settings_bookmark_bar">Панель закладок на главном экране</string>
     <string name="settings_bookmark_bar_summary">Показывать закладки под заголовком главного экрана. Боковое меню это не затрагивает</string>
     <string name="settings_kw_bookmark_bar">закладки панель главный экран скрыть</string>

@@ -186,7 +186,6 @@ class SettingsRepository(private val context: Context) {
         val DRAWER_HIDDEN = stringPreferencesKey("drawer_hidden")
         val BOOKMARK_SWIPE = booleanPreferencesKey("bookmark_swipe")
         val BOOKMARK_SWIPE_WRAP = booleanPreferencesKey("bookmark_swipe_wrap")
-        val BOOKMARK_SWIPE_SLIDE = booleanPreferencesKey("bookmark_swipe_slide")
         val KEEP_SCREEN_TASKS = booleanPreferencesKey("keep_screen_on_tasks")
         val CONFLICT = stringPreferencesKey("conflict_choice")
         val KEEP_MTIME = booleanPreferencesKey("keep_modified_time")
@@ -238,7 +237,7 @@ class SettingsRepository(private val context: Context) {
 
         val BOOLEANS = listOf(
             SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, CUSTOM_FILE_ICONS, FOLDER_SHAPED, FOLDER_FIXED_COLOR, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, FOLDER_BADGES, SHOW_DATE,
-            SHOW_SIZE, USE_24H, WRAP_NAMES, TILE_FRAME, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, SWIPE_OPENS_DRAWER, SHOW_BOOKMARK_BAR, BOOKMARK_BAR_BOTTOM, BOOKMARK_SWIPE, BOOKMARK_SWIPE_WRAP, BOOKMARK_SWIPE_SLIDE, KEEP_SCREEN_TASKS, KEEP_MTIME, UNDO_ENABLED, SECURE_SCREEN,
+            SHOW_SIZE, USE_24H, WRAP_NAMES, TILE_FRAME, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, SWIPE_OPENS_DRAWER, SHOW_BOOKMARK_BAR, BOOKMARK_BAR_BOTTOM, BOOKMARK_SWIPE, BOOKMARK_SWIPE_WRAP, KEEP_SCREEN_TASKS, KEEP_MTIME, UNDO_ENABLED, SECURE_SCREEN,
             DUAL_PANE, TRASH_DEFAULT, ROOT_ACCESS, SHIZUKU_ACCESS, VERIFY_BEFORE_INSTALL, INSTALL_WITH_ROOT, EDITOR_WRAP,
             EDITOR_LINE_NUMBERS, EDITOR_WHITESPACE, EDITOR_SYMBOL_BAR, EDITOR_AUTO_INDENT, EDITOR_AUTO_PAIRS, EDITOR_HIGHLIGHT_LINE,
             EDITOR_HIGHLIGHT_BRACKETS, EDITOR_PINCH_ZOOM, EDITOR_STICKY_SCROLL, EDITOR_INDENT_GUIDES, EDITOR_PIN_LINE_NUMBERS,
@@ -573,7 +572,6 @@ class SettingsRepository(private val context: Context) {
             bookmarkStyle = BookmarkStyle.entries.firstOrNull { it.name == p[Keys.BOOKMARK_STYLE] },
             bookmarkSwipe = p[Keys.BOOKMARK_SWIPE] ?: true,
             bookmarkSwipeWrap = p[Keys.BOOKMARK_SWIPE_WRAP] ?: true,
-            bookmarkSwipeSlide = p[Keys.BOOKMARK_SWIPE_SLIDE] ?: false,
             keepScreenOnTasks = p[Keys.KEEP_SCREEN_TASKS] ?: false,
             videoAutoHide = p[Keys.VIDEO_AUTO_HIDE] ?: true,
             resumeAudio = p[Keys.RESUME_AUDIO] ?: true,
@@ -610,7 +608,6 @@ class SettingsRepository(private val context: Context) {
             b.bookmarkStyle?.let { p[Keys.BOOKMARK_STYLE] = it.name } ?: p.remove(Keys.BOOKMARK_STYLE)
             p[Keys.BOOKMARK_SWIPE] = b.bookmarkSwipe
             p[Keys.BOOKMARK_SWIPE_WRAP] = b.bookmarkSwipeWrap
-            p[Keys.BOOKMARK_SWIPE_SLIDE] = b.bookmarkSwipeSlide
             p[Keys.KEEP_SCREEN_TASKS] = b.keepScreenOnTasks
             p[Keys.VIDEO_AUTO_HIDE] = b.videoAutoHide
             p[Keys.RESUME_AUDIO] = b.resumeAudio

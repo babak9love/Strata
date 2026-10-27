@@ -471,9 +471,6 @@
     <string name="settings_bookmark_wrap">سوایپ دایره‌ای بین بوکمارک‌ها</string>
     <string name="settings_bookmark_wrap_summary">بعد از آخرین بوکمارک، اولین باز می‌شود. اگر سوایپ منو روشن باشد، سوایپ به راست روی اولین بوکمارک منو را باز می‌کند</string>
     <string name="settings_kw_bookmark_wrap">سوایپ بوکمارک دایره‌ای چرخشی حلقه</string>
-    <string name="settings_bookmark_slide">انیمیشن کشیده شدن صفحه در سوایپ</string>
-    <string name="settings_bookmark_slide_summary">روشن: صفحه با انگشت کشیده می‌شود و بیرون و داخل می‌رود. خاموش: بوکمارک فقط باز می‌شود، مثل زدن روی چیپ آن</string>
-    <string name="settings_kw_bookmark_slide">سوایپ بوکمارک انیمیشن کشیدن صفحه لغزش</string>
     <string name="settings_bookmark_bar">نوار بوکمارک‌ها در صفحه اصلی</string>
     <string name="settings_bookmark_bar_summary">نمایش بوکمارک‌ها زیر عنوان صفحه‌ی اصلی. به منوی کشویی ربطی ندارد</string>
     <string name="settings_kw_bookmark_bar">بوکمارک نوار چیپ صفحه اصلی مخفی</string>

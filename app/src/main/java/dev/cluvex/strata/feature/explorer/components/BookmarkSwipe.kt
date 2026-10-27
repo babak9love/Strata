@@ -61,8 +61,6 @@ fun currentBookmarkIndex(bookmarks: List<Bookmark>, path: String): Int {
  * loaded (so the content never jumps back). When there is no bookmark to go to ([canPrevious]
  * or [canNext] is false) the content only gives a little and springs back.
  *
- * With [slide] off the content does not move at all: the swipe only picks the bookmark and opens it, like a tap on its chip.
- *
  * At the first bookmark a swipe towards the previous one has nothing to go to. When [passBackToDrawer] is on,
  * that swipe is left alone (not consumed) so the side menu can take it; otherwise it just gives a little.
  */
@@ -72,7 +70,6 @@ fun Modifier.bookmarkSwipe(
     canPrevious: Boolean,
     canNext: Boolean,
     passBackToDrawer: Boolean,
-    slide: Boolean,
     contentKey: Any?,
     onSwipe: (forward: Boolean) -> Unit,
 ): Modifier {
@@ -91,7 +88,6 @@ fun Modifier.bookmarkSwipe(
     val hasPrevious by rememberUpdatedState(canPrevious)
     val hasNext by rememberUpdatedState(canNext)
     val passBack by rememberUpdatedState(passBackToDrawer)
-    val slideOn by rememberUpdatedState(slide)
     val swipe by rememberUpdatedState(onSwipe)
     val key by rememberUpdatedState(contentKey)
 
@@ -101,12 +97,6 @@ fun Modifier.bookmarkSwipe(
 
     // Kept out of the pointer-input block: that block is restricted and cannot call these suspending functions.
     fun settleAfter(committed: Float, go: Boolean) {
-        if (!slideOn) {
-            // No sliding: the page stays put and the bookmark opens exactly like a tap on its chip.
-            drag = 0f
-            if (go) swipe(isForward(committed))
-            return
-        }
         settle = scope.launch {
             if (go) {
                 val out = if (committed > 0f) width else -width
@@ -165,6 +155,6 @@ fun Modifier.bookmarkSwipe(
         }
         .graphicsLayer {
             val d = drag
-            translationX = if (!slideOn) 0f else if (free || d == 0f || allowed(d)) d else (d * 0.25f).coerceIn(-maxPull, maxPull)
+            translationX = if (free || d == 0f || allowed(d)) d else (d * 0.25f).coerceIn(-maxPull, maxPull)
         }
 }

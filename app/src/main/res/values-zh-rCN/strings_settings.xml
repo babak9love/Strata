@@ -462,9 +462,6 @@
     <string name="settings_bookmark_wrap">书签循环滑动</string>
     <string name="settings_bookmark_wrap_summary">最后一个书签之后回到第一个。若开启了侧边菜单滑动，在第一个书签上右滑将打开菜单</string>
     <string name="settings_kw_bookmark_wrap">书签 滑动 循环 环绕</string>
-    <string name="settings_bookmark_slide">书签滑动时页面跟随</string>
-    <string name="settings_bookmark_slide_summary">开启：页面跟随手指滑出和滑入。关闭：书签直接打开，就像点按其标签一样</string>
-    <string name="settings_kw_bookmark_slide">书签 滑动 动画 页面 跟随</string>
     <string name="settings_bookmark_bar">主屏幕书签栏</string>
     <string name="settings_bookmark_bar_summary">在主屏幕标题下方显示书签栏。不影响侧边菜单</string>
     <string name="settings_kw_bookmark_bar">书签 栏 主屏幕 隐藏</string>
