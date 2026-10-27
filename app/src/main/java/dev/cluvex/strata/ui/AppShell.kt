@@ -381,6 +381,8 @@ fun AppShell(
                     storages = storages,
                     open = drawerState.targetValue == DrawerValue.Open,
                     closed = drawerState.currentValue == DrawerValue.Closed && drawerState.targetValue == DrawerValue.Closed,
+                    hidden = settings.behavior.drawerHidden,
+                    onHiddenChange = { v -> scope.launch { settingsRepo.editBehavior { it.copy(drawerHidden = v) } } },
                     actions = DrawerActions(
                         onShortcut = ::go,
                         onBookmark = { b ->

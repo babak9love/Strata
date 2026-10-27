@@ -82,6 +82,20 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -134,9 +148,21 @@ class DrawerActions(
     val onClose: () -> Unit = {},
 )
 
-private class Place(@StringRes val label: Int, val icon: ImageVector, val folder: String, val shape: RoundedPolygon)
+private class Place(val id: String, @StringRes val label: Int, val icon: ImageVector, val folder: String, val shape: RoundedPolygon)
 
-private class DrawerLink(val label: String, val icon: ImageVector, val onClick: () -> Unit)
+private class DrawerLink(val id: String, val label: String, val icon: ImageVector, val onClick: () -> Unit)
+
+// Stable ids of the items (and sections) the user can hide from the side menu. They are stored in settings,
+// so they must not depend on the language. Bookmarks and saved storages use a prefix plus their own id.
+private const val SECTION_PLACES = "section_places"
+private const val SECTION_BOOKMARKS = "section_bookmarks"
+private const val SECTION_SYSTEM = "section_system"
+private const val SECTION_REMOTE = "section_remote"
+private const val SECTION_TOOLS = "section_tools"
+private const val ID_VAULT = "vault"
+private const val ID_RECYCLE = "footer_recycle"
+
+private fun bookmarkId(b: Bookmark) = "bm:" + b.path
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -148,6 +174,9 @@ fun StrataDrawerContent(
     open: Boolean,
     closed: Boolean,
     actions: DrawerActions,
+    /** Ids of the items and sections the user chose to hide. */
+    hidden: Set<String> = emptySet(),
+    onHiddenChange: (Set<String>) -> Unit = {},
 ) {
     val reduced = LocalAppearance.current.motion == MotionStyle.REDUCED
     val entrance = remember { Animatable(if (reduced) 1f else 0f) }
@@ -158,6 +187,11 @@ fun StrataDrawerContent(
             closed -> entrance.snapTo(0f)
         }
     }
+    // Edit mode (the pencil): items show a minus / plus badge and a tap hides or shows them instead of opening them.
+    var editing by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(closed) { if (closed) editing = false }
+    fun toggle(id: String) = onHiddenChange(if (id in hidden) hidden - id else hidden + id)
+
     var section = 0
     fun Modifier.stagger(): Modifier {
         val index = section++
@@ -179,112 +213,170 @@ fun StrataDrawerContent(
             .padding(top = 18.dp, bottom = 20.dp)
             .testTag("strata-drawer"),
     ) {
-        Brand(reduced, Modifier.stagger(), actions.onClose)
+        Brand(reduced, editing, { editing = !editing }, Modifier.stagger(), actions.onClose)
+        if (editing) EditBar { onHiddenChange(emptySet()) }
         StorageStrata(root, !closed, reduced, Modifier.stagger().padding(top = 16.dp)) { actions.onShortcut(root) }
 
-        SectionTitle(stringResource(R.string.drawer_places), Modifier.stagger())
         val places = remember(root) {
             listOf(
-                Place(R.string.drawer_downloads, Icons.Rounded.Download, "$root/Download", MaterialShapes.Arrow),
-                Place(R.string.drawer_images, Icons.Rounded.Image, "$root/Pictures", MaterialShapes.Flower),
-                Place(R.string.drawer_camera, Icons.Rounded.CameraAlt, "$root/DCIM", MaterialShapes.Cookie12Sided),
-                Place(R.string.drawer_movies, Icons.Rounded.Movie, "$root/Movies", MaterialShapes.Clover8Leaf),
-                Place(R.string.drawer_music, Icons.Rounded.Audiotrack, "$root/Music", MaterialShapes.SoftBurst),
-                Place(R.string.drawer_documents, Icons.Rounded.Description, "$root/Documents", MaterialShapes.Bun),
+                Place("place_downloads", R.string.drawer_downloads, Icons.Rounded.Download, "$root/Download", MaterialShapes.Arrow),
+                Place("place_images", R.string.drawer_images, Icons.Rounded.Image, "$root/Pictures", MaterialShapes.Flower),
+                Place("place_camera", R.string.drawer_camera, Icons.Rounded.CameraAlt, "$root/DCIM", MaterialShapes.Cookie12Sided),
+                Place("place_movies", R.string.drawer_movies, Icons.Rounded.Movie, "$root/Movies", MaterialShapes.Clover8Leaf),
+                Place("place_music", R.string.drawer_music, Icons.Rounded.Audiotrack, "$root/Music", MaterialShapes.SoftBurst),
+                Place("place_documents", R.string.drawer_documents, Icons.Rounded.Description, "$root/Documents", MaterialShapes.Bun),
             )
         }
         val palette = rememberPlacePalette(places.size)
-        places.chunked(3).forEachIndexed { row, three ->
-            Row(Modifier.fillMaxWidth().stagger().padding(top = if (row == 0) 0.dp else 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                three.forEachIndexed { i, place ->
-                    val colors = palette[row * 3 + i]
-                    PlaceTile(place, colors.first, colors.second, reduced, Modifier.weight(1f)) { actions.onShortcut(place.folder) }
+        val placesHidden = SECTION_PLACES in hidden
+        // Keep each place's own colour (its index in the full list) even when others are hidden.
+        val shownPlaces = places.withIndex().filter { editing || it.value.id !in hidden }
+        if (editing || (!placesHidden && shownPlaces.isNotEmpty())) {
+            EditableTitle(stringResource(R.string.drawer_places), placesHidden, editing, { toggle(SECTION_PLACES) }, Modifier.stagger())
+            if (!placesHidden) {
+                shownPlaces.chunked(3).forEachIndexed { row, three ->
+                    Row(Modifier.fillMaxWidth().stagger().padding(top = if (row == 0) 0.dp else 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        three.forEach { (index, place) ->
+                            val colors = palette[index]
+                            Editable(editing, place.id in hidden, { toggle(place.id) }, Modifier.weight(1f)) {
+                                PlaceTile(place, colors.first, colors.second, reduced, Modifier.fillMaxWidth()) { actions.onShortcut(place.folder) }
+                            }
+                        }
+                        repeat(3 - three.size) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
             }
         }
 
-        if (bookmarks.isNotEmpty()) {
-            SectionTitle(stringResource(R.string.common_bookmarks), Modifier.stagger())
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().stagger(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(end = 8.dp),
-            ) {
-                items(bookmarks, key = { it.path }) { b -> BookmarkChip(b) { actions.onBookmark(b) } }
+        val bookmarksHidden = SECTION_BOOKMARKS in hidden
+        val shownBookmarks = bookmarks.filter { editing || bookmarkId(it) !in hidden }
+        if (bookmarks.isNotEmpty() && (editing || (!bookmarksHidden && shownBookmarks.isNotEmpty()))) {
+            EditableTitle(stringResource(R.string.common_bookmarks), bookmarksHidden, editing, { toggle(SECTION_BOOKMARKS) }, Modifier.stagger())
+            if (!bookmarksHidden) {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().stagger(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    // Room for the badges that stick out of the chips' corner while editing.
+                    contentPadding = PaddingValues(top = if (editing) 8.dp else 0.dp, end = if (editing) 14.dp else 8.dp),
+                ) {
+                    items(shownBookmarks, key = { it.path }) { b ->
+                        Editable(
+                            editing, bookmarkId(b) in hidden, { toggle(bookmarkId(b)) },
+                            badgeOffset = DpOffset(6.dp, (-6).dp), badgePadding = 0.dp,
+                        ) { BookmarkChip(b) { actions.onBookmark(b) } }
+                    }
+                }
             }
         }
 
-        SectionTitle(stringResource(R.string.drawer_system), Modifier.stagger())
         val rootLabel = stringResource(R.string.drawer_root)
         val dataLabel = stringResource(R.string.drawer_data)
         val systemLabel = stringResource(R.string.drawer_system_folder)
-        DrawerGroup(
+        LinkSection(
+            stringResource(R.string.drawer_system), SECTION_SYSTEM,
             buildList {
-                add(DrawerLink(rootLabel, Icons.Rounded.Folder) { actions.onShortcut("/") })
+                add(DrawerLink("sys_root", rootLabel, Icons.Rounded.Folder) { actions.onShortcut("/") })
                 if (rootMode) {
-                    add(DrawerLink(dataLabel, Icons.Rounded.Storage) { actions.onShortcut("/data") })
-                    add(DrawerLink(systemLabel, Icons.Rounded.Memory) { actions.onShortcut("/system") })
+                    add(DrawerLink("sys_data", dataLabel, Icons.Rounded.Storage) { actions.onShortcut("/data") })
+                    add(DrawerLink("sys_system", systemLabel, Icons.Rounded.Memory) { actions.onShortcut("/system") })
                 }
             },
-            MaterialShapes.Cookie6Sided,
-            Modifier.stagger(),
+            MaterialShapes.Cookie6Sided, editing, hidden, ::toggle, Modifier.stagger(), Modifier.stagger(),
         )
 
-        SectionTitle(stringResource(R.string.remote_title), Modifier.stagger())
         val manageLabel = stringResource(R.string.drawer_manage_storages)
         val sharingLabel = stringResource(R.string.drawer_wifi_sharing)
-        DrawerGroup(
+        LinkSection(
+            stringResource(R.string.remote_title), SECTION_REMOTE,
             buildList {
-                add(DrawerLink(manageLabel, Icons.Rounded.Cloud, actions.onNetwork))
-                storages.forEach { c -> add(DrawerLink(c.name.ifBlank { c.host }, Icons.Rounded.CloudQueue) { actions.onStorage(c) }) }
-                add(DrawerLink(sharingLabel, Icons.Rounded.Wifi, actions.onShare))
+                add(DrawerLink("remote_manage", manageLabel, Icons.Rounded.Cloud, actions.onNetwork))
+                storages.forEach { c -> add(DrawerLink("remote:" + c.id, c.name.ifBlank { c.host }, Icons.Rounded.CloudQueue) { actions.onStorage(c) }) }
+                add(DrawerLink("remote_wifi", sharingLabel, Icons.Rounded.Wifi, actions.onShare))
             },
-            MaterialShapes.Clover4Leaf,
-            Modifier.stagger(),
+            MaterialShapes.Clover4Leaf, editing, hidden, ::toggle, Modifier.stagger(), Modifier.stagger(),
         )
 
-        SectionTitle(stringResource(R.string.common_tools), Modifier.stagger())
-        DrawerGroup(
+        LinkSection(
+            stringResource(R.string.common_tools), SECTION_TOOLS,
             listOf(
-                DrawerLink(stringResource(R.string.drawer_languages), Icons.Rounded.Terminal, actions.onLanguages),
-                DrawerLink(stringResource(R.string.apps_title), Icons.Rounded.Apps, actions.onApps),
-                DrawerLink(stringResource(R.string.color_picker_title), Icons.Rounded.Palette, actions.onColorPicker),
-                DrawerLink(stringResource(R.string.keys_title), Icons.Rounded.Key, actions.onSigningKeys),
-                DrawerLink(stringResource(R.string.plugin_title), Icons.Rounded.Extension, actions.onPlugins),
+                DrawerLink("tool_languages", stringResource(R.string.drawer_languages), Icons.Rounded.Terminal, actions.onLanguages),
+                DrawerLink("tool_apps", stringResource(R.string.apps_title), Icons.Rounded.Apps, actions.onApps),
+                DrawerLink("tool_colors", stringResource(R.string.color_picker_title), Icons.Rounded.Palette, actions.onColorPicker),
+                DrawerLink("tool_keys", stringResource(R.string.keys_title), Icons.Rounded.Key, actions.onSigningKeys),
+                DrawerLink("tool_plugins", stringResource(R.string.plugin_title), Icons.Rounded.Extension, actions.onPlugins),
             ),
-            MaterialShapes.Cookie9Sided,
-            Modifier.stagger(),
+            MaterialShapes.Cookie9Sided, editing, hidden, ::toggle, Modifier.stagger(), Modifier.stagger(),
         )
 
-        VaultCard(actions.onVault, Modifier.stagger().padding(top = 22.dp))
+        val vaultShown = editing || ID_VAULT !in hidden
+        if (vaultShown) {
+            Editable(editing, ID_VAULT in hidden, { toggle(ID_VAULT) }, Modifier.fillMaxWidth().stagger().padding(top = 22.dp), badgePadding = 8.dp) {
+                VaultCard(actions.onVault, Modifier)
+            }
+        }
 
+        // Settings can never be hidden, so there is always a way back into the app's options.
+        val recycleShown = editing || ID_RECYCLE !in hidden
         Row(
-            Modifier.fillMaxWidth().stagger().padding(top = 10.dp),
+            Modifier.fillMaxWidth().stagger().padding(top = if (vaultShown) 10.dp else 22.dp),
             horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
         ) {
-            FooterButton(stringResource(R.string.common_recycle_bin), Icons.Rounded.DeleteSweep, leading = true, modifier = Modifier.weight(1f), onClick = actions.onRecycleBin)
-            FooterButton(stringResource(R.string.common_settings), Icons.Rounded.Settings, leading = false, modifier = Modifier.weight(1f), onClick = actions.onSettings)
+            if (recycleShown) {
+                Editable(editing, ID_RECYCLE in hidden, { toggle(ID_RECYCLE) }, Modifier.weight(1f), badgePadding = 6.dp) {
+                    FooterButton(stringResource(R.string.common_recycle_bin), Icons.Rounded.DeleteSweep, leading = true, single = false, modifier = Modifier.fillMaxWidth(), onClick = actions.onRecycleBin)
+                }
+            }
+            FooterButton(stringResource(R.string.common_settings), Icons.Rounded.Settings, leading = false, single = !recycleShown, modifier = Modifier.weight(1f), onClick = actions.onSettings)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun Brand(reduced: Boolean, modifier: Modifier, onClose: () -> Unit) {
+private fun Brand(reduced: Boolean, editing: Boolean, onEdit: () -> Unit, modifier: Modifier, onClose: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    // Tapping the logo acts like Back: it closes the drawer and returns to the file list.
-    Row(
-        modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClickLabel = stringResource(R.string.common_back), role = Role.Button, onClick = onClose)
-            .padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        StrataMark(reduced, Modifier.size(40.dp))
-        Column(Modifier.padding(start = 12.dp)) {
-            Text("Strata", style = MaterialTheme.typography.headlineSmallEmphasized, color = colors.onSurface)
-            Text(stringResource(R.string.drawer_tagline), style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        // Tapping the logo acts like Back: it closes the drawer and returns to the file list.
+        Row(
+            Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(20.dp))
+                .clickable(onClickLabel = stringResource(R.string.common_back), role = Role.Button, onClick = onClose)
+                .padding(start = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            StrataMark(reduced, Modifier.size(40.dp))
+            Column(Modifier.padding(start = 12.dp)) {
+                Text("Strata", style = MaterialTheme.typography.headlineSmallEmphasized, color = colors.onSurface)
+                Text(stringResource(R.string.drawer_tagline), style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
+            }
+        }
+        // The pencil turns the menu into edit mode; in edit mode it becomes a tick that finishes editing.
+        if (editing) {
+            FilledTonalIconButton(onClick = onEdit, modifier = Modifier.testTag("drawer-edit")) {
+                Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.common_done))
+            }
+        } else {
+            IconButton(onClick = onEdit, modifier = Modifier.testTag("drawer-edit")) {
+                Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.drawer_edit))
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditBar(onReset: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.drawer_edit_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onReset) {
+            Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.drawer_edit_reset))
         }
     }
 }
@@ -521,25 +613,117 @@ private fun SectionTitle(text: String, modifier: Modifier) {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun DrawerGroup(links: List<DrawerLink>, shape: RoundedPolygon, modifier: Modifier) {
+private fun DrawerGroup(
+    links: List<DrawerLink>,
+    shape: RoundedPolygon,
+    editing: Boolean,
+    hidden: Set<String>,
+    onToggle: (String) -> Unit,
+    modifier: Modifier,
+) {
     val colors = MaterialTheme.colorScheme
+    // Hidden links are left out entirely, so the rounded corners are computed over the visible ones only.
+    val shown = links.filter { editing || it.id !in hidden }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
-        links.forEachIndexed { i, link ->
-            SegmentedListItem(
-                onClick = link.onClick,
-                shapes = ListItemDefaults.segmentedShapes(i, links.size),
-                colors = ListItemDefaults.segmentedColors(containerColor = colors.surfaceBright),
-                leadingContent = {
-                    Box(
-                        Modifier.size(36.dp).clip(shape.toShape()).background(colors.secondaryContainer),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(link.icon, contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(20.dp))
-                    }
-                },
-            ) {
-                Text(link.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        shown.forEachIndexed { i, link ->
+            Editable(editing, link.id in hidden, { onToggle(link.id) }, Modifier.fillMaxWidth(), Alignment.CenterEnd, badgePadding = 14.dp) {
+                SegmentedListItem(
+                    onClick = link.onClick,
+                    shapes = ListItemDefaults.segmentedShapes(i, shown.size),
+                    colors = ListItemDefaults.segmentedColors(containerColor = colors.surfaceBright),
+                    leadingContent = {
+                        Box(
+                            Modifier.size(36.dp).clip(shape.toShape()).background(colors.secondaryContainer),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(link.icon, contentDescription = null, tint = colors.onSecondaryContainer, modifier = Modifier.size(20.dp))
+                        }
+                    },
+                ) {
+                    Text(link.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
+        }
+    }
+}
+
+/** A titled group of links. Gone when the section is hidden or all its links are hidden (unless editing). */
+@Composable
+private fun LinkSection(
+    title: String,
+    sectionId: String,
+    links: List<DrawerLink>,
+    shape: RoundedPolygon,
+    editing: Boolean,
+    hidden: Set<String>,
+    onToggle: (String) -> Unit,
+    titleModifier: Modifier,
+    groupModifier: Modifier,
+) {
+    val sectionHidden = sectionId in hidden
+    if (!editing && (sectionHidden || links.all { it.id in hidden })) return
+    EditableTitle(title, sectionHidden, editing, { onToggle(sectionId) }, titleModifier)
+    if (!sectionHidden) DrawerGroup(links, shape, editing, hidden, onToggle, groupModifier)
+}
+
+@Composable
+private fun EditableTitle(text: String, hidden: Boolean, editing: Boolean, onToggle: () -> Unit, modifier: Modifier) {
+    Editable(editing, hidden, onToggle, modifier.fillMaxWidth(), Alignment.CenterEnd, badgePadding = 8.dp) {
+        SectionTitle(text, Modifier)
+    }
+}
+
+/**
+ * Wraps one drawer item. Outside edit mode a hidden item is not drawn at all. In edit mode every item is drawn
+ * (a hidden one faded), a tap anywhere on it hides or shows it instead of opening it, and a small minus / plus
+ * badge says what the tap will do.
+ */
+@Composable
+private fun Editable(
+    editing: Boolean,
+    hidden: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    badgeAlignment: Alignment = Alignment.TopEnd,
+    badgePadding: Dp = 4.dp,
+    badgeOffset: DpOffset = DpOffset.Zero,
+    content: @Composable () -> Unit,
+) {
+    if (!editing) {
+        if (!hidden) Box(modifier) { content() }
+        return
+    }
+    val colors = MaterialTheme.colorScheme
+    Box(modifier) {
+        Box(Modifier.graphicsLayer { alpha = if (hidden) 0.4f else 1f }) { content() }
+        // Sits above the item so its own click never fires while editing.
+        Box(
+            Modifier
+                .matchParentSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClickLabel = stringResource(if (hidden) R.string.drawer_show else R.string.drawer_hide),
+                    role = Role.Button,
+                    onClick = onToggle,
+                ),
+        )
+        Box(
+            Modifier
+                .align(badgeAlignment)
+                .offset(badgeOffset.x, badgeOffset.y)
+                .padding(badgePadding)
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(if (hidden) colors.primary else colors.errorContainer),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (hidden) Icons.Rounded.Add else Icons.Rounded.Remove,
+                contentDescription = null,
+                tint = if (hidden) colors.onPrimary else colors.onErrorContainer,
+                modifier = Modifier.size(14.dp),
+            )
         }
     }
 }
@@ -596,10 +780,12 @@ private fun VaultCard(onClick: () -> Unit, modifier: Modifier) {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun FooterButton(label: String, icon: ImageVector, leading: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun FooterButton(label: String, icon: ImageVector, leading: Boolean, single: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val outer = 28.dp
     val inner = 8.dp
-    val shape = if (leading) {
+    val shape = if (single) {
+        RoundedCornerShape(outer)
+    } else if (leading) {
         RoundedCornerShape(topStart = outer, bottomStart = outer, topEnd = inner, bottomEnd = inner)
     } else {
         RoundedCornerShape(topStart = inner, bottomStart = inner, topEnd = outer, bottomEnd = outer)

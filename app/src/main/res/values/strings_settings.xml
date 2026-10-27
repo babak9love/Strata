@@ -373,6 +373,11 @@
     <string name="settings_zone_move_down">Move down</string>
     <string name="settings_zone_drag">Drag %1$s</string>
     <string name="drawer_tagline">Every file, in layers</string>
+    <string name="drawer_edit">Edit menu</string>
+    <string name="drawer_edit_hint">Tap an item to hide or show it</string>
+    <string name="drawer_edit_reset">Reset</string>
+    <string name="drawer_hide">Hide</string>
+    <string name="drawer_show">Show</string>
     <string name="drawer_places">Places</string>
     <string name="drawer_downloads">Downloads</string>
     <string name="drawer_images">Images</string>

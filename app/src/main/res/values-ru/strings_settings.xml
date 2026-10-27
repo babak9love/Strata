@@ -372,6 +372,11 @@
     <string name="settings_zone_move_down">Переместить вниз</string>
     <string name="settings_zone_drag">Перетащить «%1$s»</string>
     <string name="drawer_tagline">Каждый файл — слой за слоем</string>
+    <string name="drawer_edit">Изменить меню</string>
+    <string name="drawer_edit_hint">Нажмите на пункт, чтобы скрыть или показать его</string>
+    <string name="drawer_edit_reset">Сбросить</string>
+    <string name="drawer_hide">Скрыть</string>
+    <string name="drawer_show">Показать</string>
     <string name="drawer_places">Места</string>
     <string name="drawer_downloads">Загрузки</string>
     <string name="drawer_images">Изображения</string>

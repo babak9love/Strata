@@ -372,6 +372,11 @@
     <string name="settings_zone_move_down">انتقال به پایین</string>
     <string name="settings_zone_drag">کشیدن «\u2068%1$s\u2069»</string>
     <string name="drawer_tagline">هر فایل، لایه به لایه</string>
+    <string name="drawer_edit">ویرایش منو</string>
+    <string name="drawer_edit_hint">برای پنهان یا نمایان‌کردن، روی هر مورد بزنید</string>
+    <string name="drawer_edit_reset">بازنشانی</string>
+    <string name="drawer_hide">پنهان کردن</string>
+    <string name="drawer_show">نمایش</string>
     <string name="drawer_places">مکان‌ها</string>
     <string name="drawer_downloads">بارگیری‌ها</string>
     <string name="drawer_images">تصاویر</string>

@@ -372,6 +372,11 @@
     <string name="settings_zone_move_down">下移</string>
     <string name="settings_zone_drag">拖动“%1$s”</string>
     <string name="drawer_tagline">每个文件，层层有序</string>
+    <string name="drawer_edit">编辑菜单</string>
+    <string name="drawer_edit_hint">点按项目可隐藏或显示</string>
+    <string name="drawer_edit_reset">重置</string>
+    <string name="drawer_hide">隐藏</string>
+    <string name="drawer_show">显示</string>
     <string name="drawer_places">位置</string>
     <string name="drawer_downloads">下载</string>
     <string name="drawer_images">图片</string>

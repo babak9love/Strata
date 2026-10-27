@@ -183,6 +183,7 @@ class SettingsRepository(private val context: Context) {
         val SHOW_BOOKMARK_BAR = booleanPreferencesKey("show_bookmark_bar")
         val BOOKMARK_BAR_BOTTOM = booleanPreferencesKey("bookmark_bar_bottom")
         val BOOKMARK_STYLE = stringPreferencesKey("bookmark_style")
+        val DRAWER_HIDDEN = stringPreferencesKey("drawer_hidden")
         val BOOKMARK_SWIPE = booleanPreferencesKey("bookmark_swipe")
         val BOOKMARK_SWIPE_WRAP = booleanPreferencesKey("bookmark_swipe_wrap")
         val KEEP_SCREEN_TASKS = booleanPreferencesKey("keep_screen_on_tasks")
@@ -250,7 +251,7 @@ class SettingsRepository(private val context: Context) {
             SORT_BY, FOLDER_SORTS, THEME_MODE, THEME_STYLE, CONTRAST, CORNERS, ICON_SHAPE, FOLDER_STYLE, MOTION, VIEW_MODE, DATE_STYLE, SIZE_UNITS,
             START_FOLDER, START_PATH, CONFLICT, UI_DENSITY, OPEN_DEFAULTS, EDITOR_THEME, APK_EXTRACT_DIR, APK_NAME_PATTERN,
             RENAME_HISTORY, RECENT_COLORS, PLUGIN_PINS, LAST_LEFT, LAST_RIGHT, RUN_COMMANDS, READER_THEME, READER_SPOTS, READER_MARKS,
-            ACTION_LAYOUT, LOCK_DELAY, VAULT_LOCK_DELAY, PROTECTED_FOLDERS, BOOKMARK_STYLE,
+            ACTION_LAYOUT, LOCK_DELAY, VAULT_LOCK_DELAY, PROTECTED_FOLDERS, BOOKMARK_STYLE, DRAWER_HIDDEN,
         )
 
         val PRIVATE: Set<String> = setOf(
@@ -593,6 +594,7 @@ class SettingsRepository(private val context: Context) {
             shuffleAudio = p[Keys.SHUFFLE_AUDIO] ?: false,
             playAloneVideo = p[Keys.PLAY_ALONE_VIDEO] ?: true,
             playAloneAudio = p[Keys.PLAY_ALONE_AUDIO] ?: true,
+            drawerHidden = p[Keys.DRAWER_HIDDEN].orEmpty().split('\n').filter { it.isNotBlank() }.toSet(),
         )
 
         private fun writeBehavior(p: MutablePreferences, b: BehaviorPrefs) {
@@ -628,6 +630,7 @@ class SettingsRepository(private val context: Context) {
             p[Keys.SHUFFLE_AUDIO] = b.shuffleAudio
             p[Keys.PLAY_ALONE_VIDEO] = b.playAloneVideo
             p[Keys.PLAY_ALONE_AUDIO] = b.playAloneAudio
+            if (b.drawerHidden.isEmpty()) p.remove(Keys.DRAWER_HIDDEN) else p[Keys.DRAWER_HIDDEN] = b.drawerHidden.joinToString("\n")
         }
 
         internal fun readOperations(p: Preferences) = OperationPrefs(

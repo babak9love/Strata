@@ -125,6 +125,8 @@ data class BehaviorPrefs(
     val playAloneVideo: Boolean = true,
     /** "Play alone" of the music player (same meaning). */
     val playAloneAudio: Boolean = true,
+    /** Ids of the side menu items and sections the user hid with the pencil. Empty shows everything. */
+    val drawerHidden: Set<String> = emptySet(),
 )
 
 enum class ConflictChoice(@StringRes val label: Int) {
