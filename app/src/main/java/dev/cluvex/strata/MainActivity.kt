@@ -112,6 +112,7 @@ class MainActivity : FragmentActivity() {
         AppLock.apply(initial.security)
         applySecurity(initial.security.appLock)
         Formatters.solarHijri = initial.list.persianCalendar
+        Formatters.sizeUnits = initial.list.sizeUnits
         UiSounds.enabled = initial.appearance.sounds
         UiSounds.inSilent = initial.appearance.soundsInSilent
         val incoming = incomingPdf(intent)
@@ -135,6 +136,7 @@ class MainActivity : FragmentActivity() {
                 applySecurity(security.appLock)
             }
             Formatters.solarHijri = settings.list.persianCalendar
+            Formatters.sizeUnits = settings.list.sizeUnits
             val scope = rememberCoroutineScope()
             StrataTheme(appearance = settings.appearance) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {

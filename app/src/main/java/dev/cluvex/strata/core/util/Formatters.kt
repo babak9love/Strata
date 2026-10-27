@@ -41,7 +41,11 @@ object Formatters {
 
     fun number(value: Long, locale: Locale = Formatters.locale): String = String.format(locale, "%d", value)
 
-    fun size(bytes: Long): String = size(bytes, SizeUnits.BINARY)
+    /** The unit system chosen in File list settings. Every size shown without an explicit choice follows it. */
+    @Volatile
+    var sizeUnits: SizeUnits = SizeUnits.BINARY
+
+    fun size(bytes: Long): String = size(bytes, sizeUnits)
 
     fun size(bytes: Long, units: SizeUnits, locale: Locale = Formatters.locale): String {
         val base = if (units == SizeUnits.BINARY) 1024.0 else 1000.0
