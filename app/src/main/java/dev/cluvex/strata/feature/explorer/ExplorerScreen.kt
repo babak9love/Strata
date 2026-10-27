@@ -351,7 +351,8 @@ fun ExplorerScreen(
         ui.clipboards.filter { it.move }.flatMapTo(HashSet<String>()) { c -> c.items.map { it.path } }
     }
     CompositionLocalProvider(LocalFileDrag provides drag, LocalCutPaths provides cutPaths) {
-    val chipsAtBottom = !dual && ui.settings.behavior.showBookmarkBar && ui.settings.behavior.bookmarkBarAtBottom
+    // The bookmark bar is also shown with two panes: it spans both and opens a bookmark in the active pane.
+    val chipsAtBottom = ui.settings.behavior.showBookmarkBar && ui.settings.behavior.bookmarkBarAtBottom
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
@@ -529,7 +530,7 @@ fun ExplorerScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            if (!dual && ui.settings.behavior.showBookmarkBar && !chipsAtBottom) {
+            if (ui.settings.behavior.showBookmarkBar && !chipsAtBottom) {
                 BookmarkChipsBar(
                     bookmarks = ui.bookmarks,
                     currentPath = ui.activePane.path,
