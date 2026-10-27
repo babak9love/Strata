@@ -69,8 +69,14 @@ data class BehaviorPrefs(
     val iconTapSelects: Boolean = true,
     /** Swiping right from the left edge opens the side menu (drawer). Off by default so it does not clash with the bookmark swipe. */
     val swipeOpensDrawer: Boolean = false,
+    /** Shows the bookmark chips under the title on the main screen. Has nothing to do with the side menu. */
+    val showBookmarkBar: Boolean = true,
+    /** Puts the bookmark chips under the bottom toolbar instead of under the title. */
+    val bookmarkBarAtBottom: Boolean = false,
     /** Swiping left or right on the file list switches between bookmarks. */
     val bookmarkSwipe: Boolean = true,
+    /** The bookmark swipe wraps around: the last bookmark is followed by the first, and the first is preceded by the last. */
+    val bookmarkSwipeWrap: Boolean = true,
     val keepScreenOnTasks: Boolean = false,
     val videoAutoHide: Boolean = true,
     val resumeAudio: Boolean = true,

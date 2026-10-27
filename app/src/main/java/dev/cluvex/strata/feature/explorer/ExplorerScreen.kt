@@ -15,6 +15,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -350,6 +351,7 @@ fun ExplorerScreen(
         ui.clipboards.filter { it.move }.flatMapTo(HashSet<String>()) { c -> c.items.map { it.path } }
     }
     CompositionLocalProvider(LocalFileDrag provides drag, LocalCutPaths provides cutPaths) {
+    val chipsAtBottom = !dual && ui.settings.behavior.showBookmarkBar && ui.settings.behavior.bookmarkBarAtBottom
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
@@ -412,99 +414,112 @@ fun ExplorerScreen(
             }
         },
         bottomBar = {
-            ExplorerBottomBar(
-                selectionCount = ui.activePane.selected.size,
-                canBack = ui.activePane.history.canBack,
-                canForward = ui.activePane.history.canForward,
-                canUp = !isStorageRoot(ui.activePane.path, rootPath),
-                activeIsLeft = ui.active == Pane.LEFT,
-                dual = dual,
-                clipboardCount = ui.clipboards.sumOf { it.items.size },
-                clipboardIsMove = ui.clipboard?.move == true,
-                selectedFiles = selection.count { !it.isDirectory },
-                remote = ui.isRemote(ui.active),
-                projectLabel = project?.kind?.label,
-                smaliFolder = smaliFolder,
-                jarFile = jarFile,
-                archiveFile = archiveFile,
-                protectedFolder = single?.let { it.isDirectory && vm.isProtected(it.path) } == true,
-                vault = ui.isVault(ui.active),
-                browse = ui.settings.actions.browse,
-                selection = ui.settings.actions.selection,
-                showHidden = ui.settings.showHidden,
-                actions = BottomBarActions(
-                    onBack = { vm.goBack(ui.active) },
-                    onForward = { vm.goForward(ui.active) },
-                    onUp = { vm.navigateUp(ui.active) },
-                    onHome = { vm.goHome(ui.active) },
-                    onSwap = vm::swapPanes,
-                    onNewFolder = { dialog = Dialog.NewFolder(ui.active) },
-                    onNewFile = { dialog = Dialog.NewFile(ui.active) },
-                    onRefresh = { vm.refresh(ui.active) },
-                    onPaste = { ui.clipboard?.let(::runClip) },
-                    onShowClipboard = { dialog = Dialog.Clipboard },
-                    onCancelClipboard = vm::clearClipboard,
-                    onSelectAll = { vm.selectAll(ui.active, visibleOfActive()) },
-                    onClearSelection = { vm.clearSelection(ui.active) },
-                    onCopyToOther = { vm.beginTransfer(move = false) },
-                    onMoveToOther = { vm.beginTransfer(move = true) },
-                    onCopyToClipboard = { vm.copySelectionToClipboard(ui.active, move = false) },
-                    onCutToClipboard = { vm.copySelectionToClipboard(ui.active, move = true) },
-                    onDelete = { dialog = Dialog.Delete },
-                    onRename = { selection.firstOrNull()?.let { dialog = Dialog.Rename(ui.active, it) } },
-                    onCompress = { dialog = Dialog.CreateArchive(ui.active, selectionInOrder()) },
-                    onShare = { IntentUtils.share(context, selection) },
-                    onProperties = { dialog = Dialog.Properties(selection) },
-                    onCopyPath = {
-                        textClipboard.setText(selection.joinToString("\n") { it.path })
-                        vm.notifyPathsCopied(selection.size)
-                        vm.clearSelection(ui.active)
-                    },
-                    onInvert = { vm.invertSelection(ui.active, visibleOfActive()) },
-                    onBookmarks = { dialog = Dialog.Bookmarks },
-                    onBookmarkFolder = { vm.addBookmarks(listOf(ui.activePane.path)) },
-                    undoEnabled = undoEnabled,
-                    undoCount = undoCount,
-                    onUndo = { if (vm.onUndoRequested()) dialog = Dialog.UndoList },
-                    onBookmarkSelection = { vm.addSelectionToBookmarks(ui.active) },
-                    onFolderBadge = { single?.takeIf { it.isDirectory }?.let { dialog = Dialog.FolderBadge(it); vm.clearSelection(ui.active) } },
-                    onProtectedFolders = { dialog = Dialog.ProtectedFolders },
-                    onProtect = {
-                        single?.takeIf { it.isDirectory }?.let {
-                            if (vm.isProtected(it.path)) dialog = Dialog.Unprotect(it) else vm.protectFolder(it)
+            Column {
+                ExplorerBottomBar(
+                    selectionCount = ui.activePane.selected.size,
+                    canBack = ui.activePane.history.canBack,
+                    canForward = ui.activePane.history.canForward,
+                    canUp = !isStorageRoot(ui.activePane.path, rootPath),
+                    activeIsLeft = ui.active == Pane.LEFT,
+                    dual = dual,
+                    clipboardCount = ui.clipboards.sumOf { it.items.size },
+                    clipboardIsMove = ui.clipboard?.move == true,
+                    selectedFiles = selection.count { !it.isDirectory },
+                    remote = ui.isRemote(ui.active),
+                    projectLabel = project?.kind?.label,
+                    smaliFolder = smaliFolder,
+                    jarFile = jarFile,
+                    archiveFile = archiveFile,
+                    protectedFolder = single?.let { it.isDirectory && vm.isProtected(it.path) } == true,
+                    vault = ui.isVault(ui.active),
+                    browse = ui.settings.actions.browse,
+                    selection = ui.settings.actions.selection,
+                    showHidden = ui.settings.showHidden,
+                    actions = BottomBarActions(
+                        onBack = { vm.goBack(ui.active) },
+                        onForward = { vm.goForward(ui.active) },
+                        onUp = { vm.navigateUp(ui.active) },
+                        onHome = { vm.goHome(ui.active) },
+                        onSwap = vm::swapPanes,
+                        onNewFolder = { dialog = Dialog.NewFolder(ui.active) },
+                        onNewFile = { dialog = Dialog.NewFile(ui.active) },
+                        onRefresh = { vm.refresh(ui.active) },
+                        onPaste = { ui.clipboard?.let(::runClip) },
+                        onShowClipboard = { dialog = Dialog.Clipboard },
+                        onCancelClipboard = vm::clearClipboard,
+                        onSelectAll = { vm.selectAll(ui.active, visibleOfActive()) },
+                        onClearSelection = { vm.clearSelection(ui.active) },
+                        onCopyToOther = { vm.beginTransfer(move = false) },
+                        onMoveToOther = { vm.beginTransfer(move = true) },
+                        onCopyToClipboard = { vm.copySelectionToClipboard(ui.active, move = false) },
+                        onCutToClipboard = { vm.copySelectionToClipboard(ui.active, move = true) },
+                        onDelete = { dialog = Dialog.Delete },
+                        onRename = { selection.firstOrNull()?.let { dialog = Dialog.Rename(ui.active, it) } },
+                        onCompress = { dialog = Dialog.CreateArchive(ui.active, selectionInOrder()) },
+                        onShare = { IntentUtils.share(context, selection) },
+                        onProperties = { dialog = Dialog.Properties(selection) },
+                        onCopyPath = {
+                            textClipboard.setText(selection.joinToString("\n") { it.path })
+                            vm.notifyPathsCopied(selection.size)
                             vm.clearSelection(ui.active)
-                        }
-                    },
-                    onBatchRename = { dialog = Dialog.BatchRename(ui.active, selectionInOrder()) },
-                    onCreateLinks = { dialog = Dialog.CreateLink(ui.active, selectionInOrder()) },
-                    onMerge = { dialog = Dialog.Merge(ui.active, selectionInOrder().filterNot { it.isDirectory }) },
-                    onCompare = {
-                        val two = selectionInOrder().filterNot { it.isDirectory }
-                        if (two.size == 2) onCompare(two[0], two[1])
-                    },
-                    onNewProject = { dialog = Dialog.NewProject(ui.activePane.path) },
-                    onOpenTerminal = { termux.openTerminal(ui.activePane.path) },
-                    onRunProject = { project?.let { dialog = Dialog.RunProject(it) } },
-                    onSmaliToDex = { single?.let { vm.smaliToDex(ui.active, it) } },
-                    onJarToDex = { single?.let { vm.jarToDex(ui.active, it) } },
-                    onFilter = { vm.setSearchActive(true) },
-                    onSearch = {
-                        if (RemoteUri.isRemote(ui.activePane.path)) {
-                            scope.launch { snackbar.showSnackbar(tr(R.string.explorer_search_local_only)) }
-                        } else {
-                            onOpenSearch(ui.activePane.path)
-                        }
-                    },
-                    onSort = { dialog = Dialog.Sort },
-                    onJump = { dialog = Dialog.JumpTo(ui.active) },
-                    onToggleHidden = { vm.setShowHidden(!ui.settings.showHidden) },
-                    onCustomize = onCustomize,
-                    onMoveToVault = { vm.moveSelectionToVault(ui.active) },
-                    onRestore = { vm.restoreFromVault(ui.active) },
-                    onOpenWith = { single?.takeIf { !it.isDirectory }?.let { f -> withLocal(f) { onOpenWith(it) } } },
-                    onExtract = { single?.takeIf { !it.isDirectory }?.let { f -> localOnly(f) { vm.extractArchive(ui.active, f) } } },
-                ),
-            )
+                        },
+                        onInvert = { vm.invertSelection(ui.active, visibleOfActive()) },
+                        onBookmarks = { dialog = Dialog.Bookmarks },
+                        onBookmarkFolder = { vm.addBookmarks(listOf(ui.activePane.path)) },
+                        undoEnabled = undoEnabled,
+                        undoCount = undoCount,
+                        onUndo = { if (vm.onUndoRequested()) dialog = Dialog.UndoList },
+                        onBookmarkSelection = { vm.addSelectionToBookmarks(ui.active) },
+                        onFolderBadge = { single?.takeIf { it.isDirectory }?.let { dialog = Dialog.FolderBadge(it); vm.clearSelection(ui.active) } },
+                        onProtectedFolders = { dialog = Dialog.ProtectedFolders },
+                        onProtect = {
+                            single?.takeIf { it.isDirectory }?.let {
+                                if (vm.isProtected(it.path)) dialog = Dialog.Unprotect(it) else vm.protectFolder(it)
+                                vm.clearSelection(ui.active)
+                            }
+                        },
+                        onBatchRename = { dialog = Dialog.BatchRename(ui.active, selectionInOrder()) },
+                        onCreateLinks = { dialog = Dialog.CreateLink(ui.active, selectionInOrder()) },
+                        onMerge = { dialog = Dialog.Merge(ui.active, selectionInOrder().filterNot { it.isDirectory }) },
+                        onCompare = {
+                            val two = selectionInOrder().filterNot { it.isDirectory }
+                            if (two.size == 2) onCompare(two[0], two[1])
+                        },
+                        onNewProject = { dialog = Dialog.NewProject(ui.activePane.path) },
+                        onOpenTerminal = { termux.openTerminal(ui.activePane.path) },
+                        onRunProject = { project?.let { dialog = Dialog.RunProject(it) } },
+                        onSmaliToDex = { single?.let { vm.smaliToDex(ui.active, it) } },
+                        onJarToDex = { single?.let { vm.jarToDex(ui.active, it) } },
+                        onFilter = { vm.setSearchActive(true) },
+                        onSearch = {
+                            if (RemoteUri.isRemote(ui.activePane.path)) {
+                                scope.launch { snackbar.showSnackbar(tr(R.string.explorer_search_local_only)) }
+                            } else {
+                                onOpenSearch(ui.activePane.path)
+                            }
+                        },
+                        onSort = { dialog = Dialog.Sort },
+                        onJump = { dialog = Dialog.JumpTo(ui.active) },
+                        onToggleHidden = { vm.setShowHidden(!ui.settings.showHidden) },
+                        onCustomize = onCustomize,
+                        onMoveToVault = { vm.moveSelectionToVault(ui.active) },
+                        onRestore = { vm.restoreFromVault(ui.active) },
+                        onOpenWith = { single?.takeIf { !it.isDirectory }?.let { f -> withLocal(f) { onOpenWith(it) } } },
+                        onExtract = { single?.takeIf { !it.isDirectory }?.let { f -> localOnly(f) { vm.extractArchive(ui.active, f) } } },
+                    ),
+                    insets = !chipsAtBottom,
+                )
+                if (chipsAtBottom) {
+                    Box(Modifier.navigationBarsPadding()) {
+                        BookmarkChipsBar(
+                            bookmarks = ui.bookmarks,
+                            currentPath = ui.activePane.path,
+                            onOpen = { vm.openBookmark(ui.active, it) },
+                            onLongPress = { editingBookmark = it },
+                        )
+                    }
+                }
+            }
         },
     ) { padding ->
         Column(
@@ -512,7 +527,7 @@ fun ExplorerScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            if (!dual) {
+            if (!dual && ui.settings.behavior.showBookmarkBar && !chipsAtBottom) {
                 BookmarkChipsBar(
                     bookmarks = ui.bookmarks,
                     currentPath = ui.activePane.path,
@@ -532,8 +547,10 @@ fun ExplorerScreen(
                 val state = ui.pane(pane)
                 val visible = remember(state.items, ui.settings, ui.query) { visibleItems(state, ui.settings, ui.query) }
                 val bookmarkIndex = currentBookmarkIndex(ui.bookmarks, state.path)
-                // With the side-menu swipe off, bookmarks wrap around: past the first comes the last, and the other way round.
-                val wrapBookmarks = !ui.settings.behavior.swipeOpensDrawer && ui.bookmarks.size > 1
+                // Circular swipe: past the last bookmark comes the first. Past the first one comes the last, unless the
+                // side-menu swipe is on: that swipe is left to the menu.
+                val wrapBookmarks = ui.settings.behavior.bookmarkSwipeWrap && ui.bookmarks.size > 1
+                val wrapBack = wrapBookmarks && !ui.settings.behavior.swipeOpensDrawer
                 PaneColumn(
                     state = state,
                     visible = visible,
@@ -552,8 +569,8 @@ fun ExplorerScreen(
                             Modifier
                         } else {
                             Modifier.bookmarkSwipe(
-                                enabled = ui.settings.behavior.bookmarkSwipe && bookmarkIndex >= 0 && state.selected.isEmpty(),
-                                canPrevious = wrapBookmarks || bookmarkIndex > 0,
+                                enabled = ui.settings.behavior.showBookmarkBar && ui.settings.behavior.bookmarkSwipe && bookmarkIndex >= 0 && state.selected.isEmpty(),
+                                canPrevious = wrapBack || bookmarkIndex > 0,
                                 canNext = wrapBookmarks || bookmarkIndex in 0 until ui.bookmarks.lastIndex,
                                 passBackToDrawer = ui.settings.behavior.swipeOpensDrawer,
                                 contentKey = state.path,

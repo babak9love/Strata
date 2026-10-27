@@ -47,6 +47,8 @@ import androidx.compose.material.icons.rounded.ScreenLockPortrait
 import androidx.compose.material.icons.rounded.SdStorage
 import androidx.compose.material.icons.rounded.Bookmarks
 import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.VerticalAlignBottom
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.SettingsBackupRestore
 import androidx.compose.material.icons.rounded.Shield
@@ -240,11 +242,14 @@ fun BehaviorPage(settings: StrataSettings, act: SettingsActions, activeFolder: S
                 link(tr(R.string.settings_start_folder), summary = b.startPath.ifBlank { tr(R.string.settings_not_set) }, icon = Icons.Rounded.CreateNewFolder) { editPath = true }
             }
             switch(tr(R.string.settings_two_panes), settings.dualPanePreferred, { v -> act.run { setDualPanePreferred(v) }; if (v) act.list { it.copy(viewMode = ViewMode.LIST) } }, summary = tr(R.string.settings_two_panes_summary), icon = Icons.Rounded.ViewColumn)
+            switch(tr(R.string.settings_bookmark_bar), b.showBookmarkBar, { v -> act.behavior { it.copy(showBookmarkBar = v) } }, summary = tr(R.string.settings_bookmark_bar_summary), icon = Icons.Rounded.Bookmarks)
+            switch(tr(R.string.settings_bookmark_bar_bottom), b.bookmarkBarAtBottom, { v -> act.behavior { it.copy(bookmarkBarAtBottom = v) } }, summary = tr(R.string.settings_bookmark_bar_bottom_summary), icon = Icons.Rounded.VerticalAlignBottom, enabled = b.showBookmarkBar)
         }
         SettingsGroup(stringResource(R.string.settings_group_gestures)) {
             switch(tr(R.string.settings_double_back), b.doubleBackToExit, { v -> act.behavior { it.copy(doubleBackToExit = v) } }, summary = tr(R.string.settings_double_back_summary), icon = Icons.AutoMirrored.Rounded.ExitToApp)
             switch(tr(R.string.settings_icon_tap), b.iconTapSelects, { v -> act.behavior { it.copy(iconTapSelects = v) } }, summary = tr(R.string.settings_icon_tap_summary), icon = Icons.Rounded.SelectAll)
-            switch(tr(R.string.settings_bookmark_swipe), b.bookmarkSwipe, { v -> act.behavior { it.copy(bookmarkSwipe = v) } }, summary = tr(R.string.settings_bookmark_swipe_summary), icon = Icons.Rounded.Bookmarks)
+            switch(tr(R.string.settings_bookmark_swipe), b.bookmarkSwipe, { v -> act.behavior { it.copy(bookmarkSwipe = v) } }, summary = tr(R.string.settings_bookmark_swipe_summary), icon = Icons.Rounded.Bookmarks, enabled = b.showBookmarkBar)
+            switch(tr(R.string.settings_bookmark_wrap), b.bookmarkSwipeWrap, { v -> act.behavior { it.copy(bookmarkSwipeWrap = v) } }, summary = tr(R.string.settings_bookmark_wrap_summary), icon = Icons.Rounded.Repeat, enabled = b.bookmarkSwipe && b.showBookmarkBar)
             switch(tr(R.string.settings_swipe_drawer), b.swipeOpensDrawer, { v -> act.behavior { it.copy(swipeOpensDrawer = v) } }, summary = tr(R.string.settings_swipe_drawer_summary), icon = Icons.Rounded.Menu)
         }
         SettingsGroup(stringResource(R.string.settings_group_working)) {

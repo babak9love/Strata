@@ -463,4 +463,13 @@
     <string name="settings_swipe_drawer_summary">کشیدن انگشت به راست از لبه‌ی صفحه، منوی کناری را باز می‌کند</string>
     <string name="settings_kw_bookmark_swipe">سوایپ بوکمارک جابه‌جایی صفحه کشیدن</string>
     <string name="settings_kw_swipe_drawer">منو داراور کناری سوایپ لبه کشیدن</string>
+    <string name="settings_bookmark_wrap">سوایپ دایره‌ای بین بوکمارک‌ها</string>
+    <string name="settings_bookmark_wrap_summary">بعد از آخرین بوکمارک، اولین باز می‌شود. اگر سوایپ منو روشن باشد، سوایپ به راست روی اولین بوکمارک منو را باز می‌کند</string>
+    <string name="settings_kw_bookmark_wrap">سوایپ بوکمارک دایره‌ای چرخشی حلقه</string>
+    <string name="settings_bookmark_bar">نوار بوکمارک‌ها در صفحه اصلی</string>
+    <string name="settings_bookmark_bar_summary">نمایش بوکمارک‌ها زیر عنوان صفحه‌ی اصلی. به منوی کشویی ربطی ندارد</string>
+    <string name="settings_kw_bookmark_bar">بوکمارک نوار چیپ صفحه اصلی مخفی</string>
+    <string name="settings_bookmark_bar_bottom">نوار بوکمارک‌ها در پایین صفحه</string>
+    <string name="settings_bookmark_bar_bottom_summary">بوکمارک‌ها به جای زیر عنوان، زیر نوار ابزار پایین نمایش داده شوند</string>
+    <string name="settings_kw_bookmark_bar_bottom">بوکمارک نوار چیپ پایین صفحه جابجایی جایگاه زیر نوار ابزار</string>
 </resources>

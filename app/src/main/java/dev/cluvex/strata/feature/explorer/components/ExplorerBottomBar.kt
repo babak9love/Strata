@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.rounded.West
 import androidx.compose.material.icons.rounded.LayersClear
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -153,12 +155,15 @@ fun ExplorerBottomBar(
     selection: Zoned<SelectionAction> = dev.cluvex.strata.core.model.ActionLayout.DEFAULT_SELECTION,
     showHidden: Boolean = false,
     hiddenSelection: Set<SelectionAction> = emptySet(),
+    /** False when something sits below the bar and takes over the system-bar padding. */
+    insets: Boolean = true,
 ) {
     val motion = MaterialTheme.motionScheme
     val threshold = with(LocalDensity.current) { 48.dp.toPx() }
     val current by rememberUpdatedState(actions)
     FlexibleBottomAppBar(
         horizontalArrangement = Arrangement.Center,
+        windowInsets = if (insets) BottomAppBarDefaults.windowInsets else WindowInsets(0),
         modifier = Modifier.testTag("bottom-bar").pointerInput(Unit) {
             var dragged = 0f
             detectVerticalDragGestures(

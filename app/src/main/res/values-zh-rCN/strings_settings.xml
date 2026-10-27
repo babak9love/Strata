@@ -454,4 +454,13 @@
     <string name="settings_swipe_drawer_summary">从屏幕边缘向右滑动可打开侧边菜单</string>
     <string name="settings_kw_bookmark_swipe">滑动 书签 切换 手势</string>
     <string name="settings_kw_swipe_drawer">菜单 侧边 滑动 边缘 手势</string>
+    <string name="settings_bookmark_wrap">书签循环滑动</string>
+    <string name="settings_bookmark_wrap_summary">最后一个书签之后回到第一个。若开启了侧边菜单滑动，在第一个书签上右滑将打开菜单</string>
+    <string name="settings_kw_bookmark_wrap">书签 滑动 循环 环绕</string>
+    <string name="settings_bookmark_bar">主屏幕书签栏</string>
+    <string name="settings_bookmark_bar_summary">在主屏幕标题下方显示书签栏。不影响侧边菜单</string>
+    <string name="settings_kw_bookmark_bar">书签 栏 主屏幕 隐藏</string>
+    <string name="settings_bookmark_bar_bottom">书签栏置于底部</string>
+    <string name="settings_bookmark_bar_bottom_summary">将书签栏显示在底部工具栏下方，而不是标题下方</string>
+    <string name="settings_kw_bookmark_bar_bottom">书签 栏 底部 位置 工具栏</string>
 </resources>
