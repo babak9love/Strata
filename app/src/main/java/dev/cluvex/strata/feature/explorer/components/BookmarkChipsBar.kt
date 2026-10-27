@@ -72,6 +72,8 @@ fun BookmarkChipsBar(
     onOpen: (Bookmark) -> Unit,
     onLongPress: (Bookmark) -> Unit,
     modifier: Modifier = Modifier,
+    /** Extra space under the row for the tabs style (which has no vertical padding), e.g. when the bar sits above the system navigation bar. */
+    underlineBottomGap: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
     if (bookmarks.isEmpty()) return
     val normalizedCurrent = Bookmarks.normalize(currentPath)
@@ -109,7 +111,12 @@ fun BookmarkChipsBar(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(scroll)
-            .padding(horizontal = CHIP_ROW_PADDING, vertical = if (style == BookmarkStyle.UNDERLINE) 0.dp else 6.dp),
+            .padding(
+                start = CHIP_ROW_PADDING,
+                end = CHIP_ROW_PADDING,
+                top = if (style == BookmarkStyle.UNDERLINE) 0.dp else 6.dp,
+                bottom = if (style == BookmarkStyle.UNDERLINE) underlineBottomGap else 6.dp,
+            ),
         horizontalArrangement = Arrangement.spacedBy(CHIP_SPACING),
         verticalAlignment = Alignment.CenterVertically,
     ) {

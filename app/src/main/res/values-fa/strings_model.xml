@@ -205,7 +205,7 @@
     <string name="model_folder_style_rose">رز</string>
     <string name="model_browse_undo">واگرد</string>
     <string name="model_bookmark_classic">کلاسیک</string>
-    <string name="model_bookmark_outlined">خط‌دار</string>
+    <string name="model_bookmark_outlined">حاشیه‌دار</string>
     <string name="model_bookmark_underline">تب</string>
-    <string name="model_bookmark_path_card">کادر مسیر</string>
+    <string name="model_bookmark_path_card">مستطیلی</string>
 </resources>

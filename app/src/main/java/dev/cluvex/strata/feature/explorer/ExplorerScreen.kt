@@ -516,6 +516,8 @@ fun ExplorerScreen(
                             currentPath = ui.activePane.path,
                             onOpen = { vm.openBookmark(ui.active, it) },
                             onLongPress = { editingBookmark = it },
+                            // Same 4dp that the path box leaves under the bar when the bar is on top.
+                            underlineBottomGap = 4.dp,
                         )
                     }
                 }

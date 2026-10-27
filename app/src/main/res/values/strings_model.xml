@@ -221,5 +221,5 @@
     <string name="model_bookmark_classic">Classic</string>
     <string name="model_bookmark_outlined">Outlined</string>
     <string name="model_bookmark_underline">Tabs</string>
-    <string name="model_bookmark_path_card">Path box</string>
+    <string name="model_bookmark_path_card">Box</string>
 </resources>
