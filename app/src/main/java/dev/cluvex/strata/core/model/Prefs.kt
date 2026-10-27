@@ -67,10 +67,7 @@ enum class BookmarkStyle(@StringRes val label: Int) {
     /** Plain text with a line under the open bookmark. */
     UNDERLINE(R.string.model_bookmark_underline),
 
-    /** Folder icon above the name, on a rounded tile. */
-    TILES(R.string.model_bookmark_tiles),
-
-    /** Rounded box like the path box above the list: the name with the folder's path under it. */
+    /** Rounded box shaped and coloured like the path box above the list, holding just the name. */
     PATH_CARD(R.string.model_bookmark_path_card),
 }
 

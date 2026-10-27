@@ -8,6 +8,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -108,7 +109,7 @@ fun BookmarkChipsBar(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(scroll)
-            .padding(horizontal = CHIP_ROW_PADDING, vertical = 6.dp),
+            .padding(horizontal = CHIP_ROW_PADDING, vertical = if (style == BookmarkStyle.UNDERLINE) 0.dp else 6.dp),
         horizontalArrangement = Arrangement.spacedBy(CHIP_SPACING),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -136,7 +137,8 @@ fun BookmarkChipsBar(
             when (style) {
                 BookmarkStyle.UNDERLINE -> Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = common.padding(horizontal = 8.dp),
+                    // Max intrinsic width: inside the scrolling row the width is unbounded and the line would get no width.
+                    modifier = common.width(IntrinsicSize.Max).padding(horizontal = 8.dp),
                 ) {
                     Text(
                         text = bookmark.name,
@@ -145,7 +147,7 @@ fun BookmarkChipsBar(
                         color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(vertical = 8.dp),
+                        modifier = Modifier.padding(vertical = 6.dp),
                     )
                     Box(
                         Modifier
@@ -155,55 +157,22 @@ fun BookmarkChipsBar(
                             .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent),
                     )
                 }
-                BookmarkStyle.PATH_CARD -> Column(
+                BookmarkStyle.PATH_CARD -> Box(
+                    contentAlignment = Alignment.CenterStart,
                     modifier = Modifier
-                        .widthIn(min = 110.dp, max = 220.dp)
+                        .widthIn(min = 96.dp, max = 200.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
                         .then(common)
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
                 ) {
-                    val text = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                     Text(
                         text = bookmark.name,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = text,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = if (bookmark.path.startsWith("/storage/emulated/0")) "/sdcard" + bookmark.path.removePrefix("/storage/emulated/0") else bookmark.path,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = text.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.StartEllipsis,
-                    )
-                }
-                BookmarkStyle.TILES -> Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .width(76.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
-                        .then(common)
-                        .padding(horizontal = 4.dp, vertical = 8.dp),
-                ) {
-                    Image(
-                        painter = painterResource(look.folderStyle.drawable),
-                        contentDescription = null,
-                        colorFilter = if (tintFolder) folderTint else null,
-                        modifier = Modifier.size(width = 32.dp, height = 25.dp),
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = bookmark.name,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (selected) FontWeight.Bold else null,
                         color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
                     )
                 }
                 else -> Row(
