@@ -129,11 +129,6 @@
     <string name="media_audio_tracks">音轨</string>
     <string name="media_audio_track_disable">禁用</string>
     <string name="media_audio_track_n">音轨 %1$d</string>
-    <string name="media_audio_external">来自存储</string>
-    <string name="media_audio_load">从文件加载…</string>
-    <string name="media_audio_load_failed">无法读取该音频文件</string>
-    <string name="media_audio_sync">音频同步</string>
-    <string name="media_audio_sync_hint">正值使声音延后，负值使声音提前。</string>
     <string name="media_font_unreadable">无法读取此字体：%1$s</string>
     <string name="media_sample_text">示例文本</string>
     <string name="media_font_sample">敏捷的棕色狐狸跳过了懒狗</string>

@@ -1,7 +1,6 @@
 package dev.cluvex.strata.feature.media
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,8 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.FileOpen
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,21 +36,9 @@ import androidx.media3.common.Tracks
 import dev.cluvex.strata.R
 import java.util.Locale
 
-/**
- * Lists every audio stream of the playing video (plus "Disable") and plays the one the user picks, lets the user add
- * an audio file from storage, and moves the sound earlier or later against the picture.
- */
+/** Lists every audio stream of the playing video (plus "Disable") and plays the one the user picks. */
 @Composable
-fun AudioTracksDialog(
-    player: Player,
-    externalName: String?,
-    externalActive: Boolean,
-    onUseExternal: (Boolean) -> Unit,
-    offsetMs: Int,
-    onLoadFile: () -> Unit,
-    onApplyOffset: (Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
+fun AudioTracksDialog(player: Player, onDismiss: () -> Unit) {
     var tick by remember { mutableIntStateOf(0) }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
@@ -73,9 +58,8 @@ fun AudioTracksDialog(
                     Text(stringResource(R.string.media_audio_tracks), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                     IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_close)) }
                 }
-                Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                    TrackRow(stringResource(R.string.media_audio_track_disable), null, disabled && !externalActive, true) {
-                        onUseExternal(false)
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    TrackRow(stringResource(R.string.media_audio_track_disable), null, disabled, true) {
                         player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
                             .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
                             .build()
@@ -92,10 +76,9 @@ fun AudioTracksDialog(
                         TrackRow(
                             name ?: stringResource(R.string.media_audio_track_n, i + 1),
                             details,
-                            !disabled && !externalActive && group.isTrackSelected(0),
+                            !disabled && group.isTrackSelected(0),
                             group.isTrackSupported(0),
                         ) {
-                            onUseExternal(false)
                             player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
                                 .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
                                 .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
@@ -103,31 +86,6 @@ fun AudioTracksDialog(
                                 .build()
                             onDismiss()
                         }
-                    }
-                    // The audio file added from storage, after the video's own streams.
-                    if (externalName != null) {
-                        TrackRow(externalName, stringResource(R.string.media_audio_external), externalActive, true) {
-                            onUseExternal(true)
-                            onDismiss()
-                        }
-                    }
-                    Row(
-                        Modifier.fillMaxWidth().clickable(onClick = onLoadFile).padding(horizontal = 24.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Icon(Icons.Rounded.FileOpen, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Text(stringResource(R.string.media_audio_load), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyLarge)
-                    }
-                    HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 4.dp))
-                    SyncSection(
-                        initialMs = offsetMs,
-                        title = stringResource(R.string.media_audio_sync),
-                        hint = stringResource(R.string.media_audio_sync_hint),
-                        maxMs = AudioOffsets.MAX_MS,
-                    ) { ms ->
-                        onApplyOffset(ms)
-                        onDismiss()
                     }
                 }
             }

@@ -270,23 +270,17 @@ private const val STEP_COARSE_MS = 1_000
 
 /** Moves the subtitles earlier or later in steps; nothing is changed until Apply, because applying reloads the video. */
 @Composable
-internal fun SyncSection(
-    initialMs: Int,
-    title: String = stringResource(R.string.media_subtitle_sync),
-    hint: String = stringResource(R.string.media_subtitle_sync_hint),
-    maxMs: Int = MAX_OFFSET_MS,
-    onApply: (Int) -> Unit,
-) {
+private fun SyncSection(initialMs: Int, onApply: (Int) -> Unit) {
     var value by remember(initialMs) { mutableIntStateOf(initialMs) }
-    fun move(by: Int) { value = (value + by).coerceIn(-maxMs, maxMs) }
+    fun move(by: Int) { value = (value + by).coerceIn(-MAX_OFFSET_MS, MAX_OFFSET_MS) }
     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {
         Text(
-            title,
+            stringResource(R.string.media_subtitle_sync),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            hint,
+            stringResource(R.string.media_subtitle_sync_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

@@ -138,11 +138,6 @@
     <string name="media_audio_tracks">Звуковые дорожки</string>
     <string name="media_audio_track_disable">Отключить</string>
     <string name="media_audio_track_n">Дорожка %1$d</string>
-    <string name="media_audio_external">Из памяти</string>
-    <string name="media_audio_load">Загрузить из файла…</string>
-    <string name="media_audio_load_failed">Не удалось прочитать аудиофайл</string>
-    <string name="media_audio_sync">Синхронизация звука</string>
-    <string name="media_audio_sync_hint">Плюс — звук позже, минус — раньше.</string>
     <string name="media_font_unreadable">Не удаётся прочитать шрифт: %1$s</string>
     <string name="media_sample_text">Образец текста</string>
     <string name="media_font_sample">Съешь же ещё этих мягких французских булок, да выпей чаю</string>

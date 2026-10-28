@@ -21,7 +21,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import kotlin.math.abs
 import kotlin.math.roundToInt
 import android.content.Context
 import android.content.ContextWrapper
@@ -33,7 +32,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.rounded.Subtitles
 import androidx.media3.common.TrackSelectionOverride
-import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -98,7 +96,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -159,9 +156,7 @@ import dev.cluvex.strata.feature.props.MediaInfoKind
 import dev.cluvex.strata.feature.props.MediaInfoSheet
 import dev.cluvex.strata.core.util.FileKind
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -217,8 +212,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             sidecars.forEach { (video, subs) -> externals[video] = subs.toMutableList() }
             val skip = dev.cluvex.strata.core.data.SettingsRepository(getApplication()).settings.first().behavior
             playAlone = skip.playAloneVideo
-            val renderers = AudioSyncRenderersFactory(getApplication()).also { audioRenderers = it }
-            val p = ExoPlayer.Builder(getApplication(), renderers)
+            val p = ExoPlayer.Builder(getApplication())
                 .setAudioAttributes(VIDEO_AUDIO_ATTRIBUTES, skip.playAloneVideo)
                 .setSeekBackIncrementMs(skip.seekBackSeconds * 1000L)
                 .setSeekForwardIncrementMs(skip.seekForwardSeconds * 1000L)
@@ -226,19 +220,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             p.addListener(object : Player.Listener {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     title = mediaItem?.mediaMetadata?.displayTitle?.toString().orEmpty()
-                    mediaItem?.mediaId?.let { applyAudioSettingsOf(it) }
-                }
-
-                override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
-                    syncAudioHelper(hard = true)
-                }
-
-                override fun onTrackSelectionParametersChanged(parameters: TrackSelectionParameters) {
-                    if (audioHelper != null) mirrorAudioSelection()
-                }
-
-                override fun onPlaybackStateChanged(state: Int) {
-                    syncAudioHelper(hard = false)
                 }
             })
             // A subtitle file the user just loaded is switched on as soon as the player has it as a track.
@@ -267,7 +248,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             volumeLevel = minOf(skip.videoVolume.coerceIn(0.05f, MAX_LEVEL), SAFE_LEVEL)
             p.volume = minOf(volumeLevel, 1f)
             p.setMediaItems(list.files.map { mediaItem(it, sidecars[it.path].orEmpty()) }, list.start, if (start != null) start.positionMs else if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
-            applyAudioSettingsOf(list.files[list.start].path)
             p.prepare()
             p.playWhenReady = start?.playing ?: true
             title = list.current.name
@@ -288,202 +268,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     @Volatile private var pendingSubtitleLabel: String? = null
-
-    // ---- Audio: an audio file added from storage, and the sync between sound and picture.
-    // Both are done by a second, audio-only player that supplies the sound in step with the video: from the added
-    // file, or (when a sync is set) from the video's own file. The video player's own sound is silenced meanwhile
-    // but keeps running, so the picture's clock does not change.
-    private var audioRenderers: AudioSyncRenderersFactory? = null
-
-    /** Audio files added from storage, by video path: the file and the name shown for it. */
-    private val externalAudio = HashMap<String, Pair<Uri, String>>()
-
-    /** Videos whose added audio file is the one being heard. */
-    private val externalOn = HashSet<String>()
-
-    private var audioHelper: ExoPlayer? = null
-    private var audioHelperUri: Uri? = null
-    private var audioSyncJob: Job? = null
-    private var lastCorrectionAt = 0L
-
-    /** Name of the audio file added to the video that is playing, if any. */
-    var externalAudioName by mutableStateOf<String?>(null)
-        private set
-
-    /** True while that added file is the sound being heard. */
-    var externalAudioActive by mutableStateOf(false)
-        private set
-
-    /** Sync (milliseconds, positive = the sound later) of the video that is playing. */
-    var audioOffsetMs by mutableIntStateOf(0)
-        private set
-
-    /** Reads the saved sync and the added audio file of the video [mediaId] that is now playing. */
-    private fun applyAudioSettingsOf(mediaId: String) {
-        audioOffsetMs = AudioOffsets.get(getApplication(), mediaId)
-        externalAudioName = externalAudio[mediaId]?.second
-        externalAudioActive = mediaId in externalOn && externalAudio.containsKey(mediaId)
-        refreshAudioHelper()
-    }
-
-    /** Moves the sound [offsetMs] later (negative: earlier) than the picture, and remembers it for this video. */
-    fun setAudioOffset(offsetMs: Int) {
-        val p = player ?: return
-        val id = p.currentMediaItem?.mediaId ?: return
-        AudioOffsets.save(getApplication(), id, offsetMs)
-        audioOffsetMs = offsetMs
-        refreshAudioHelper()
-    }
-
-    /** Plays the added audio file instead of the video's own sound ([on]), or the other way round. */
-    fun useExternalAudio(on: Boolean) {
-        val p = player ?: return
-        val id = p.currentMediaItem?.mediaId ?: return
-        if (on && externalAudio.containsKey(id)) externalOn.add(id) else externalOn.remove(id)
-        externalAudioActive = id in externalOn
-        refreshAudioHelper()
-    }
-
-    /** Adds an audio file chosen by the user to the video that is playing and plays it instead of the video's own sound. */
-    fun addExternalAudio(uri: Uri, onFailed: () -> Unit) {
-        val p = player ?: return
-        val id = p.currentMediaItem?.mediaId
-        if (id == null) {
-            onFailed()
-            return
-        }
-        viewModelScope.launch {
-            val ctx = getApplication<Application>()
-            val name = withContext(Dispatchers.IO) {
-                runCatching {
-                    ctx.contentResolver.openInputStream(uri)?.close() ?: return@runCatching null
-                    ctx.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
-                        ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
-                        ?: uri.lastPathSegment
-                        ?: "audio"
-                }.getOrNull()
-            }
-            if (name == null) {
-                onFailed()
-                return@launch
-            }
-            externalAudio[id] = uri to name
-            if (player?.currentMediaItem?.mediaId == id) {
-                externalAudioName = name
-                useExternalAudio(true)
-            }
-        }
-    }
-
-    /**
-     * Starts, changes or stops the second player. It runs when an added file is the sound, or when a sync is set
-     * (then it plays the video's own file, audio only); otherwise the video player plays its own sound as usual.
-     */
-    private fun refreshAudioHelper() {
-        val p = player ?: return
-        val item = p.currentMediaItem
-        val id = item?.mediaId
-        val ext = if (id != null && id in externalOn) externalAudio[id] else null
-        val source: Uri? = ext?.first ?: if (audioOffsetMs != 0) item?.localConfiguration?.uri else null
-        if (source == null) {
-            releaseAudioHelper()
-            return
-        }
-        val h = audioHelper ?: ExoPlayer.Builder(getApplication())
-            .setAudioAttributes(VIDEO_AUDIO_ATTRIBUTES, false) // the video player already holds the audio focus
-            .setHandleAudioBecomingNoisy(false)
-            .build()
-            .also { audioHelper = it }
-        if (audioHelperUri != source) {
-            audioHelperUri = source
-            h.trackSelectionParameters = h.trackSelectionParameters.buildUpon()
-                .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, true)
-                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
-                .build()
-            h.setMediaItem(MediaItem.fromUri(source))
-            h.prepare()
-        }
-        mirrorAudioSelection()
-        audioRenderers?.mute = true
-        h.playWhenReady = false
-        if (audioSyncJob?.isActive != true) {
-            audioSyncJob = viewModelScope.launch {
-                while (isActive) {
-                    syncAudioHelper(hard = false)
-                    delay(AUDIO_SYNC_INTERVAL_MS)
-                }
-            }
-        }
-        syncAudioHelper(hard = true)
-    }
-
-    /**
-     * When the second player plays the video's own file, it has to play the same stream the user picked in the
-     * audio list (or none, if the sound is off). An added file has only one stream and needs nothing.
-     */
-    private fun mirrorAudioSelection() {
-        val m = player ?: return
-        val h = audioHelper ?: return
-        if (externalAudioActive) {
-            h.trackSelectionParameters = h.trackSelectionParameters.buildUpon()
-                .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
-                .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
-                .build()
-            return
-        }
-        val params = m.trackSelectionParameters
-        val builder = h.trackSelectionParameters.buildUpon()
-            .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, C.TRACK_TYPE_AUDIO in params.disabledTrackTypes)
-            .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
-        params.overrides.values.filter { it.type == C.TRACK_TYPE_AUDIO }.forEach { builder.addOverride(it) }
-        h.trackSelectionParameters = builder.build()
-    }
-
-    /**
-     * Keeps the second player in step with the video: same pause, speed and volume, and the same spot, moved by the
-     * sync. A seek of the video moves it at once; a drift of more than a quarter of a second is put right with a seek.
-     */
-    private fun syncAudioHelper(hard: Boolean) {
-        val m = player ?: return
-        val h = audioHelper ?: return
-        if (h.volume != m.volume) h.volume = m.volume
-        val speed = m.playbackParameters.speed
-        val target = m.currentPosition - audioOffsetMs
-        if (target < 0L) { // the sound has not started yet (it is delayed)
-            if (h.currentPosition != 0L) h.seekTo(0L)
-            setHelperSpeed(h, speed)
-            h.playWhenReady = false
-            return
-        }
-        val now = android.os.SystemClock.elapsedRealtime()
-        if (hard) {
-            h.seekTo(target)
-            lastCorrectionAt = now
-            setHelperSpeed(h, speed)
-        } else if (h.playbackState == Player.STATE_READY && now - lastCorrectionAt > AUDIO_SETTLE_MS) {
-            // Both players run on the audio hardware's clock, so they hardly drift apart: only a clear difference is
-            // put right, with a seek. (Nudging the speed instead made the sound crackle.)
-            if (abs(h.currentPosition - target) > AUDIO_DRIFT_MS) {
-                h.seekTo(target + AUDIO_SEEK_LEAD_MS)
-                lastCorrectionAt = now
-            }
-            setHelperSpeed(h, speed)
-        }
-        h.playWhenReady = m.playWhenReady && m.playbackState == Player.STATE_READY
-    }
-
-    private fun setHelperSpeed(h: ExoPlayer, speed: Float) {
-        if (abs(h.playbackParameters.speed - speed) > 0.001f) h.setPlaybackSpeed(speed)
-    }
-
-    private fun releaseAudioHelper() {
-        audioSyncJob?.cancel()
-        audioSyncJob = null
-        audioHelper?.release()
-        audioHelper = null
-        audioHelperUri = null
-        audioRenderers?.mute = false
-    }
     private var reloadSeq = 0
 
     /** Subtitle files (next to each video, or loaded by the user) that sync can shift, by video path. Main thread only. */
@@ -587,7 +371,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     fun handOffToBackground(force: Boolean = false) {
         val p = player ?: return
         if (handedOff || (!force && !p.playWhenReady)) return
-        releaseAudioHelper() // the background player plays the video's own sound
         if (force && p.volume == 0f) p.volume = volumeLevel.coerceIn(0.05f, 1f) // "audio only" was asked for: unmute
         val items = backgroundItems(p)
         val index = p.currentMediaItemIndex
@@ -697,7 +480,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
-        releaseAudioHelper()
         SleepTimer.videoPauser = null
         releaseBackground()
         saveJob?.cancel()
@@ -719,10 +501,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
 
         private const val SAVE_INTERVAL_MS = 5_000L
         private const val RELOAD_GRACE_MS = 4_000L
-        private const val AUDIO_SYNC_INTERVAL_MS = 200L
-        private const val AUDIO_DRIFT_MS = 250L
-        private const val AUDIO_SEEK_LEAD_MS = 100L
-        private const val AUDIO_SETTLE_MS = 3_000L
         const val MAX_LEVEL = 1f
         const val SAFE_LEVEL = 1f
 
@@ -797,11 +575,6 @@ fun VideoPlayerScreen(
     val pickSubtitle = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             vm.addExternalSubtitle(uri) { Toast.makeText(context, R.string.media_subtitle_load_failed, Toast.LENGTH_SHORT).show() }
-        }
-    }
-    val pickAudio = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            vm.addExternalAudio(uri) { Toast.makeText(context, R.string.media_audio_load_failed, Toast.LENGTH_SHORT).show() }
         }
     }
     // Set by the headphones button of the floating window: the next stop is not a "window closed".
@@ -1307,21 +1080,7 @@ fun VideoPlayerScreen(
                 }
             }
         }
-        if (audioTracks && player != null) {
-            AudioTracksDialog(
-                player = player,
-                externalName = vm.externalAudioName,
-                externalActive = vm.externalAudioActive,
-                onUseExternal = { vm.useExternalAudio(it) },
-                offsetMs = vm.audioOffsetMs,
-                onLoadFile = {
-                    audioTracks = false
-                    pickAudio.launch(arrayOf("*/*"))
-                },
-                onApplyOffset = { vm.setAudioOffset(it) },
-                onDismiss = { audioTracks = false },
-            )
-        }
+        if (audioTracks && player != null) AudioTracksDialog(player) { audioTracks = false }
         if (sleepDialog) SleepTimerDialog { sleepDialog = false }
         if (subtitlesDialog && player != null) {
             SubtitleTracksDialog(
