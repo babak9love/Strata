@@ -312,13 +312,17 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     private fun applyAudioSettingsOf(mediaId: String) {
         val saved = AudioOffsets.get(getApplication(), mediaId)
         audioOffsetMs = saved
-        audioRenderers?.offsetUs = saved * 1000L
+        val renderers = audioRenderers
+        val changed = renderers != null && renderers.offsetUs != saved * 1000L
+        renderers?.offsetUs = saved * 1000L
+        // The sync is applied when the audio restarts: a seek to the same spot does that for a video that is already playing.
+        if (changed) player?.let { if (it.mediaItemCount > 0) it.seekTo(it.currentPosition) }
         externalAudioName = externalAudio[mediaId]?.second
     }
 
     /**
      * Moves the sound [offsetMs] later (negative: earlier) than the picture, and remembers it for this video.
-     * The audio is restarted so the new value takes effect; the picture stays where it is.
+     * The audio is restarted so the new value takes effect; the picture and its time stay where they are.
      */
     fun setAudioOffset(offsetMs: Int) {
         val p = player ?: return
@@ -327,8 +331,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         AudioOffsets.save(getApplication(), id, offsetMs)
         audioOffsetMs = offsetMs
         audioRenderers?.offsetUs = offsetMs * 1000L
-        // After a seek the clock starts at the seek position plus the offset, so seek that much earlier to keep the picture here.
-        p.seekTo((shown - offsetMs).coerceAtLeast(0L))
+        // Only the audio is shifted (see AudioDelayProcessor); a seek to the same spot restarts it with the new value.
+        p.seekTo(shown)
     }
 
     /** Adds an audio file chosen by the user to the video that is playing and plays it instead of the video's own sound. */
