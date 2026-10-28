@@ -156,6 +156,7 @@
     <string name="media_font_ttc">TrueType collection</string>
     <string name="media_font_otc">OpenType collection (CFF)</string>
     <string name="media_auto_hide_controls">Auto-hide controls and seekbar</string>
+    <string name="media_auto_rotate">Auto-rotate (device sensor)</string>
     <string name="media_resume_playback">Resume where you left off</string>
     <string name="media_back_to_list">Back to list</string>
     <string name="media_back_to_list_desc">Return to the list after playback is completed.</string>

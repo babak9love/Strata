@@ -562,6 +562,9 @@ fun VideoPlayerScreen(
     val view = LocalView.current
     val context = LocalContext.current
     val activity = remember(view) { view.context.findActivity() }
+    // Optional: the screen turns with the phone's rotation sensor (only while the system auto-rotate is on).
+    var autoRotate by remember { mutableStateOf(VideoRotatePrefs.load(context)) }
+    AutoRotateEffect(autoRotate)
     var subtitlesDialog by remember { mutableStateOf(false) }
     var subStyle by remember { mutableStateOf(SubtitleStylePrefs.load(context)) }
     val pickSubtitle = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -921,6 +924,14 @@ fun VideoPlayerScreen(
                                             onClick = { onAutoHideChange(!autoHide) },
                                         )
                                         DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.media_auto_rotate)) },
+                                            trailingIcon = { Switch(checked = autoRotate, onCheckedChange = null) },
+                                            onClick = {
+                                                autoRotate = !autoRotate
+                                                VideoRotatePrefs.save(context, autoRotate)
+                                            },
+                                        )
+                                        DropdownMenuItem(
                                             text = { Text(stringResource(R.string.media_resume_playback)) },
                                             trailingIcon = { Switch(checked = resume, onCheckedChange = null) },
                                             onClick = { onResumeChange(!resume) },
@@ -1164,6 +1175,36 @@ private fun currentBrightness(activity: Activity?, context: Context): Float {
     return runCatching { Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255f }
         .getOrDefault(0.5f)
         .coerceIn(0f, 1f)
+}
+
+/** Whether the video screen follows the phone's rotation sensor. Off by default; kept between runs. */
+object VideoRotatePrefs {
+    private fun prefs(ctx: Context) = ctx.applicationContext.getSharedPreferences("video_rotate", Context.MODE_PRIVATE)
+
+    fun load(ctx: Context): Boolean = prefs(ctx).getBoolean("auto", false)
+
+    fun save(ctx: Context, on: Boolean) {
+        prefs(ctx).edit().putBoolean("auto", on).apply()
+    }
+}
+
+/**
+ * While [enabled], the screen turns with the phone: the system's own auto-rotate setting decides, so with it off
+ * the screen stays as it is. Switching it off (or closing the player) puts the orientation back as it was.
+ */
+@Composable
+private fun AutoRotateEffect(enabled: Boolean) {
+    val view = LocalView.current
+    val activity = remember(view) { view.context.findActivity() }
+    DisposableEffect(activity, enabled) {
+        if (activity == null || !enabled) {
+            onDispose { }
+        } else {
+            val before = activity.requestedOrientation
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+            onDispose { activity.requestedOrientation = before }
+        }
+    }
 }
 
 /** Toggles the screen between landscape and portrait; the original orientation is restored when the player closes. */

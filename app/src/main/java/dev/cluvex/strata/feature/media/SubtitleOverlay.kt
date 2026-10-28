@@ -58,7 +58,7 @@ import androidx.media3.common.text.CueGroup
  */
 data class SubtitleStyle(
     val scale: Float = 1f,
-    val background: Boolean = true,
+    val background: Boolean = false,
     val textColor: Int = DEFAULT_SUBTITLE_TEXT,
     val backgroundColor: Int = DEFAULT_SUBTITLE_BACKGROUND,
     val lift: Float = 0f,
@@ -86,7 +86,7 @@ object SubtitleStylePrefs {
         val p = prefs(ctx)
         return SubtitleStyle(
             scale = p.getFloat("scale", 1f).coerceIn(SUBTITLE_SCALE_MIN, SUBTITLE_SCALE_MAX),
-            background = p.getBoolean("background", true),
+            background = p.getBoolean("background", false),
             textColor = p.getInt("textColor", DEFAULT_SUBTITLE_TEXT),
             backgroundColor = p.getInt("backgroundColor", DEFAULT_SUBTITLE_BACKGROUND),
             lift = p.getFloat("lift", 0f).coerceIn(SUBTITLE_LIFT_MIN, SUBTITLE_LIFT_MAX),

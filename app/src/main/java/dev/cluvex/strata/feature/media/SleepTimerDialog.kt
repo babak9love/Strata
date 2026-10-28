@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardActions
@@ -86,7 +87,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                             invalid = invalid,
                             imeAction = ImeAction.Next,
                             onDone = {},
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.width(104.dp),
                         )
                         TimeBox(
                             value = minutes,
@@ -96,7 +97,7 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                             invalid = invalid,
                             imeAction = ImeAction.Done,
                             onDone = { start() },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.width(104.dp),
                         )
                     }
                 }
@@ -158,11 +159,11 @@ private fun TimeBox(
         modifier = modifier,
         singleLine = true,
         isError = invalid,
-        textStyle = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.End),
+        textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.End),
         placeholder = {
-            Text(placeholder, style = MaterialTheme.typography.headlineSmall.copy(color = hint, textAlign = TextAlign.End), modifier = Modifier.fillMaxWidth())
+            Text(placeholder, style = MaterialTheme.typography.bodyLarge.copy(color = hint, textAlign = TextAlign.End), modifier = Modifier.fillMaxWidth())
         },
-        suffix = { Text(unit, style = MaterialTheme.typography.headlineSmall) },
+        suffix = { Text(unit, style = MaterialTheme.typography.bodyLarge) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = imeAction),
         keyboardActions = KeyboardActions(onDone = { onDone() }),
     )
