@@ -47,6 +47,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -132,6 +134,7 @@ fun MusicPlayerSheet(
     val onPlayModeChangeNow by androidx.compose.runtime.rememberUpdatedState(onPlayModeChange)
     val backToListNow by androidx.compose.runtime.rememberUpdatedState(backToList)
     val onDismissNow by androidx.compose.runtime.rememberUpdatedState(onDismiss)
+    val backgroundPlayNow by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
@@ -156,6 +159,21 @@ fun MusicPlayerSheet(
         c.setMediaItems(list.files.map(::songItem), list.start, if (resume) PlaybackPositions.get(context, ResumeKind.AUDIO, path) else 0L)
         c.prepare()
         c.play()
+    }
+    // With Background Play off, the music stops when the app is left (home, another app, screen off).
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        if (!backgroundPlayNow) controller?.pause()
+    }
+    // Closing the player (swipe down, tap outside, back) with Background Play off stops the music instead of
+    // leaving it playing in the service; with it on, the music carries on in the background.
+    val closeSheet = {
+        if (!backgroundPlayNow) {
+            controller?.run {
+                stop()
+                clearMediaItems()
+            }
+        }
+        onDismiss()
     }
     DisposableEffect(controller) {
         val c = controller
@@ -201,7 +219,7 @@ fun MusicPlayerSheet(
     }
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = closeSheet,
         sheetState = rememberSheetState(),
         modifier = Modifier.testTag("music-player"),
     ) {
