@@ -285,9 +285,13 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun addExternalSubtitle(uri: Uri, onFailed: () -> Unit) {
         val p = player ?: return
+        val item = p.currentMediaItem
         viewModelScope.launch {
-            val prepared = withContext(Dispatchers.IO) { SubtitleFiles.preparePicked(getApplication(), uri) }
-            val item = p.currentMediaItem
+            val prepared = withContext(Dispatchers.IO) {
+                // Subtitles longer than the video would keep it "playing" after its end: they are cut to its length.
+                val duration = item?.let { SubtitleFiles.videoDurationMs(File(it.mediaId)) } ?: 0L
+                SubtitleFiles.preparePicked(getApplication(), uri, duration)
+            }
             if (prepared == null || item == null) {
                 onFailed()
                 return@launch

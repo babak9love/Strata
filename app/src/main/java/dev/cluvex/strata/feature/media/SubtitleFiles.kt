@@ -1,6 +1,7 @@
 package dev.cluvex.strata.feature.media
 
 import android.content.Context
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.media3.common.C
@@ -42,6 +43,8 @@ object SubtitleFiles {
         val key: String,
         val base: File,
         val offsetMs: Int = 0,
+        /** Length of the video this subtitle belongs to; cues past it are cut off. 0 = unknown, nothing is cut. */
+        val durationMs: Long = 0L,
     ) {
         fun configuration(default: Boolean): MediaItem.SubtitleConfiguration =
             MediaItem.SubtitleConfiguration.Builder(uri)
@@ -67,14 +70,15 @@ object SubtitleFiles {
                 n.equals(base, ignoreCase = true) || n.startsWith("$base.", ignoreCase = true)
             }
             if (mine.isEmpty()) continue
-            val ready = mine.mapNotNull { prepareFile(ctx, it, base) }
+            val duration = videoDurationMs(video)
+            val ready = mine.mapNotNull { prepareFile(ctx, it, base, duration) }
             if (ready.isNotEmpty()) out[video.path] = ready
         }
         return out
     }
 
     /** A file chosen with the system file picker. Runs on IO. Null when it can't be read. */
-    fun preparePicked(ctx: Context, uri: Uri): Prepared? = runCatching {
+    fun preparePicked(ctx: Context, uri: Uri, videoDurationMs: Long = 0L): Prepared? = runCatching {
         val resolver = ctx.contentResolver
         val bytes = resolver.openInputStream(uri)?.use { readCapped(it) } ?: return@runCatching null
         val name = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
@@ -86,36 +90,53 @@ object SubtitleFiles {
         val ext = sniff(text)
         val out = File(cacheDir(ctx), "picked_${uri.toString().hashCode()}_${bytes.size}.$ext")
         if (!out.exists()) out.writeText(text)
-        val prepared = Prepared(Uri.fromFile(out), mimeOf(ext), name, languageOf(name.substringBeforeLast('.'), null), "uri:$uri", out)
+        val prepared = Prepared(Uri.fromFile(out), mimeOf(ext), name, languageOf(name.substringBeforeLast('.'), null), "uri:$uri", out, 0, videoDurationMs)
         withSavedOffset(ctx, prepared)
     }.getOrNull()
 
-    private fun prepareFile(ctx: Context, f: File, videoBase: String): Prepared? = runCatching {
+    private fun prepareFile(ctx: Context, f: File, videoBase: String, videoDurationMs: Long): Prepared? = runCatching {
         if (f.length() > MAX_BYTES) return@runCatching null
         val ext = f.extension.lowercase()
         val out = File(cacheDir(ctx), "${f.absolutePath.hashCode()}_${f.lastModified()}_${f.length()}.$ext")
         if (!out.exists()) out.writeText(decode(ctx, f.readBytes()))
-        val prepared = Prepared(Uri.fromFile(out), mimeOf(ext), f.name, languageOf(f.nameWithoutExtension, videoBase), f.absolutePath, out)
+        val prepared = Prepared(Uri.fromFile(out), mimeOf(ext), f.name, languageOf(f.nameWithoutExtension, videoBase), f.absolutePath, out, 0, videoDurationMs)
         withSavedOffset(ctx, prepared)
     }.getOrNull()
 
-    /** The subtitle shifted by the offset the user last set for this file, if any. */
-    private fun withSavedOffset(ctx: Context, p: Prepared): Prepared {
-        val saved = SubtitleOffsets.get(ctx, p.key)
-        return if (saved == 0) p else withOffset(ctx, p, saved) ?: p
-    }
+    /** The subtitle shifted by the offset the user last set for this file, if any (and cut to the video's length). */
+    private fun withSavedOffset(ctx: Context, p: Prepared): Prepared =
+        withOffset(ctx, p, SubtitleOffsets.get(ctx, p.key)) ?: p
 
     /**
      * A copy of [p] with every time shifted by [offsetMs] (positive shows the subtitles later, negative earlier),
-     * made from the unshifted UTF-8 copy so offsets never add up. Runs on IO. Null when it can't be written.
+     * made from the unshifted UTF-8 copy so offsets never add up. Cues that start after the end of the video are
+     * dropped and the last one is cut at the end: otherwise the player keeps "playing" past the end of the video
+     * until the last subtitle is over (the video freezes on its last frame, repeat never kicks in). Runs on IO.
+     * Null when it can't be written.
      */
     fun withOffset(ctx: Context, p: Prepared, offsetMs: Int): Prepared? = runCatching {
-        if (offsetMs == 0) return@runCatching Prepared(Uri.fromFile(p.base), p.mime, p.label, p.language, p.key, p.base, 0)
+        if (offsetMs == 0 && p.durationMs <= 0L) return@runCatching Prepared(Uri.fromFile(p.base), p.mime, p.label, p.language, p.key, p.base, 0, 0L)
         val ext = p.base.extension.lowercase()
-        val out = File(p.base.parentFile, "${p.base.nameWithoutExtension}_s$offsetMs.$ext")
-        if (!out.exists()) out.writeText(shift(p.base.readText(), ext, offsetMs))
-        Prepared(Uri.fromFile(out), p.mime, p.label, p.language, p.key, p.base, offsetMs)
+        val out = File(p.base.parentFile, "${p.base.nameWithoutExtension}_s${offsetMs}_c${p.durationMs}.$ext")
+        if (!out.exists()) {
+            var text = p.base.readText()
+            if (offsetMs != 0) text = shift(text, ext, offsetMs)
+            if (p.durationMs > 0L) text = clip(text, ext, p.durationMs)
+            out.writeText(text)
+        }
+        Prepared(Uri.fromFile(out), p.mime, p.label, p.language, p.key, p.base, offsetMs, p.durationMs)
     }.getOrNull()
+
+    /** Length of [video] in milliseconds, or 0 when it can't be read. Runs on IO. */
+    fun videoDurationMs(video: File): Long = runCatching {
+        val r = MediaMetadataRetriever()
+        try {
+            r.setDataSource(video.absolutePath)
+            r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+        } finally {
+            r.release()
+        }
+    }.getOrDefault(0L)
 
     private val SRT_TIME = Regex("""(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})""")
     private val VTT_TIME = Regex("""(?:(\d{1,2}):)?(\d{2}):(\d{2})\.(\d{3})""")
@@ -177,6 +198,94 @@ object SubtitleFiles {
         val cs = m.groupValues[4].padEnd(2, '0').toLong()
         val total = (((h * 60 + min) * 60 + sec) * 1000 + cs * 10 + offsetMs).coerceAtLeast(0L)
         return String.format(Locale.US, "%d:%02d:%02d.%02d", total / 3_600_000, total / 60_000 % 60, total / 1000 % 60, total / 10 % 100)
+    }
+
+    private fun clip(text: String, ext: String, durationMs: Long): String = when (ext) {
+        "ass", "ssa" -> clipAss(text, durationMs)
+        "vtt" -> clipCueBlocks(text, durationMs, VTT_TIME, '.')
+        else -> clipCueBlocks(text, durationMs, SRT_TIME, ',')
+    }
+
+    private fun cueMs(m: MatchResult): Long {
+        val h = m.groupValues[1].toLongOrNull() ?: 0L
+        val min = m.groupValues[2].toLong()
+        val sec = m.groupValues[3].toLong()
+        val ms = m.groupValues[4].padEnd(3, '0').toLong()
+        return ((h * 60 + min) * 60 + sec) * 1000 + ms
+    }
+
+    /** SRT and VTT: a cue is a block of lines; the one holding "start --> end" has the times. */
+    private fun clipCueBlocks(text: String, durationMs: Long, time: Regex, separator: Char): String {
+        val kept = ArrayList<String>()
+        for (block in text.replace("\r\n", "\n").split(Regex("\n{2,}"))) {
+            val lines = block.split("\n").toMutableList()
+            val i = lines.indexOfFirst { it.contains("-->") }
+            if (i < 0) {
+                kept += block
+                continue
+            }
+            val times = time.findAll(lines[i]).toList()
+            if (times.size < 2) {
+                kept += block
+                continue
+            }
+            if (cueMs(times[0]) >= durationMs) continue
+            if (cueMs(times[1]) > durationMs) {
+                val d = durationMs
+                lines[i] = lines[i].replaceRange(
+                    times[1].range,
+                    String.format(Locale.US, "%02d:%02d:%02d%c%03d", d / 3_600_000, d / 60_000 % 60, d / 1000 % 60, separator, d % 1000),
+                )
+            }
+            kept += lines.joinToString("\n")
+        }
+        return kept.joinToString("\n\n")
+    }
+
+    /** ASS and SSA: "Dialogue:" lines that start after the end are dropped and the others end at the latest there. */
+    private fun clipAss(text: String, durationMs: Long): String {
+        val lines = text.split("\n")
+        var startIdx = 1
+        var endIdx = 2
+        var fields = 10
+        lines.firstNotNullOfOrNull { line ->
+            if (!line.trimStart().startsWith("Format:", ignoreCase = true)) return@firstNotNullOfOrNull null
+            line.substringAfter(':').split(',').map { it.trim().lowercase() }.takeIf { "start" in it && "end" in it }
+        }?.let { names ->
+            startIdx = names.indexOf("start")
+            endIdx = names.indexOf("end")
+            fields = names.size
+        }
+        val out = ArrayList<String>()
+        for (line in lines) {
+            if (!line.startsWith("Dialogue:")) {
+                out += line
+                continue
+            }
+            val parts = line.substring("Dialogue:".length).split(",", limit = fields)
+            if (parts.size < fields) {
+                out += line
+                continue
+            }
+            val start = assMs(parts[startIdx])
+            val end = assMs(parts[endIdx])
+            if (start != null && start >= durationMs) continue
+            if (end != null && end > durationMs) {
+                val m = parts.toMutableList()
+                val d = durationMs
+                m[endIdx] = String.format(Locale.US, "%d:%02d:%02d.%02d", d / 3_600_000, d / 60_000 % 60, d / 1000 % 60, d / 10 % 100)
+                out += "Dialogue:" + m.joinToString(",")
+            } else {
+                out += line
+            }
+        }
+        return out.joinToString("\n")
+    }
+
+    private fun assMs(value: String): Long? {
+        val m = ASS_TIME.find(value.trim()) ?: return null
+        return ((m.groupValues[1].toLong() * 60 + m.groupValues[2].toLong()) * 60 + m.groupValues[3].toLong()) * 1000 +
+            m.groupValues[4].padEnd(2, '0').toLong() * 10
     }
 
     private fun cacheDir(ctx: Context): File {
