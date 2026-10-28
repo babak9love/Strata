@@ -193,15 +193,18 @@ fun MusicPlayerSheet(
             }
 
             // A track finished: either it moved on to the next one on its own, or it was the last.
+            // With "repeat all" on, the playlist is meant to keep going, so "back to list" is not applied.
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && backToListNow) {
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && backToListNow &&
+                    c?.repeatMode != Player.REPEAT_MODE_ALL
+                ) {
                     c?.pause()
                     onDismissNow()
                 }
             }
 
             override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_ENDED && backToListNow) onDismissNow()
+                if (state == Player.STATE_ENDED && backToListNow && c?.repeatMode != Player.REPEAT_MODE_ALL) onDismissNow()
             }
 
             // Remember the repeat / shuffle buttons for next time.
