@@ -233,8 +233,6 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
                 }
 
                 override fun onPlaybackStateChanged(state: Int) {
-                    // The length of the video: a delayed sound is cut there so it cannot run on past the end.
-                    if (state == Player.STATE_READY) audioRenderers?.endUs = if (p.duration == C.TIME_UNSET) 0L else p.duration * 1000L
                     syncAudioHelper(hard = false)
                 }
             })
