@@ -9,73 +9,39 @@ import androidx.media3.exoplayer.audio.DefaultAudioSink
 import java.nio.ByteBuffer
 
 /**
- * Renderers whose audio output can be moved against the picture: [delayUs] positive plays the sound later,
- * negative earlier. Only the sound moves; the clock, the position and the picture stay where they are.
+ * Renderers whose own sound can be silenced while still running: [mute] makes the audio output play silence in place
+ * of the sound, so the audio clock (and with it the picture) carries on exactly as before. This is used while another
+ * player supplies the sound, which is how the sync and an audio file from storage are done.
  */
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class AudioSyncRenderersFactory(context: Context) : DefaultRenderersFactory(context) {
-    @Volatile var delayUs: Long = 0L
+    @Volatile var mute: Boolean = false
 
-    private val delayProcessor = DelayAudioProcessor { delayUs }
+    private val muteProcessor = MuteAudioProcessor { mute }
 
     override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink? =
         DefaultAudioSink.Builder(context)
-            .setAudioProcessors(arrayOf<AudioProcessor>(delayProcessor))
+            .setAudioProcessors(arrayOf<AudioProcessor>(muteProcessor))
             .build()
 }
 
-/**
- * Delays or advances the sound by changing the audio itself, not the clock:
- * - delayed: a stretch of silence is put in front of the audio, so the output's own clock runs on as before and
- *   the real audio is simply heard later;
- * - advanced: the first part of the audio is dropped.
- * It starts again after every seek (the audio is flushed then), reading the value that is set at that moment.
- */
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-private class DelayAudioProcessor(private val delayUs: () -> Long) : BaseAudioProcessor() {
-    private var sampleRate = 0
-    private var frameSize = 0
-    private var started = false
-    private var silenceLeft = 0L
-    private var skipLeft = 0L
+private class MuteAudioProcessor(private val mute: () -> Boolean) : BaseAudioProcessor() {
+    private var zeros = ByteArray(0)
 
-    override fun onConfigure(inputAudioFormat: AudioProcessor.AudioFormat): AudioProcessor.AudioFormat {
-        sampleRate = inputAudioFormat.sampleRate
-        frameSize = inputAudioFormat.bytesPerFrame
-        return inputAudioFormat
-    }
-
-    override fun onFlush(streamMetadata: AudioProcessor.StreamMetadata) {
-        started = false
-        silenceLeft = 0L
-        skipLeft = 0L
-    }
-
-    override fun onReset() {
-        started = false
-        silenceLeft = 0L
-        skipLeft = 0L
-    }
+    override fun onConfigure(inputAudioFormat: AudioProcessor.AudioFormat): AudioProcessor.AudioFormat = inputAudioFormat
 
     override fun queueInput(inputBuffer: ByteBuffer) {
-        if (!started) {
-            started = true
-            val delay = delayUs()
-            val bytes = Math.abs(delay) * sampleRate / 1_000_000L * frameSize
-            if (delay > 0L) silenceLeft = bytes else if (delay < 0L) skipLeft = bytes
+        val n = inputBuffer.remaining()
+        if (n == 0) return
+        val out = replaceOutputBuffer(n)
+        if (mute()) {
+            inputBuffer.position(inputBuffer.limit())
+            if (zeros.size < n) zeros = ByteArray(n)
+            out.put(zeros, 0, n)
+        } else {
+            out.put(inputBuffer)
         }
-        if (skipLeft > 0L) {
-            val n = minOf(skipLeft, inputBuffer.remaining().toLong()).toInt()
-            inputBuffer.position(inputBuffer.position() + n)
-            skipLeft -= n
-        }
-        val input = inputBuffer.remaining()
-        if (input == 0) return
-        val silence = silenceLeft.toInt()
-        silenceLeft = 0L
-        val out = replaceOutputBuffer(silence + input)
-        if (silence > 0) out.put(ByteArray(silence))
-        out.put(inputBuffer)
         out.flip()
     }
 }
