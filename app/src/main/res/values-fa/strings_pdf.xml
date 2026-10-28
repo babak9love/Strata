@@ -132,6 +132,7 @@
     <string name="media_audio_tracks">آهنگ‌های صوتی</string>
     <string name="media_audio_track_disable">غیرفعال</string>
     <string name="media_audio_track_n">ترک %1$d</string>
+    <string name="media_audio_external">از حافظه گوشی</string>
     <string name="media_audio_load">بارگذاری از فایل…</string>
     <string name="media_audio_load_failed">این فایل صوتی خوانده نشد</string>
     <string name="media_audio_sync">همگام‌سازی صدا</string>

@@ -47,6 +47,8 @@ import java.util.Locale
 fun AudioTracksDialog(
     player: Player,
     externalName: String?,
+    externalActive: Boolean,
+    onUseExternal: (Boolean) -> Unit,
     offsetMs: Int,
     onLoadFile: () -> Unit,
     onApplyOffset: (Int) -> Unit,
@@ -72,7 +74,8 @@ fun AudioTracksDialog(
                     IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_close)) }
                 }
                 Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                    TrackRow(stringResource(R.string.media_audio_track_disable), null, disabled, true) {
+                    TrackRow(stringResource(R.string.media_audio_track_disable), null, disabled && !externalActive, true) {
+                        onUseExternal(false)
                         player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
                             .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, true)
                             .build()
@@ -81,9 +84,7 @@ fun AudioTracksDialog(
                     groups.forEachIndexed { i, group ->
                         val format = group.getTrackFormat(0)
                         // Prefer the stream's own name; fall back to "Track N" when it has none.
-                        // An audio file added from storage comes last among the streams.
-                        val isExternal = externalName != null && i == groups.lastIndex
-                        val name = if (isExternal) externalName else format.label?.trim()?.takeIf { it.isNotEmpty() }
+                        val name = format.label?.trim()?.takeIf { it.isNotEmpty() }
                         val details = listOfNotNull(
                             format.language?.takeIf { it.isNotBlank() && it != "und" }?.let { Locale.forLanguageTag(it).displayLanguage.takeIf { n -> n.isNotBlank() } },
                             format.channelCount.takeIf { it > 0 }?.let { "$it ch" },
@@ -91,14 +92,22 @@ fun AudioTracksDialog(
                         TrackRow(
                             name ?: stringResource(R.string.media_audio_track_n, i + 1),
                             details,
-                            !disabled && group.isTrackSelected(0),
+                            !disabled && !externalActive && group.isTrackSelected(0),
                             group.isTrackSupported(0),
                         ) {
+                            onUseExternal(false)
                             player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
                                 .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
                                 .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
                                 .setOverrideForType(TrackSelectionOverride(group.mediaTrackGroup, 0))
                                 .build()
+                            onDismiss()
+                        }
+                    }
+                    // The audio file added from storage, after the video's own streams.
+                    if (externalName != null) {
+                        TrackRow(externalName, stringResource(R.string.media_audio_external), externalActive, true) {
+                            onUseExternal(true)
                             onDismiss()
                         }
                     }

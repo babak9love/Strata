@@ -136,6 +136,7 @@
     <string name="media_audio_tracks">Audio tracks</string>
     <string name="media_audio_track_disable">Disable</string>
     <string name="media_audio_track_n">Track %1$d</string>
+    <string name="media_audio_external">From storage</string>
     <string name="media_audio_load">Load from file…</string>
     <string name="media_audio_load_failed">Couldn\'t read this audio file</string>
     <string name="media_audio_sync">Audio sync</string>
