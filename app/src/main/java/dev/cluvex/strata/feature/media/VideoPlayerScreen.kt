@@ -71,7 +71,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AspectRatio
-import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.FastForward
@@ -268,6 +268,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     @Volatile private var pendingSubtitleLabel: String? = null
+    private var reloadSeq = 0
 
     /** Subtitle files (next to each video, or loaded by the user) that sync can shift, by video path. Main thread only. */
     private val externals = HashMap<String, MutableList<SubtitleFiles.Prepared>>()
@@ -331,7 +332,13 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         val index = p.currentMediaItemIndex
         val position = p.currentPosition
         val playWhenReady = p.playWhenReady
-        p.replaceMediaItem(index, updated)
+        // When only the subtitles of an item change, ExoPlayer updates the item in place and keeps the subtitle
+        // sources it already has, so the new (shifted) file is never read until the video is reopened. A different
+        // uri makes it build the item's sources again; the fragment is ignored when the file is opened.
+        val forced = updated.localConfiguration?.uri?.let { uri ->
+            updated.buildUpon().setUri(uri.buildUpon().fragment("sub${++reloadSeq}").build()).build()
+        } ?: updated
+        p.replaceMediaItem(index, forced)
         p.seekTo(index, position)
         p.playWhenReady = playWhenReady
     }
@@ -886,7 +893,7 @@ fun VideoPlayerScreen(
                                                     }
                                                 }
                                             },
-                                            leadingIcon = { Icon(Icons.Rounded.Bedtime, contentDescription = null) },
+                                            leadingIcon = { Icon(Icons.Rounded.Alarm, contentDescription = null) },
                                             onClick = {
                                                 menu = false
                                                 sleepDialog = true

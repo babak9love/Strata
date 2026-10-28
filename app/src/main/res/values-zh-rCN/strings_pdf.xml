@@ -173,7 +173,11 @@
     <string name="media_subtitle_size_m">中</string>
     <string name="media_subtitle_size_l">大</string>
     <string name="media_subtitle_size_xl">特大</string>
-    <string name="media_subtitle_background">深色背景</string>
+    <string name="media_subtitle_background">背景</string>
+    <string name="media_subtitle_text_color">文字颜色</string>
+    <string name="media_subtitle_background_color">背景颜色</string>
+    <string name="media_subtitle_position">位置（距底部高度）</string>
+    <string name="media_subtitle_style_reset">重置样式</string>
     <string name="media_subtitle_load_failed">无法读取该字幕文件</string>
     <string name="media_subtitle_sync">同步</string>
     <string name="media_subtitle_sync_hint">正值使字幕延后，负值使字幕提前。</string>

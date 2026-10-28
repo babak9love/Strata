@@ -28,14 +28,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
 import kotlinx.coroutines.delay
 
-/** Asks for a duration like `3h 5m` (or a quick preset) and starts [SleepTimer]; also shows and stops a running one. */
+/** Asks for a duration in a fixed `0h 00m` box (or a quick preset) and starts [SleepTimer]; also shows and stops a running one. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SleepTimerDialog(onDismiss: () -> Unit) {
@@ -48,8 +53,8 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
         }
     }
     var text by remember { mutableStateOf("") }
-    val parsed = SleepTimer.parse(text)
-    val invalid = text.isNotBlank() && parsed == null
+    val parsed = SleepTimer.fromDigits(text)
+    val invalid = text.isNotEmpty() && parsed == null
     val start = {
         parsed?.let {
             SleepTimer.start(it)
@@ -71,20 +76,20 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                     )
                     Spacer(Modifier.height(12.dp))
                 }
-                // "3h 5m" always reads left to right, even in the Persian layout.
+                // The "h" and "m" stay in the box; only digits are typed and they fill it from the right (0h 00m).
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                     OutlinedTextField(
                         value = text,
-                        onValueChange = { text = it.take(12) },
+                        onValueChange = { text = SleepTimer.cleanDigits(it) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         isError = invalid,
-                        label = { Text(stringResource(R.string.media_sleep_timer_label)) },
-                        placeholder = { Text("3h 5m") },
+                        textStyle = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.Center),
+                        visualTransformation = SleepTimerMask,
                         supportingText = if (invalid) {
                             { Text(stringResource(R.string.media_sleep_timer_invalid)) }
                         } else null,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Done),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { start() }),
                     )
                 }
@@ -118,4 +123,18 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
             }
         },
     )
+}
+
+/** Shows the typed digits inside the fixed `0h 00m` shape; the caret always stays at the end. */
+private object SleepTimerMask : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val shown = SleepTimer.maskText(text.text)
+        return TransformedText(
+            AnnotatedString(shown),
+            object : OffsetMapping {
+                override fun originalToTransformed(offset: Int) = shown.length
+                override fun transformedToOriginal(offset: Int) = text.length
+            },
+        )
+    }
 }

@@ -177,7 +177,11 @@
     <string name="media_subtitle_size_m">متوسط</string>
     <string name="media_subtitle_size_l">بزرگ</string>
     <string name="media_subtitle_size_xl">خیلی بزرگ</string>
-    <string name="media_subtitle_background">پس‌زمینه‌ی تیره</string>
+    <string name="media_subtitle_background">پس‌زمینه</string>
+    <string name="media_subtitle_text_color">رنگ متن</string>
+    <string name="media_subtitle_background_color">رنگ پس‌زمینه</string>
+    <string name="media_subtitle_position">موقعیت (فاصله از پایین)</string>
+    <string name="media_subtitle_style_reset">بازنشانی ظاهر</string>
     <string name="media_subtitle_load_failed">این فایل زیرنویس خوانده نشد</string>
     <string name="media_subtitle_sync">همگام‌سازی</string>
     <string name="media_subtitle_sync_hint">مثبت: زیرنویس دیرتر نمایش داده می‌شود. منفی: زودتر.</string>

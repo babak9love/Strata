@@ -185,7 +185,11 @@
     <string name="media_subtitle_size_m">Средний</string>
     <string name="media_subtitle_size_l">Большой</string>
     <string name="media_subtitle_size_xl">Очень большой</string>
-    <string name="media_subtitle_background">Тёмный фон</string>
+    <string name="media_subtitle_background">Фон</string>
+    <string name="media_subtitle_text_color">Цвет текста</string>
+    <string name="media_subtitle_background_color">Цвет фона</string>
+    <string name="media_subtitle_position">Положение (высота от низа)</string>
+    <string name="media_subtitle_style_reset">Сбросить стиль</string>
     <string name="media_subtitle_load_failed">Не удалось прочитать файл субтитров</string>
     <string name="media_subtitle_sync">Синхронизация</string>
     <string name="media_subtitle_sync_hint">Плюс — субтитры позже, минус — раньше.</string>

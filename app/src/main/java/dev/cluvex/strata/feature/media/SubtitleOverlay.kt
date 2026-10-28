@@ -43,10 +43,26 @@ import androidx.media3.common.Player
 import androidx.media3.common.text.Cue
 import androidx.media3.common.text.CueGroup
 
-/** How subtitles look: a size multiplier and whether they sit on a dark background. Kept between runs. */
-data class SubtitleStyle(val scale: Float = 1f, val background: Boolean = true)
+/**
+ * How subtitles look. [scale] multiplies the text size, [textColor] and [backgroundColor] are ARGB values (the
+ * background one keeps its own opacity and only shows while [background] is on) and [lift] raises the subtitles
+ * from the bottom edge, in dp. Kept between runs.
+ */
+data class SubtitleStyle(
+    val scale: Float = 1f,
+    val background: Boolean = true,
+    val textColor: Int = DEFAULT_SUBTITLE_TEXT,
+    val backgroundColor: Int = DEFAULT_SUBTITLE_BACKGROUND,
+    val lift: Float = 0f,
+)
 
-/** The four sizes offered in the subtitle dialog. */
+const val DEFAULT_SUBTITLE_TEXT = 0xFFFFFFFF.toInt()
+const val DEFAULT_SUBTITLE_BACKGROUND = 0x99000000.toInt()
+const val SUBTITLE_SCALE_MIN = 0.5f
+const val SUBTITLE_SCALE_MAX = 3f
+const val SUBTITLE_LIFT_MAX = 400f
+
+/** The four size presets offered in the subtitle dialog (the slider reaches everything in between). */
 val SUBTITLE_SCALES = listOf(0.8f, 1f, 1.3f, 1.7f)
 
 object SubtitleStylePrefs {
@@ -56,11 +72,23 @@ object SubtitleStylePrefs {
 
     fun load(ctx: Context): SubtitleStyle {
         val p = prefs(ctx)
-        return SubtitleStyle(p.getFloat("scale", 1f).coerceIn(0.5f, 2.5f), p.getBoolean("background", true))
+        return SubtitleStyle(
+            scale = p.getFloat("scale", 1f).coerceIn(SUBTITLE_SCALE_MIN, SUBTITLE_SCALE_MAX),
+            background = p.getBoolean("background", true),
+            textColor = p.getInt("textColor", DEFAULT_SUBTITLE_TEXT),
+            backgroundColor = p.getInt("backgroundColor", DEFAULT_SUBTITLE_BACKGROUND),
+            lift = p.getFloat("lift", 0f).coerceIn(0f, SUBTITLE_LIFT_MAX),
+        )
     }
 
     fun save(ctx: Context, style: SubtitleStyle) {
-        prefs(ctx).edit().putFloat("scale", style.scale).putBoolean("background", style.background).apply()
+        prefs(ctx).edit()
+            .putFloat("scale", style.scale)
+            .putBoolean("background", style.background)
+            .putInt("textColor", style.textColor)
+            .putInt("backgroundColor", style.backgroundColor)
+            .putFloat("lift", style.lift)
+            .apply()
     }
 }
 
@@ -92,7 +120,8 @@ fun SubtitleOverlay(
         }
     }
     // Lifted above the seek bar and buttons while the controls are showing.
-    val bottomPad by animateDpAsState(if (controlsVisible) 190.dp else 24.dp, label = "subtitle-bottom")
+    val ownPad = 24.dp + style.lift.dp
+    val bottomPad by animateDpAsState(if (controlsVisible) maxOf(190.dp, ownPad) else ownPad, label = "subtitle-bottom")
     val textCues = cues.filter { it.text != null && it.text.toString().isNotBlank() }
     if (textCues.isEmpty()) return
     val top = textCues.filter { it.lineType == Cue.LINE_TYPE_FRACTION && it.line != Cue.DIMEN_UNSET && it.line < 0.35f }
@@ -115,7 +144,7 @@ private fun CueColumn(cues: List<Cue>, style: SubtitleStyle, modifier: Modifier)
             val text = cue.text ?: return@forEach
             Text(
                 text = text.toAnnotated(),
-                color = Color.White,
+                color = Color(style.textColor),
                 fontSize = (18f * style.scale).sp,
                 lineHeight = (24f * style.scale).sp,
                 fontWeight = FontWeight.Medium,
@@ -123,10 +152,10 @@ private fun CueColumn(cues: List<Cue>, style: SubtitleStyle, modifier: Modifier)
                 // The direction follows the text itself, so a Persian line keeps its punctuation on the correct side.
                 style = TextStyle(
                     textDirection = TextDirection.Content,
-                    shadow = if (style.background) null else Shadow(Color.Black, Offset.Zero, 8f),
+                    shadow = if (style.background && Color(style.backgroundColor).alpha > 0.3f) null else Shadow(Color.Black, Offset.Zero, 8f),
                 ),
                 modifier = Modifier
-                    .background(if (style.background) Color.Black.copy(alpha = 0.6f) else Color.Transparent, RoundedCornerShape(6.dp))
+                    .background(if (style.background) Color(style.backgroundColor) else Color.Transparent, RoundedCornerShape(6.dp))
                     .padding(horizontal = 8.dp, vertical = 2.dp),
             )
         }

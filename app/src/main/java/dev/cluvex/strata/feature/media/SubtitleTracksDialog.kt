@@ -1,6 +1,16 @@
 package dev.cluvex.strata.feature.media
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Slider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import dev.cluvex.strata.feature.color.ColorPickerDialog
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +63,7 @@ import java.util.Locale
 
 /**
  * Lists every subtitle track of the playing video (embedded ones and files found next to it), plays the one the
- * user picks or turns subtitles off, loads a subtitle file from storage, and sets their size and background.
+ * user picks or turns subtitles off, loads a subtitle file from storage, and sets their size, position, text colour and background.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -86,6 +96,9 @@ fun SubtitleTracksDialog(
         stringResource(R.string.media_subtitle_size_l),
         stringResource(R.string.media_subtitle_size_xl),
     )
+
+    var pickText by remember { mutableStateOf(false) }
+    var pickBackground by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
@@ -158,6 +171,29 @@ fun SubtitleTracksDialog(
                             )
                         }
                     }
+                    // Any size in between: the slider moves in 5% steps.
+                    SliderRow(
+                        valueText = "${(style.scale * 100).roundToInt()}%",
+                        value = style.scale,
+                        range = SUBTITLE_SCALE_MIN..SUBTITLE_SCALE_MAX,
+                        steps = ((SUBTITLE_SCALE_MAX - SUBTITLE_SCALE_MIN) / 0.05f).roundToInt() - 1,
+                        onChange = { onStyleChange(style.copy(scale = (it / 0.05f).roundToInt() * 0.05f)) },
+                    )
+                    Text(
+                        stringResource(R.string.media_subtitle_position),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp),
+                    )
+                    SliderRow(
+                        valueText = "${style.lift.roundToInt()} dp",
+                        value = style.lift,
+                        range = 0f..SUBTITLE_LIFT_MAX,
+                        steps = 0,
+                        onChange = { onStyleChange(style.copy(lift = it.roundToInt().toFloat())) },
+                    )
+                    HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 4.dp))
+                    ColorRow(stringResource(R.string.media_subtitle_text_color), style.textColor) { pickText = true }
                     Row(
                         Modifier.fillMaxWidth().clickable { onStyleChange(style.copy(background = !style.background)) }.padding(horizontal = 24.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -165,12 +201,36 @@ fun SubtitleTracksDialog(
                         Text(stringResource(R.string.media_subtitle_background), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                         Switch(checked = style.background, onCheckedChange = null)
                     }
+                    if (style.background) {
+                        ColorRow(stringResource(R.string.media_subtitle_background_color), style.backgroundColor) { pickBackground = true }
+                    }
+                    TextButton(
+                        onClick = { onStyleChange(SubtitleStyle()) },
+                        enabled = style != SubtitleStyle(),
+                        modifier = Modifier.align(Alignment.End).padding(end = 12.dp),
+                    ) { Text(stringResource(R.string.media_subtitle_style_reset)) }
                 }
                 TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End).padding(end = 12.dp)) {
                     Text(stringResource(R.string.common_close))
                 }
             }
         }
+    }
+    if (pickText) {
+        ColorPickerDialog(
+            initial = style.textColor,
+            title = stringResource(R.string.media_subtitle_text_color),
+            onPick = { onStyleChange(style.copy(textColor = it)); pickText = false },
+            onDismiss = { pickText = false },
+        )
+    }
+    if (pickBackground) {
+        ColorPickerDialog(
+            initial = style.backgroundColor,
+            title = stringResource(R.string.media_subtitle_background_color),
+            onPick = { onStyleChange(style.copy(backgroundColor = it, background = true)); pickBackground = false },
+            onDismiss = { pickBackground = false },
+        )
     }
 }
 
@@ -259,5 +319,36 @@ private fun StepButton(text: String, onClick: () -> Unit) {
         Box(Modifier.padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
             Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
+    }
+}
+
+@Composable
+private fun SliderRow(valueText: String, value: Float, range: ClosedFloatingPointRange<Float>, steps: Int, onChange: (Float) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+        Slider(value = value, onValueChange = onChange, valueRange = range, steps = steps.coerceAtLeast(0), modifier = Modifier.weight(1f))
+        Text(
+            valueText,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(start = 12.dp).widthIn(min = 52.dp),
+            textAlign = TextAlign.End,
+        )
+    }
+}
+
+/** A line with a round swatch of the colour on the right; tapping it opens the colour picker. */
+@Composable
+private fun ColorRow(title: String, argb: Int, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 24.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Box(
+            Modifier
+                .size(28.dp)
+                .border(1.5.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                .padding(3.dp)
+                .background(Color(argb), CircleShape),
+        )
     }
 }

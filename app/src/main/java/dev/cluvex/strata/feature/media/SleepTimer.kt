@@ -70,6 +70,23 @@ object SleepTimer {
         return total * 60_000L
     }
 
+    /** Only the digits the user typed (Persian and Arabic-Indic ones count), without leading zeros, at most four. */
+    fun cleanDigits(text: String): String = normalizeDigits(text).filter { it in '0'..'9' }.trimStart('0').take(4)
+
+    /** The fixed-format field: digits fill it from the right, so `130` is `1h 30m` and nothing typed is `0h 00m`. */
+    fun maskText(digits: String): String {
+        val n = digits.toIntOrNull() ?: 0
+        return "${n / 100}h ${(n % 100).toString().padStart(2, '0')}m"
+    }
+
+    /** Typed [digits] (see [maskText]) to milliseconds; null when it is zero or longer than 24 hours. */
+    fun fromDigits(digits: String): Long? {
+        val n = digits.toIntOrNull() ?: 0
+        val total = (n / 100) * 60L + (n % 100)
+        if (total <= 0L || total > MAX_MINUTES) return null
+        return total * 60_000L
+    }
+
     /** Remaining time as `3h 5m`, `2h` or `45m`, rounded up to the next minute. */
     fun format(ms: Long): String {
         val totalMin = ((ms.coerceAtLeast(0L) + 59_999L) / 60_000L)

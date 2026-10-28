@@ -24,7 +24,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.Audiotrack
-import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.MoreVert
@@ -289,7 +289,7 @@ fun MusicPlayerSheet(
                                     }
                                 }
                             },
-                            leadingIcon = { Icon(Icons.Rounded.Bedtime, contentDescription = null) },
+                            leadingIcon = { Icon(Icons.Rounded.Alarm, contentDescription = null) },
                             onClick = {
                                 menu = false
                                 sleepDialog = true
