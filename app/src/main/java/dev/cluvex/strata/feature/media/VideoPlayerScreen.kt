@@ -566,7 +566,8 @@ fun VideoPlayerScreen(
     val view = LocalView.current
     val context = LocalContext.current
     val activity = remember(view) { view.context.findActivity() }
-    // Optional: the screen turns with the phone's rotation sensor (only while the system auto-rotate is on).
+    // Optional: the screen turns with the phone's rotation sensor (while the system auto-rotate is on). When it is
+    // off, the player stays in its current orientation even if the system auto-rotate is on.
     var autoRotate by remember { mutableStateOf(VideoRotatePrefs.load(context)) }
     AutoRotateEffect(autoRotate)
     var subtitlesDialog by remember { mutableStateOf(false) }
@@ -695,15 +696,18 @@ fun VideoPlayerScreen(
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             // A video finished: either it moved on to the next one on its own, or it was the last.
+            // With "repeat all" on, the playlist is meant to keep going, so "back to list" is not applied.
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && backToListNow && !vm.reloading) {
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && backToListNow && !vm.reloading &&
+                    player?.repeatMode != Player.REPEAT_MODE_ALL
+                ) {
                     player?.pause()
                     onBackNow()
                 }
             }
 
             override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_ENDED && backToListNow && !vm.reloading) onBackNow()
+                if (state == Player.STATE_ENDED && backToListNow && !vm.reloading && player?.repeatMode != Player.REPEAT_MODE_ALL) onBackNow()
             }
         }
         player?.addListener(listener)
@@ -1193,37 +1197,40 @@ object VideoRotatePrefs {
 }
 
 /**
- * While [enabled], the screen turns with the phone: the system's own auto-rotate setting decides, so with it off
- * the screen stays as it is. Switching it off (or closing the player) puts the orientation back as it was.
+ * While [enabled], the screen turns with the phone (and the system's own auto-rotate setting still applies).
+ * While it is off, the screen is locked to the orientation it is in, whatever the system auto-rotate says: the
+ * app's default orientation would otherwise follow the sensor. Closing the player puts the orientation back as it
+ * was when the player opened.
  */
 @Composable
 private fun AutoRotateEffect(enabled: Boolean) {
     val view = LocalView.current
     val activity = remember(view) { view.context.findActivity() }
-    DisposableEffect(activity, enabled) {
-        if (activity == null || !enabled) {
-            onDispose { }
-        } else {
-            val before = activity.requestedOrientation
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER
-            onDispose { activity.requestedOrientation = before }
-        }
-    }
-}
-
-/** Toggles the screen between landscape and portrait; the original orientation is restored when the player closes. */
-@Composable
-private fun rememberRotateAction(): () -> Unit {
-    val view = LocalView.current
-    val activity = remember(view) { view.context.findActivity() }
+    // Declared first so it runs first: it remembers the orientation from before the player touched it.
     DisposableEffect(activity) {
         val original = activity?.requestedOrientation
         onDispose { if (activity != null && original != null) activity.requestedOrientation = original }
     }
+    DisposableEffect(activity, enabled) {
+        activity?.requestedOrientation =
+            if (enabled) ActivityInfo.SCREEN_ORIENTATION_FULL_USER else ActivityInfo.SCREEN_ORIENTATION_LOCKED
+        onDispose { }
+    }
+}
+
+/**
+ * Toggles the screen between landscape and portrait with the rotate button. The orientations are fixed ones (not the
+ * "sensor" kinds, which keep following the phone's sensor and ignore the system auto-rotate setting).
+ * [AutoRotateEffect] puts the original orientation back when the player closes.
+ */
+@Composable
+private fun rememberRotateAction(): () -> Unit {
+    val view = LocalView.current
+    val activity = remember(view) { view.context.findActivity() }
     return {
         activity?.let {
             val landscape = it.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-            it.requestedOrientation = if (landscape) ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            it.requestedOrientation = if (landscape) ActivityInfo.SCREEN_ORIENTATION_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
     }
 }
