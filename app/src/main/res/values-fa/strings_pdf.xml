@@ -132,6 +132,10 @@
     <string name="media_audio_tracks">آهنگ‌های صوتی</string>
     <string name="media_audio_track_disable">غیرفعال</string>
     <string name="media_audio_track_n">ترک %1$d</string>
+    <string name="media_audio_load">بارگذاری از فایل…</string>
+    <string name="media_audio_load_failed">این فایل صوتی خوانده نشد</string>
+    <string name="media_audio_sync">همگام‌سازی صدا</string>
+    <string name="media_audio_sync_hint">مقدار مثبت صدا را دیرتر و منفی زودتر پخش می‌کند.</string>
     <string name="media_font_unreadable">این فونت خوانده نشد: \u2068%1$s\u2069</string>
     <string name="media_sample_text">متن نمونه</string>
     <string name="media_font_sample">بیژن جوان با صدای خوش و ضرب ظریف، غزلی از حافظ را ثبت کرد؛ پس ژاله با عشق، چای گرم، قند لذیذ و طالبی آورد</string>

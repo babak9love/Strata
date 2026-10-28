@@ -96,6 +96,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -124,6 +125,12 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.AndroidViewModel
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.exoplayer.source.ClippingMediaSource
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.MergingMediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
@@ -212,7 +219,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             sidecars.forEach { (video, subs) -> externals[video] = subs.toMutableList() }
             val skip = dev.cluvex.strata.core.data.SettingsRepository(getApplication()).settings.first().behavior
             playAlone = skip.playAloneVideo
-            val p = ExoPlayer.Builder(getApplication())
+            val renderers = AudioSyncRenderersFactory(getApplication()).also { audioRenderers = it }
+            val p = ExoPlayer.Builder(getApplication(), renderers)
                 .setAudioAttributes(VIDEO_AUDIO_ATTRIBUTES, skip.playAloneVideo)
                 .setSeekBackIncrementMs(skip.seekBackSeconds * 1000L)
                 .setSeekForwardIncrementMs(skip.seekForwardSeconds * 1000L)
@@ -220,11 +228,24 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             p.addListener(object : Player.Listener {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     title = mediaItem?.mediaMetadata?.displayTitle?.toString().orEmpty()
+                    mediaItem?.mediaId?.let { applyAudioSettingsOf(it) }
                 }
             })
             // A subtitle file the user just loaded is switched on as soon as the player has it as a track.
             p.addListener(object : Player.Listener {
                 override fun onTracksChanged(tracks: Tracks) {
+                    // An audio file the user just added is played as soon as the player has it as a track (it is the last one).
+                    if (pendingAudioBefore >= 0) {
+                        val audio = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
+                        if (audio.size > pendingAudioBefore) {
+                            pendingAudioBefore = -1
+                            p.trackSelectionParameters = p.trackSelectionParameters.buildUpon()
+                                .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+                                .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
+                                .setOverrideForType(TrackSelectionOverride(audio.last().mediaTrackGroup, 0))
+                                .build()
+                        }
+                    }
                     val label = pendingSubtitleLabel ?: return
                     val group = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_TEXT && it.getTrackFormat(0).label == label } ?: return
                     pendingSubtitleLabel = null
@@ -248,6 +269,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             volumeLevel = minOf(skip.videoVolume.coerceIn(0.05f, MAX_LEVEL), SAFE_LEVEL)
             p.volume = minOf(volumeLevel, 1f)
             p.setMediaItems(list.files.map { mediaItem(it, sidecars[it.path].orEmpty()) }, list.start, if (start != null) start.positionMs else if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
+            applyAudioSettingsOf(list.files[list.start].path)
             p.prepare()
             p.playWhenReady = start?.playing ?: true
             title = list.current.name
@@ -268,6 +290,110 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     @Volatile private var pendingSubtitleLabel: String? = null
+
+    // ---- Audio: a file added from storage, and the sync between sound and picture.
+    private var audioRenderers: AudioSyncRenderersFactory? = null
+
+    /** Audio files added from storage, by video path: the file and the name shown for it. Main thread only. */
+    private val externalAudio = HashMap<String, Pair<Uri, String>>()
+
+    /** Number of audio streams before an added file was merged in; -1 when nothing is pending. */
+    @Volatile private var pendingAudioBefore = -1
+
+    /** Name of the audio file added to the video that is playing, if any. */
+    var externalAudioName by mutableStateOf<String?>(null)
+        private set
+
+    /** Sync (milliseconds, positive = the sound later) of the video that is playing. */
+    var audioOffsetMs by mutableIntStateOf(0)
+        private set
+
+    /** Reads the saved sync and the added audio file of the video [mediaId] that is now playing. */
+    private fun applyAudioSettingsOf(mediaId: String) {
+        val saved = AudioOffsets.get(getApplication(), mediaId)
+        audioOffsetMs = saved
+        audioRenderers?.offsetUs = saved * 1000L
+        externalAudioName = externalAudio[mediaId]?.second
+    }
+
+    /**
+     * Moves the sound [offsetMs] later (negative: earlier) than the picture, and remembers it for this video.
+     * The audio is restarted so the new value takes effect; the picture stays where it is.
+     */
+    fun setAudioOffset(offsetMs: Int) {
+        val p = player ?: return
+        val id = p.currentMediaItem?.mediaId ?: return
+        val shown = p.currentPosition
+        AudioOffsets.save(getApplication(), id, offsetMs)
+        audioOffsetMs = offsetMs
+        audioRenderers?.offsetUs = offsetMs * 1000L
+        // After a seek the clock starts at the seek position plus the offset, so seek that much earlier to keep the picture here.
+        p.seekTo((shown - offsetMs).coerceAtLeast(0L))
+    }
+
+    /** Adds an audio file chosen by the user to the video that is playing and plays it instead of the video's own sound. */
+    fun addExternalAudio(uri: Uri, onFailed: () -> Unit) {
+        val p = player ?: return
+        val item = p.currentMediaItem
+        if (item == null) {
+            onFailed()
+            return
+        }
+        viewModelScope.launch {
+            val ctx = getApplication<Application>()
+            val name = withContext(Dispatchers.IO) {
+                runCatching {
+                    ctx.contentResolver.openInputStream(uri)?.close() ?: return@runCatching null
+                    ctx.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+                        ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+                        ?: uri.lastPathSegment
+                        ?: "audio"
+                }.getOrNull()
+            }
+            if (name == null) {
+                onFailed()
+                return@launch
+            }
+            externalAudio[item.mediaId] = uri to name
+            externalAudioName = name
+            pendingAudioBefore = p.currentTracks.groups.count { it.type == C.TRACK_TYPE_AUDIO }
+            swapCurrentItem(p, item)
+        }
+    }
+
+    /**
+     * The media source of [item]: the video with its subtitle files, plus the audio file added to it, if any.
+     * An added audio file is cut to the length of the video: left longer, it would keep playback going past the end.
+     */
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun sourceOf(item: MediaItem, durationMs: Long): MediaSource {
+        val data = DefaultDataSource.Factory(getApplication())
+        val video = DefaultMediaSourceFactory(data).createMediaSource(item)
+        val ext = externalAudio[item.mediaId] ?: return video
+        var audio: MediaSource = ProgressiveMediaSource.Factory(data).createMediaSource(MediaItem.fromUri(ext.first))
+        if (durationMs > 0L && durationMs != C.TIME_UNSET) {
+            audio = ClippingMediaSource.Builder(audio).setEndPositionUs(durationMs * 1000L).build()
+        }
+        return MergingMediaSource(video, audio)
+    }
+
+    /** Swaps the playing item for a freshly built copy of [item] (with its added audio) and carries on from the same spot. */
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun swapCurrentItem(p: ExoPlayer, item: MediaItem) {
+        val index = p.currentMediaItemIndex
+        val position = p.currentPosition
+        val playWhenReady = p.playWhenReady
+        val source = sourceOf(item, p.duration)
+        reloading = true
+        p.addMediaSource(index + 1, source)
+        p.removeMediaItem(index)
+        p.seekTo(index, position)
+        p.playWhenReady = playWhenReady
+        viewModelScope.launch {
+            delay(RELOAD_GRACE_MS)
+            reloading = false
+        }
+    }
     private var reloadSeq = 0
 
     /** Subtitle files (next to each video, or loaded by the user) that sync can shift, by video path. Main thread only. */
@@ -352,7 +478,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         reloading = true
         // The new copy goes in next to the old one before the old one is taken out, so the list is never without
         // the playing video (replacing it in one step can end the playback for an instant).
-        p.addMediaItem(index + 1, forced)
+        if (externalAudio.containsKey(forced.mediaId)) p.addMediaSource(index + 1, sourceOf(forced, p.duration)) else p.addMediaItem(index + 1, forced)
         p.removeMediaItem(index)
         p.seekTo(index, position)
         p.playWhenReady = playWhenReady
@@ -575,6 +701,11 @@ fun VideoPlayerScreen(
     val pickSubtitle = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             vm.addExternalSubtitle(uri) { Toast.makeText(context, R.string.media_subtitle_load_failed, Toast.LENGTH_SHORT).show() }
+        }
+    }
+    val pickAudio = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            vm.addExternalAudio(uri) { Toast.makeText(context, R.string.media_audio_load_failed, Toast.LENGTH_SHORT).show() }
         }
     }
     // Set by the headphones button of the floating window: the next stop is not a "window closed".
@@ -1080,7 +1211,19 @@ fun VideoPlayerScreen(
                 }
             }
         }
-        if (audioTracks && player != null) AudioTracksDialog(player) { audioTracks = false }
+        if (audioTracks && player != null) {
+            AudioTracksDialog(
+                player = player,
+                externalName = vm.externalAudioName,
+                offsetMs = vm.audioOffsetMs,
+                onLoadFile = {
+                    audioTracks = false
+                    pickAudio.launch(arrayOf("*/*"))
+                },
+                onApplyOffset = { vm.setAudioOffset(it) },
+                onDismiss = { audioTracks = false },
+            )
+        }
         if (sleepDialog) SleepTimerDialog { sleepDialog = false }
         if (subtitlesDialog && player != null) {
             SubtitleTracksDialog(
