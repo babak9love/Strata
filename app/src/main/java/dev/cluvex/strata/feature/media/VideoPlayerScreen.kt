@@ -441,13 +441,12 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     /**
      * Keeps the second player in step with the video: same pause, speed and volume, and the same spot, moved by the
-     * sync. A seek of the video moves it at once. Small drifts are put right by playing a little faster or slower
-     * (a few percent, the pitch stays), which cannot be heard; only a big drift is put right with a seek.
+     * sync. A seek of the video moves it at once; a drift of more than a quarter of a second is put right with a seek.
      */
     private fun syncAudioHelper(hard: Boolean) {
         val m = player ?: return
         val h = audioHelper ?: return
-        h.volume = m.volume
+        if (h.volume != m.volume) h.volume = m.volume
         val speed = m.playbackParameters.speed
         val target = m.currentPosition - audioOffsetMs
         if (target < 0L) { // the sound has not started yet (it is delayed)
@@ -462,16 +461,13 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             lastCorrectionAt = now
             setHelperSpeed(h, speed)
         } else if (h.playbackState == Player.STATE_READY && now - lastCorrectionAt > AUDIO_SETTLE_MS) {
-            val drift = h.currentPosition - target // positive: the second player is ahead
-            when {
-                abs(drift) > AUDIO_HARD_DRIFT_MS -> {
-                    h.seekTo(target)
-                    lastCorrectionAt = now
-                    setHelperSpeed(h, speed)
-                }
-                abs(drift) > AUDIO_DRIFT_MS -> setHelperSpeed(h, speed * (1f - drift / 4000f).coerceIn(0.95f, 1.05f))
-                else -> setHelperSpeed(h, speed)
+            // Both players run on the audio hardware's clock, so they hardly drift apart: only a clear difference is
+            // put right, with a seek. (Nudging the speed instead made the sound crackle.)
+            if (abs(h.currentPosition - target) > AUDIO_DRIFT_MS) {
+                h.seekTo(target + AUDIO_SEEK_LEAD_MS)
+                lastCorrectionAt = now
             }
+            setHelperSpeed(h, speed)
         }
         h.playWhenReady = m.playWhenReady && m.playbackState == Player.STATE_READY
     }
@@ -724,9 +720,9 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         private const val SAVE_INTERVAL_MS = 5_000L
         private const val RELOAD_GRACE_MS = 4_000L
         private const val AUDIO_SYNC_INTERVAL_MS = 200L
-        private const val AUDIO_DRIFT_MS = 80L
-        private const val AUDIO_HARD_DRIFT_MS = 1_000L
-        private const val AUDIO_SETTLE_MS = 1_500L
+        private const val AUDIO_DRIFT_MS = 250L
+        private const val AUDIO_SEEK_LEAD_MS = 100L
+        private const val AUDIO_SETTLE_MS = 3_000L
         const val MAX_LEVEL = 1f
         const val SAFE_LEVEL = 1f
 
