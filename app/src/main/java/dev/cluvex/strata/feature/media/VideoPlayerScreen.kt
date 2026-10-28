@@ -27,6 +27,12 @@ import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.rounded.Subtitles
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,6 +71,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AspectRatio
+import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.runtime.collectAsState
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.Crop
@@ -198,6 +206,10 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         PlaybackService.stopPlayback()
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.VIDEO, showHidden) }
+            // Subtitle files saved next to the videos (movie.srt, movie.fa.srt, ...), converted to UTF-8.
+            val sidecars = withContext(Dispatchers.IO) { SubtitleFiles.sidecarsFor(getApplication(), list.files) }
+            externals.clear()
+            sidecars.forEach { (video, subs) -> externals[video] = subs.toMutableList() }
             val skip = dev.cluvex.strata.core.data.SettingsRepository(getApplication()).settings.first().behavior
             playAlone = skip.playAloneVideo
             val p = ExoPlayer.Builder(getApplication())
@@ -208,6 +220,19 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             p.addListener(object : Player.Listener {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     title = mediaItem?.mediaMetadata?.displayTitle?.toString().orEmpty()
+                }
+            })
+            // A subtitle file the user just loaded is switched on as soon as the player has it as a track.
+            p.addListener(object : Player.Listener {
+                override fun onTracksChanged(tracks: Tracks) {
+                    val label = pendingSubtitleLabel ?: return
+                    val group = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_TEXT && it.getTrackFormat(0).label == label } ?: return
+                    pendingSubtitleLabel = null
+                    p.trackSelectionParameters = p.trackSelectionParameters.buildUpon()
+                        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                        .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                        .setOverrideForType(TrackSelectionOverride(group.mediaTrackGroup, 0))
+                        .build()
                 }
             })
             resume = ResumeListener(getApplication(), ResumeKind.VIDEO, p) { resumeEnabled }.also { p.addListener(it) }
@@ -222,11 +247,12 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             })
             volumeLevel = minOf(skip.videoVolume.coerceIn(0.05f, MAX_LEVEL), SAFE_LEVEL)
             p.volume = minOf(volumeLevel, 1f)
-            p.setMediaItems(list.files.map(::mediaItem), list.start, if (start != null) start.positionMs else if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
+            p.setMediaItems(list.files.map { mediaItem(it, sidecars[it.path].orEmpty()) }, list.start, if (start != null) start.positionMs else if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
             p.prepare()
             p.playWhenReady = start?.playing ?: true
             title = list.current.name
             player = p
+            SleepTimer.videoPauser = { p.pause() }
             saveJob?.cancel()
             saveJob = viewModelScope.launch {
                 while (true) {
@@ -239,6 +265,75 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     fun savePosition() {
         resume?.saveNow()
+    }
+
+    @Volatile private var pendingSubtitleLabel: String? = null
+
+    /** Subtitle files (next to each video, or loaded by the user) that sync can shift, by video path. Main thread only. */
+    private val externals = HashMap<String, MutableList<SubtitleFiles.Prepared>>()
+
+    /** Offsets (milliseconds, positive = later) of the subtitle files of the video that is playing, by track label. */
+    fun externalOffsets(): Map<String, Int> {
+        val id = player?.currentMediaItem?.mediaId ?: return emptyMap()
+        return externals[id].orEmpty().associate { it.label to it.offsetMs }
+    }
+
+    /**
+     * Adds a subtitle file chosen by the user to the video that is playing and switches it on.
+     * The player has to reload the item to take it, so playback carries on from the same spot.
+     */
+    fun addExternalSubtitle(uri: Uri, onFailed: () -> Unit) {
+        val p = player ?: return
+        viewModelScope.launch {
+            val prepared = withContext(Dispatchers.IO) { SubtitleFiles.preparePicked(getApplication(), uri) }
+            val item = p.currentMediaItem
+            if (prepared == null || item == null) {
+                onFailed()
+                return@launch
+            }
+            externals.getOrPut(item.mediaId) { mutableListOf() }.add(prepared)
+            val existing = item.localConfiguration?.subtitleConfigurations.orEmpty()
+            val updated = item.buildUpon()
+                .setSubtitleConfigurations(existing + prepared.configuration(default = false))
+                .build()
+            reloadCurrentItem(p, updated, prepared.label)
+        }
+    }
+
+    /**
+     * Sync: shows the subtitle file with this track [label] [offsetMs] later (negative: earlier) than its own times.
+     * The shifted copy replaces the old one and the offset is remembered for the file.
+     */
+    fun setSubtitleOffset(label: String, offsetMs: Int) {
+        val p = player ?: return
+        val item = p.currentMediaItem ?: return
+        val list = externals[item.mediaId] ?: return
+        val current = list.firstOrNull { it.label == label } ?: return
+        if (current.offsetMs == offsetMs) return
+        viewModelScope.launch {
+            val ctx = getApplication<Application>()
+            val shifted = withContext(Dispatchers.IO) { SubtitleFiles.withOffset(ctx, current, offsetMs) } ?: return@launch
+            SubtitleOffsets.save(ctx, current.key, offsetMs)
+            list[list.indexOf(current)] = shifted
+            val updated = item.buildUpon()
+                .setSubtitleConfigurations(
+                    item.localConfiguration?.subtitleConfigurations.orEmpty()
+                        .map { if (it.label == label) shifted.configuration(default = false) else it },
+                )
+                .build()
+            reloadCurrentItem(p, updated, label)
+        }
+    }
+
+    /** Swaps the playing item for [updated] and carries on from the same position; [selectLabel] is switched on once loaded. */
+    private fun reloadCurrentItem(p: ExoPlayer, updated: MediaItem, selectLabel: String) {
+        pendingSubtitleLabel = selectLabel
+        val index = p.currentMediaItemIndex
+        val position = p.currentPosition
+        val playWhenReady = p.playWhenReady
+        p.replaceMediaItem(index, updated)
+        p.seekTo(index, position)
+        p.playWhenReady = playWhenReady
     }
 
     // ---- Background play: the audio of the video keeps going in PlaybackService while the app is hidden.
@@ -283,6 +378,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     private fun backgroundItems(p: ExoPlayer): List<MediaItem> = (0 until p.mediaItemCount).map { i ->
         val item = p.getMediaItemAt(i)
         item.buildUpon()
+            .setSubtitleConfigurations(emptyList())
             .setMediaMetadata(
                 item.mediaMetadata.buildUpon()
                     .setExtras(android.os.Bundle().apply { putBoolean(PlaybackService.EXTRA_FROM_VIDEO, true) })
@@ -358,6 +454,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        SleepTimer.videoPauser = null
         releaseBackground()
         saveJob?.cancel()
         resume?.saveNow()
@@ -380,8 +477,10 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         const val MAX_LEVEL = 1f
         const val SAFE_LEVEL = 1f
 
-        fun mediaItem(file: File): MediaItem = MediaItem.Builder()
+        fun mediaItem(file: File, subtitles: List<SubtitleFiles.Prepared> = emptyList()): MediaItem = MediaItem.Builder()
             .setUri(Uri.fromFile(file))
+            // The first subtitle file next to the video is switched on by default; the dialog can turn it off.
+            .setSubtitleConfigurations(subtitles.mapIndexed { i, s -> s.configuration(default = i == 0) })
             .setMediaId(file.path)
             .setMediaMetadata(MediaMetadata.Builder().setTitle(file.nameWithoutExtension).setDisplayTitle(file.name).build())
             .build()
@@ -432,12 +531,21 @@ fun VideoPlayerScreen(
     var info by remember { mutableStateOf<String?>(null) }
     var titleExpanded by remember { mutableStateOf(false) }
     var audioTracks by remember { mutableStateOf(false) }
+    var sleepDialog by remember { mutableStateOf(false) }
+    val sleepEndsAt by SleepTimer.endsAt.collectAsState()
     // Which skip button is being adjusted by a long press: false = rewind, true = forward, null = none.
     var seekDialog by remember { mutableStateOf<Boolean?>(null) }
     val rotate = rememberRotateAction()
     val view = LocalView.current
     val context = LocalContext.current
     val activity = remember(view) { view.context.findActivity() }
+    var subtitlesDialog by remember { mutableStateOf(false) }
+    var subStyle by remember { mutableStateOf(SubtitleStylePrefs.load(context)) }
+    val pickSubtitle = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            vm.addExternalSubtitle(uri) { Toast.makeText(context, R.string.media_subtitle_load_failed, Toast.LENGTH_SHORT).show() }
+        }
+    }
     // Set by the headphones button of the floating window: the next stop is not a "window closed".
     var audioOnlyFromPip by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
@@ -758,6 +866,33 @@ fun VideoPlayerScreen(
                                             },
                                         )
                                         DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.media_subtitles)) },
+                                            leadingIcon = { Icon(Icons.Rounded.Subtitles, contentDescription = null) },
+                                            onClick = {
+                                                menu = false
+                                                subtitlesDialog = true
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(stringResource(R.string.media_sleep_timer))
+                                                    sleepEndsAt?.let { end ->
+                                                        Text(
+                                                            stringResource(R.string.media_sleep_timer_left, SleepTimer.format(end - android.os.SystemClock.elapsedRealtime())),
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                            leadingIcon = { Icon(Icons.Rounded.Bedtime, contentDescription = null) },
+                                            onClick = {
+                                                menu = false
+                                                sleepDialog = true
+                                            },
+                                        )
+                                        DropdownMenuItem(
                                             text = { Text(stringResource(R.string.media_auto_hide_controls)) },
                                             trailingIcon = { Switch(checked = autoHide, onCheckedChange = null) },
                                             onClick = { onAutoHideChange(!autoHide) },
@@ -860,6 +995,11 @@ fun VideoPlayerScreen(
                 },
             )
         }
+        if (!inPip) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                SubtitleOverlay(player, subStyle, controlsVisible = controls, modifier = Modifier.fillMaxSize())
+            }
+        }
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Box(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
                 AnimatedVisibility(
@@ -891,6 +1031,24 @@ fun VideoPlayerScreen(
             }
         }
         if (audioTracks && player != null) AudioTracksDialog(player) { audioTracks = false }
+        if (sleepDialog) SleepTimerDialog { sleepDialog = false }
+        if (subtitlesDialog && player != null) {
+            SubtitleTracksDialog(
+                player = player,
+                style = subStyle,
+                onStyleChange = {
+                    subStyle = it
+                    SubtitleStylePrefs.save(context, it)
+                },
+                externalOffsets = vm.externalOffsets(),
+                onApplySync = { label, ms -> vm.setSubtitleOffset(label, ms) },
+                onLoadFile = {
+                    subtitlesDialog = false
+                    pickSubtitle.launch(arrayOf("*/*"))
+                },
+                onDismiss = { subtitlesDialog = false },
+            )
+        }
         info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.VIDEO, onDismiss = { info = null }) }
     }
 }

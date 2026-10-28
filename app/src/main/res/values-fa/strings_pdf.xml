@@ -162,4 +162,25 @@
     <string name="media_seek_back_title">مدت عقب‌رفتن</string>
     <string name="media_seek_forward_title">مدت جلو رفتن</string>
     <string name="media_seek_seconds">%1$d ثانیه</string>
+    <string name="media_sleep_timer">تایمر خواب</string>
+    <string name="media_sleep_timer_label">مدت (h m)</string>
+    <string name="media_sleep_timer_invalid">فرمت درست نیست. مثال: 3h 5m</string>
+    <string name="media_sleep_timer_left">%1$s مانده</string>
+    <string name="media_sleep_timer_start">شروع</string>
+    <string name="media_sleep_timer_off">خاموش کردن</string>
+    <string name="media_subtitles">زیرنویس</string>
+    <string name="media_subtitle_off">خاموش</string>
+    <string name="media_subtitle_track_n">زیرنویس %1$d</string>
+    <string name="media_subtitle_load">بارگذاری از فایل…</string>
+    <string name="media_subtitle_size">اندازه‌ی متن</string>
+    <string name="media_subtitle_size_s">کوچک</string>
+    <string name="media_subtitle_size_m">متوسط</string>
+    <string name="media_subtitle_size_l">بزرگ</string>
+    <string name="media_subtitle_size_xl">خیلی بزرگ</string>
+    <string name="media_subtitle_background">پس‌زمینه‌ی تیره</string>
+    <string name="media_subtitle_load_failed">این فایل زیرنویس خوانده نشد</string>
+    <string name="media_subtitle_sync">همگام‌سازی</string>
+    <string name="media_subtitle_sync_hint">مثبت: زیرنویس دیرتر نمایش داده می‌شود. منفی: زودتر.</string>
+    <string name="media_subtitle_sync_apply">اعمال</string>
+    <string name="media_subtitle_sync_reset">بازنشانی</string>
 </resources>

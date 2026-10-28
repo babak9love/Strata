@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -117,12 +118,23 @@ fun ZoomablePlayer(
         onDispose { player?.removeListener(listener) }
     }
 
+    // The screen stays on only while the video is actually playing (or buffering to play), so a paused video,
+    // a finished one or the sleep timer running out lets the screen turn off by itself.
     val view = LocalView.current
-    DisposableEffect(view) {
-        val previous = view.keepScreenOn
-        view.keepScreenOn = true
-        onDispose { view.keepScreenOn = previous }
+    var keepOn by remember(player) { mutableStateOf(player.wantsScreenOn()) }
+    DisposableEffect(player) {
+        val listener = object : Player.Listener {
+            override fun onEvents(p: Player, events: Player.Events) {
+                keepOn = p.wantsScreenOn()
+            }
+        }
+        keepOn = player.wantsScreenOn()
+        player?.addListener(listener)
+        onDispose { player?.removeListener(listener) }
     }
+    val originalKeepOn = remember(view) { view.keepScreenOn }
+    DisposableEffect(view) { onDispose { view.keepScreenOn = originalKeepOn } }
+    SideEffect { view.keepScreenOn = keepOn }
 
     BoxWithConstraints(modifier.clipToBounds().background(Color.Black)) {
         val cw = constraints.maxWidth.toFloat()
@@ -246,3 +258,6 @@ fun ZoomablePlayer(
         }
     }
 }
+
+private fun Player?.wantsScreenOn(): Boolean =
+    this != null && playWhenReady && playbackState != Player.STATE_ENDED && playbackState != Player.STATE_IDLE

@@ -240,6 +240,11 @@ class PlaybackService : MediaSessionService() {
             instance?.exitPlayback()
         }
 
+        /** Pauses whatever the service is playing (used by the sleep timer). Must be called on the main thread. */
+        fun pausePlayback() {
+            instance?.session?.player?.pause()
+        }
+
         private const val SAVE_INTERVAL_MS = 5_000L
         const val ACTION_EXIT = "dev.cluvex.strata.media.EXIT"
         private const val ACTION_SPEED = "dev.cluvex.strata.media.SPEED"

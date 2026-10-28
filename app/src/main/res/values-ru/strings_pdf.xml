@@ -170,4 +170,25 @@
     <string name="media_seek_back_title">Шаг перемотки назад</string>
     <string name="media_seek_forward_title">Шаг перемотки вперёд</string>
     <string name="media_seek_seconds">%1$d с</string>
+    <string name="media_sleep_timer">Таймер сна</string>
+    <string name="media_sleep_timer_label">Длительность (h m)</string>
+    <string name="media_sleep_timer_invalid">Неверный формат. Пример: 3h 5m</string>
+    <string name="media_sleep_timer_left">Осталось %1$s</string>
+    <string name="media_sleep_timer_start">Запустить</string>
+    <string name="media_sleep_timer_off">Выключить</string>
+    <string name="media_subtitles">Субтитры</string>
+    <string name="media_subtitle_off">Выкл.</string>
+    <string name="media_subtitle_track_n">Субтитры %1$d</string>
+    <string name="media_subtitle_load">Загрузить из файла…</string>
+    <string name="media_subtitle_size">Размер текста</string>
+    <string name="media_subtitle_size_s">Маленький</string>
+    <string name="media_subtitle_size_m">Средний</string>
+    <string name="media_subtitle_size_l">Большой</string>
+    <string name="media_subtitle_size_xl">Очень большой</string>
+    <string name="media_subtitle_background">Тёмный фон</string>
+    <string name="media_subtitle_load_failed">Не удалось прочитать файл субтитров</string>
+    <string name="media_subtitle_sync">Синхронизация</string>
+    <string name="media_subtitle_sync_hint">Плюс — субтитры позже, минус — раньше.</string>
+    <string name="media_subtitle_sync_apply">Применить</string>
+    <string name="media_subtitle_sync_reset">Сбросить</string>
 </resources>

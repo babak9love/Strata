@@ -158,4 +158,25 @@
     <string name="media_seek_back_title">后退步长</string>
     <string name="media_seek_forward_title">快进步长</string>
     <string name="media_seek_seconds">%1$d 秒</string>
+    <string name="media_sleep_timer">睡眠定时器</string>
+    <string name="media_sleep_timer_label">时长（h m）</string>
+    <string name="media_sleep_timer_invalid">格式不正确，例如：3h 5m</string>
+    <string name="media_sleep_timer_left">剩余 %1$s</string>
+    <string name="media_sleep_timer_start">开始</string>
+    <string name="media_sleep_timer_off">关闭</string>
+    <string name="media_subtitles">字幕</string>
+    <string name="media_subtitle_off">关闭</string>
+    <string name="media_subtitle_track_n">字幕 %1$d</string>
+    <string name="media_subtitle_load">从文件加载…</string>
+    <string name="media_subtitle_size">文字大小</string>
+    <string name="media_subtitle_size_s">小</string>
+    <string name="media_subtitle_size_m">中</string>
+    <string name="media_subtitle_size_l">大</string>
+    <string name="media_subtitle_size_xl">特大</string>
+    <string name="media_subtitle_background">深色背景</string>
+    <string name="media_subtitle_load_failed">无法读取该字幕文件</string>
+    <string name="media_subtitle_sync">同步</string>
+    <string name="media_subtitle_sync_hint">正值使字幕延后，负值使字幕提前。</string>
+    <string name="media_subtitle_sync_apply">应用</string>
+    <string name="media_subtitle_sync_reset">重置</string>
 </resources>

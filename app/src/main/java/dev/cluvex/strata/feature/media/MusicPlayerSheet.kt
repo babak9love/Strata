@@ -24,6 +24,8 @@ import androidx.compose.material3.Slider
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.Audiotrack
+import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.runtime.collectAsState
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -133,6 +135,8 @@ fun MusicPlayerSheet(
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
+    var sleepDialog by remember { mutableStateOf(false) }
+    val sleepEndsAt by SleepTimer.endsAt.collectAsState()
     val direction = LocalLayoutDirection.current
     val controller = rememberMediaController(onDisconnected = { onDismissNow() })
     var metadata by remember { mutableStateOf(MediaMetadata.EMPTY) }
@@ -273,6 +277,25 @@ fun MusicPlayerSheet(
                             },
                         )
                         DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(stringResource(R.string.media_sleep_timer))
+                                    sleepEndsAt?.let { end ->
+                                        Text(
+                                            stringResource(R.string.media_sleep_timer_left, SleepTimer.format(end - android.os.SystemClock.elapsedRealtime())),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                }
+                            },
+                            leadingIcon = { Icon(Icons.Rounded.Bedtime, contentDescription = null) },
+                            onClick = {
+                                menu = false
+                                sleepDialog = true
+                            },
+                        )
+                        DropdownMenuItem(
                             text = { Text(stringResource(R.string.media_resume_playback)) },
                             trailingIcon = { Switch(checked = resume, onCheckedChange = null) },
                             onClick = { onResumeChange(!resume) },
@@ -316,6 +339,7 @@ fun MusicPlayerSheet(
         }
         }
     }
+    if (sleepDialog) SleepTimerDialog { sleepDialog = false }
     info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.AUDIO, onDismiss = { info = null }) }
 }
 
