@@ -10,6 +10,13 @@ import android.text.style.UnderlineSpan
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -45,8 +52,9 @@ import androidx.media3.common.text.CueGroup
 
 /**
  * How subtitles look. [scale] multiplies the text size, [textColor] and [backgroundColor] are ARGB values (the
- * background one keeps its own opacity and only shows while [background] is on) and [lift] raises the subtitles
- * from the bottom edge, in dp. Kept between runs.
+ * background one keeps its own opacity and only shows while [background] is on). Once the user has dragged the
+ * subtitles on the picture ([moved]), they sit [lift] dp above their usual place at the bottom and [shiftX] dp to
+ * the right of the centre (negative: left), whether the controls show or not. Kept between runs.
  */
 data class SubtitleStyle(
     val scale: Float = 1f,
@@ -54,13 +62,17 @@ data class SubtitleStyle(
     val textColor: Int = DEFAULT_SUBTITLE_TEXT,
     val backgroundColor: Int = DEFAULT_SUBTITLE_BACKGROUND,
     val lift: Float = 0f,
+    val shiftX: Float = 0f,
+    val moved: Boolean = false,
 )
 
 const val DEFAULT_SUBTITLE_TEXT = 0xFFFFFFFF.toInt()
 const val DEFAULT_SUBTITLE_BACKGROUND = 0x99000000.toInt()
 const val SUBTITLE_SCALE_MIN = 0.5f
 const val SUBTITLE_SCALE_MAX = 3f
-const val SUBTITLE_LIFT_MAX = 400f
+const val SUBTITLE_LIFT_MIN = -24f
+const val SUBTITLE_LIFT_MAX = 1500f
+const val SUBTITLE_SHIFT_MAX = 1500f
 
 /** The four size presets offered in the subtitle dialog (the slider reaches everything in between). */
 val SUBTITLE_SCALES = listOf(0.8f, 1f, 1.3f, 1.7f)
@@ -77,7 +89,9 @@ object SubtitleStylePrefs {
             background = p.getBoolean("background", true),
             textColor = p.getInt("textColor", DEFAULT_SUBTITLE_TEXT),
             backgroundColor = p.getInt("backgroundColor", DEFAULT_SUBTITLE_BACKGROUND),
-            lift = p.getFloat("lift", 0f).coerceIn(0f, SUBTITLE_LIFT_MAX),
+            lift = p.getFloat("lift", 0f).coerceIn(SUBTITLE_LIFT_MIN, SUBTITLE_LIFT_MAX),
+            shiftX = p.getFloat("shiftX", 0f).coerceIn(-SUBTITLE_SHIFT_MAX, SUBTITLE_SHIFT_MAX),
+            moved = p.getBoolean("moved", false),
         )
     }
 
@@ -88,6 +102,8 @@ object SubtitleStylePrefs {
             .putInt("textColor", style.textColor)
             .putInt("backgroundColor", style.backgroundColor)
             .putFloat("lift", style.lift)
+            .putFloat("shiftX", style.shiftX)
+            .putBoolean("moved", style.moved)
             .apply()
     }
 }
@@ -95,7 +111,9 @@ object SubtitleStylePrefs {
 /**
  * Draws the subtitle text of the playing video over the picture. Text subtitles only; picture based ones
  * (PGS, DVB, VobSub) are not drawn. Cues placed near the top (some ASS subtitles) are drawn at the top.
- * Touches pass through to the player underneath.
+ * Touches pass through to the player underneath, except on the lower subtitle itself: dragging it moves it
+ * ([onStyleChange] while the finger moves, [onStyleChangeFinished] when it lifts) and a tap on it is handed to
+ * [onTap], so it still shows or hides the controls.
  */
 @Composable
 fun SubtitleOverlay(
@@ -103,6 +121,9 @@ fun SubtitleOverlay(
     style: SubtitleStyle,
     controlsVisible: Boolean,
     modifier: Modifier = Modifier,
+    onStyleChange: (SubtitleStyle) -> Unit = {},
+    onStyleChangeFinished: (SubtitleStyle) -> Unit = {},
+    onTap: () -> Unit = {},
 ) {
     var cues by remember(player) { mutableStateOf(player?.currentCues?.cues.orEmpty()) }
     DisposableEffect(player) {
@@ -119,9 +140,23 @@ fun SubtitleOverlay(
             onDispose { player.removeListener(listener) }
         }
     }
-    // Lifted above the seek bar and buttons while the controls are showing.
-    val ownPad = 24.dp + style.lift.dp
-    val bottomPad by animateDpAsState(if (controlsVisible) maxOf(190.dp, ownPad) else ownPad, label = "subtitle-bottom")
+    val config = LocalConfiguration.current
+    val density = LocalDensity.current.density
+    // Where the user dragged them stays within the screen, also after a turn to the other orientation.
+    val maxLift = (config.screenHeightDp - 120f).coerceAtLeast(0f)
+    val maxShift = config.screenWidthDp / 3f
+    val ownPad = (24f + style.lift).coerceIn(0f, maxLift).dp
+    // Not moved by the user: lifted above the seek bar and buttons while the controls are showing.
+    val targetPad = if (style.moved) ownPad else if (controlsVisible) 190.dp else 24.dp
+    val animatedPad by animateDpAsState(targetPad, label = "subtitle-bottom")
+    var dragging by remember { mutableStateOf(false) }
+    // Follows the finger right away while dragging; eases otherwise.
+    val bottomPad = if (dragging) targetPad else animatedPad
+    val latestStyle by rememberUpdatedState(style)
+    val latestChange by rememberUpdatedState(onStyleChange)
+    val latestFinished by rememberUpdatedState(onStyleChangeFinished)
+    val latestTap by rememberUpdatedState(onTap)
+    val latestControls by rememberUpdatedState(controlsVisible)
     val textCues = cues.filter { it.text != null && it.text.toString().isNotBlank() }
     if (textCues.isEmpty()) return
     val top = textCues.filter { it.lineType == Cue.LINE_TYPE_FRACTION && it.line != Cue.DIMEN_UNSET && it.line < 0.35f }
@@ -132,7 +167,42 @@ fun SubtitleOverlay(
             CueColumn(top, style, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = if (controlsVisible) 64.dp else 16.dp))
         }
         if (bottom.isNotEmpty()) {
-            CueColumn(bottom, style, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = bottomPad))
+            CueColumn(
+                bottom,
+                style,
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = bottomPad)
+                    .offset(x = if (style.moved) style.shiftX.coerceIn(-maxShift, maxShift).dp else 0.dp)
+                    .pointerInput(Unit) { detectTapGestures(onTap = { latestTap() }) }
+                    .pointerInput(maxLift, maxShift) {
+                        detectDragGestures(
+                            onDragStart = { dragging = true },
+                            onDragEnd = {
+                                dragging = false
+                                latestFinished(latestStyle)
+                            },
+                            onDragCancel = {
+                                dragging = false
+                                latestFinished(latestStyle)
+                            },
+                            onDrag = { change, drag ->
+                                change.consume()
+                                val cur = latestStyle
+                                // Up raises the subtitles (more lift); left and right move them sideways.
+                                val startLift = if (cur.moved) cur.lift else if (latestControls) 190f - 24f else 0f
+                                latestChange(
+                                    cur.copy(
+                                        moved = true,
+                                        lift = (startLift - drag.y / density).coerceIn(SUBTITLE_LIFT_MIN, maxLift - 24f),
+                                        shiftX = (cur.shiftX + drag.x / density).coerceIn(-maxShift, maxShift),
+                                    ),
+                                )
+                            },
+                        )
+                    },
+            )
         }
     }
 }

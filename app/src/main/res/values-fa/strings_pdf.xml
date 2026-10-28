@@ -180,7 +180,8 @@
     <string name="media_subtitle_background">پس‌زمینه</string>
     <string name="media_subtitle_text_color">رنگ متن</string>
     <string name="media_subtitle_background_color">رنگ پس‌زمینه</string>
-    <string name="media_subtitle_position">موقعیت (فاصله از پایین)</string>
+    <string name="media_subtitle_position">موقعیت</string>
+    <string name="media_subtitle_position_hint">زیرنویس رو روی خود تصویر با انگشت بکش و هر جا خواستی ببر.</string>
     <string name="media_subtitle_style_reset">بازنشانی ظاهر</string>
     <string name="media_subtitle_load_failed">این فایل زیرنویس خوانده نشد</string>
     <string name="media_subtitle_sync">همگام‌سازی</string>

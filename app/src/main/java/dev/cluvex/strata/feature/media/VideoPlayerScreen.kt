@@ -326,6 +326,13 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * True while the playing item is being swapped for a reloaded copy (subtitle sync or a loaded subtitle file):
+     * the player may report a transition or even an end for a moment, which must not close the screen.
+     */
+    @Volatile var reloading = false
+        private set
+
     /** Swaps the playing item for [updated] and carries on from the same position; [selectLabel] is switched on once loaded. */
     private fun reloadCurrentItem(p: ExoPlayer, updated: MediaItem, selectLabel: String) {
         pendingSubtitleLabel = selectLabel
@@ -338,9 +345,17 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         val forced = updated.localConfiguration?.uri?.let { uri ->
             updated.buildUpon().setUri(uri.buildUpon().fragment("sub${++reloadSeq}").build()).build()
         } ?: updated
-        p.replaceMediaItem(index, forced)
+        reloading = true
+        // The new copy goes in next to the old one before the old one is taken out, so the list is never without
+        // the playing video (replacing it in one step can end the playback for an instant).
+        p.addMediaItem(index + 1, forced)
+        p.removeMediaItem(index)
         p.seekTo(index, position)
         p.playWhenReady = playWhenReady
+        viewModelScope.launch {
+            delay(RELOAD_GRACE_MS)
+            reloading = false
+        }
     }
 
     // ---- Background play: the audio of the video keeps going in PlaybackService while the app is hidden.
@@ -481,6 +496,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         @Volatile var startOverride: StartAt? = null
 
         private const val SAVE_INTERVAL_MS = 5_000L
+        private const val RELOAD_GRACE_MS = 4_000L
         const val MAX_LEVEL = 1f
         const val SAFE_LEVEL = 1f
 
@@ -673,14 +689,14 @@ fun VideoPlayerScreen(
         val listener = object : Player.Listener {
             // A video finished: either it moved on to the next one on its own, or it was the last.
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && backToListNow) {
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && backToListNow && !vm.reloading) {
                     player?.pause()
                     onBackNow()
                 }
             }
 
             override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_ENDED && backToListNow) onBackNow()
+                if (state == Player.STATE_ENDED && backToListNow && !vm.reloading) onBackNow()
             }
         }
         player?.addListener(listener)
@@ -1004,7 +1020,15 @@ fun VideoPlayerScreen(
         }
         if (!inPip) {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                SubtitleOverlay(player, subStyle, controlsVisible = controls, modifier = Modifier.fillMaxSize())
+                SubtitleOverlay(
+                    player,
+                    subStyle,
+                    controlsVisible = controls,
+                    modifier = Modifier.fillMaxSize(),
+                    onStyleChange = { subStyle = it },
+                    onStyleChangeFinished = { SubtitleStylePrefs.save(context, it) },
+                    onTap = { controls = !controls },
+                )
             }
         }
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {

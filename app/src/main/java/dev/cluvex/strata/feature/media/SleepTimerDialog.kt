@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardActions
@@ -28,11 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.LayoutDirection
@@ -40,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
 import kotlinx.coroutines.delay
 
-/** Asks for a duration in a fixed `0h 00m` box (or a quick preset) and starts [SleepTimer]; also shows and stops a running one. */
+/** Asks for a duration in a `0h 00m` boxes (or a quick preset) and starts [SleepTimer]; also shows and stops a running one. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SleepTimerDialog(onDismiss: () -> Unit) {
@@ -52,9 +50,10 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
             delay(1_000)
         }
     }
-    var text by remember { mutableStateOf("") }
-    val parsed = SleepTimer.fromDigits(text)
-    val invalid = text.isNotEmpty() && parsed == null
+    var hours by remember { mutableStateOf("") }
+    var minutes by remember { mutableStateOf("") }
+    val parsed = SleepTimer.fromParts(hours, minutes)
+    val invalid = (hours.isNotEmpty() || minutes.isNotEmpty()) && parsed == null
     val start = {
         parsed?.let {
             SleepTimer.start(it)
@@ -76,21 +75,37 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
                     )
                     Spacer(Modifier.height(12.dp))
                 }
-                // The "h" and "m" stay in the box; only digits are typed and they fill it from the right (0h 00m).
+                // Two boxes, each tapped on its own; the "h" and "m" stay inside them. Empty boxes read 0h 00m.
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    OutlinedTextField(
-                        value = text,
-                        onValueChange = { text = SleepTimer.cleanDigits(it) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        isError = invalid,
-                        textStyle = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.Center),
-                        visualTransformation = SleepTimerMask,
-                        supportingText = if (invalid) {
-                            { Text(stringResource(R.string.media_sleep_timer_invalid)) }
-                        } else null,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { start() }),
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TimeBox(
+                            value = hours,
+                            onChange = { hours = SleepTimer.digitsOnly(it, 2) },
+                            placeholder = "0",
+                            unit = "h",
+                            invalid = invalid,
+                            imeAction = ImeAction.Next,
+                            onDone = {},
+                            modifier = Modifier.weight(1f),
+                        )
+                        TimeBox(
+                            value = minutes,
+                            onChange = { minutes = SleepTimer.digitsOnly(it, 2) },
+                            placeholder = "00",
+                            unit = "m",
+                            invalid = invalid,
+                            imeAction = ImeAction.Done,
+                            onDone = { start() },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+                if (invalid) {
+                    Text(
+                        stringResource(R.string.media_sleep_timer_invalid),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp),
                     )
                 }
                 Spacer(Modifier.height(8.dp))
@@ -125,16 +140,30 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
     )
 }
 
-/** Shows the typed digits inside the fixed `0h 00m` shape; the caret always stays at the end. */
-private object SleepTimerMask : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        val shown = SleepTimer.maskText(text.text)
-        return TransformedText(
-            AnnotatedString(shown),
-            object : OffsetMapping {
-                override fun originalToTransformed(offset: Int) = shown.length
-                override fun transformedToOriginal(offset: Int) = text.length
-            },
-        )
-    }
+@Composable
+private fun TimeBox(
+    value: String,
+    onChange: (String) -> Unit,
+    placeholder: String,
+    unit: String,
+    invalid: Boolean,
+    imeAction: ImeAction,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val hint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        modifier = modifier,
+        singleLine = true,
+        isError = invalid,
+        textStyle = MaterialTheme.typography.headlineSmall.copy(textAlign = TextAlign.End),
+        placeholder = {
+            Text(placeholder, style = MaterialTheme.typography.headlineSmall.copy(color = hint, textAlign = TextAlign.End), modifier = Modifier.fillMaxWidth())
+        },
+        suffix = { Text(unit, style = MaterialTheme.typography.headlineSmall) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = imeAction),
+        keyboardActions = KeyboardActions(onDone = { onDone() }),
+    )
 }

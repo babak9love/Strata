@@ -185,12 +185,11 @@ fun SubtitleTracksDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp),
                     )
-                    SliderRow(
-                        valueText = "${style.lift.roundToInt()} dp",
-                        value = style.lift,
-                        range = 0f..SUBTITLE_LIFT_MAX,
-                        steps = 0,
-                        onChange = { onStyleChange(style.copy(lift = it.roundToInt().toFloat())) },
+                    Text(
+                        stringResource(R.string.media_subtitle_position_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 2.dp, bottom = 4.dp),
                     )
                     HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 4.dp))
                     ColorRow(stringResource(R.string.media_subtitle_text_color), style.textColor) { pickText = true }

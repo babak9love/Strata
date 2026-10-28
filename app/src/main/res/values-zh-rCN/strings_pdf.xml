@@ -176,7 +176,8 @@
     <string name="media_subtitle_background">背景</string>
     <string name="media_subtitle_text_color">文字颜色</string>
     <string name="media_subtitle_background_color">背景颜色</string>
-    <string name="media_subtitle_position">位置（距底部高度）</string>
+    <string name="media_subtitle_position">位置</string>
+    <string name="media_subtitle_position_hint">在视频上用手指拖动字幕即可移动到任意位置。</string>
     <string name="media_subtitle_style_reset">重置样式</string>
     <string name="media_subtitle_load_failed">无法读取该字幕文件</string>
     <string name="media_subtitle_sync">同步</string>

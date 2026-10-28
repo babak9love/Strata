@@ -184,7 +184,8 @@
     <string name="media_subtitle_background">Background</string>
     <string name="media_subtitle_text_color">Text color</string>
     <string name="media_subtitle_background_color">Background color</string>
-    <string name="media_subtitle_position">Position (height from bottom)</string>
+    <string name="media_subtitle_position">Position</string>
+    <string name="media_subtitle_position_hint">Drag the subtitle on the video with your finger to move it anywhere.</string>
     <string name="media_subtitle_style_reset">Reset style</string>
     <string name="media_subtitle_load_failed">Couldn\'t read this subtitle file</string>
     <string name="media_subtitle_sync">Sync</string>

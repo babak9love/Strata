@@ -188,7 +188,8 @@
     <string name="media_subtitle_background">Фон</string>
     <string name="media_subtitle_text_color">Цвет текста</string>
     <string name="media_subtitle_background_color">Цвет фона</string>
-    <string name="media_subtitle_position">Положение (высота от низа)</string>
+    <string name="media_subtitle_position">Положение</string>
+    <string name="media_subtitle_position_hint">Перетащите субтитры пальцем прямо на видео, чтобы переместить их.</string>
     <string name="media_subtitle_style_reset">Сбросить стиль</string>
     <string name="media_subtitle_load_failed">Не удалось прочитать файл субтитров</string>
     <string name="media_subtitle_sync">Синхронизация</string>
