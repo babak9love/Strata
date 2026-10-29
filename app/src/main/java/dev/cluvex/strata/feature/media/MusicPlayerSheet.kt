@@ -147,6 +147,8 @@ fun MusicPlayerSheet(
     var menu by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
     var sleepDialog by remember { mutableStateOf(false) }
+    val abRepeat = remember { AbRepeatState() }
+    var abPanel by remember { mutableStateOf(false) }
     val sleepEndsAt by SleepTimer.endsAt.collectAsState()
     val direction = LocalLayoutDirection.current
     val controller = rememberMediaController(onDisconnected = { onDismissNow() })
@@ -279,6 +281,14 @@ fun MusicPlayerSheet(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SpeedButton(c, save = SpeedSave(saveSpeed, onSaveSpeedChange))
+                // A-B repeat: tapping again clears the points and opens the card; the loop is gone when the player closes.
+                IconButton(onClick = { abRepeat.clear(); abPanel = true }) {
+                    Icon(
+                        AbRepeatIcon,
+                        contentDescription = stringResource(R.string.media_ab_repeat),
+                        tint = if (abRepeat.armed) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                    )
+                }
                 // Headphones: switch Background Play on if it is off, then leave the app with the music carrying on.
                 IconButton(onClick = {
                     BackgroundSession.start()
@@ -301,6 +311,18 @@ fun MusicPlayerSheet(
                 }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { BackgroundSession.end(); c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
+            }
+            AbRepeatEffect(c, abRepeat)
+            if (abPanel) {
+                AbRepeatPanel(
+                    c,
+                    abRepeat,
+                    onClose = { abPanel = false },
+                    modifier = Modifier.fillMaxWidth(),
+                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    content = MaterialTheme.colorScheme.onSurface,
+                    button = MaterialTheme.colorScheme.surfaceContainerHighest,
+                )
             }
         }
         // The player's own volume: a small vertical bar in the free space to the left of the cover.

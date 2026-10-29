@@ -65,7 +65,6 @@ enum class FolderStyle(@StringRes val label: Int, @DrawableRes val drawable: Int
     BURST(R.string.model_folder_style_burst, R.drawable.ic_folder_burst),
     CRIMSON(R.string.model_folder_style_crimson, R.drawable.ic_folder_crimson),
     ROSE(R.string.model_folder_style_rose, R.drawable.ic_folder_rose),
-    FLOWER(R.string.model_folder_style_flower, R.drawable.ic_folder_flower),
     FLUFFY_PINK(R.string.model_folder_style_fluffy_pink, R.drawable.ic_folder_fluffy_pink),
     FLUFFY_BLUE(R.string.model_folder_style_fluffy_blue, R.drawable.ic_folder_fluffy_blue),
 }

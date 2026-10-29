@@ -1081,7 +1081,7 @@ fun VideoPlayerScreen(
                                             tint = if (backgroundSetting || BackgroundSession.active) MaterialTheme.colorScheme.primary else Color.White,
                                         )
                                     }
-                                    IconButton(onClick = { abPanel = !abPanel; controls = true }) {
+                                    IconButton(onClick = { abRepeat.clear(); abPanel = true; controls = true }) {
                                         Icon(
                                             AbRepeatIcon,
                                             contentDescription = stringResource(R.string.media_ab_repeat),
