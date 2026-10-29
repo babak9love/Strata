@@ -25,6 +25,10 @@ import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Alarm
+import androidx.compose.material.icons.rounded.Headphones
+import android.content.ContextWrapper
+import android.content.Context
+import android.app.Activity
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.MoreVert
@@ -161,8 +165,11 @@ fun MusicPlayerSheet(
         c.play()
     }
     // With Background Play off, the music stops when the app is left (home, another app, screen off).
+    var keepPlaying by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-        if (!backgroundPlayNow) controller?.pause()
+        // The headphones button asked for it explicitly: keep playing even if the setting had not been saved yet.
+        if (!backgroundPlayNow && !keepPlaying) controller?.pause()
+        keepPlaying = false
     }
     // Closing the player (swipe down, tap outside, back) with Background Play off stops the music instead of
     // leaving it playing in the service; with it on, the music carries on in the background.
@@ -271,6 +278,26 @@ fun MusicPlayerSheet(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SpeedButton(c, save = SpeedSave(saveSpeed, onSaveSpeedChange))
+                // Headphones: switch Background Play on if it is off, then leave the app with the music carrying on.
+                IconButton(onClick = {
+                    if (!backgroundPlay) onBackgroundPlayChange(true)
+                    keepPlaying = true
+                    var a: Context? = context
+                    while (a is ContextWrapper && a !is Activity) a = a.baseContext
+                    (a as? Activity)?.moveTaskToBack(true)
+                }) {
+                    Icon(Icons.Rounded.Headphones, contentDescription = stringResource(R.string.media_background_play))
+                }
+                IconButton(onClick = { info = controller?.currentMediaItem?.mediaId ?: path }) {
+                    Icon(Icons.Rounded.Audiotrack, contentDescription = stringResource(R.string.model_sheet_audio_info))
+                }
+                IconButton(onClick = { sleepDialog = true }) {
+                    Icon(
+                        Icons.Rounded.Alarm,
+                        contentDescription = stringResource(R.string.media_sleep_timer),
+                        tint = if (sleepEndsAt != null) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                    )
+                }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
             }
@@ -289,33 +316,6 @@ fun MusicPlayerSheet(
                 }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.model_sheet_audio_info)) },
-                            leadingIcon = { Icon(Icons.Rounded.Audiotrack, contentDescription = null) },
-                            onClick = {
-                                menu = false
-                                info = controller?.currentMediaItem?.mediaId ?: path
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Column {
-                                    Text(stringResource(R.string.media_sleep_timer))
-                                    sleepEndsAt?.let { end ->
-                                        Text(
-                                            stringResource(R.string.media_sleep_timer_left, SleepTimer.format(end - android.os.SystemClock.elapsedRealtime())),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    }
-                                }
-                            },
-                            leadingIcon = { Icon(Icons.Rounded.Alarm, contentDescription = null) },
-                            onClick = {
-                                menu = false
-                                sleepDialog = true
-                            },
-                        )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.media_resume_playback)) },
                             trailingIcon = { Switch(checked = resume, onCheckedChange = null) },

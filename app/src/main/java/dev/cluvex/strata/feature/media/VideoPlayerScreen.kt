@@ -10,6 +10,8 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -72,6 +74,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.Alarm
+import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.FastForward
@@ -577,7 +580,7 @@ fun VideoPlayerScreen(
             vm.addExternalSubtitle(uri) { Toast.makeText(context, R.string.media_subtitle_load_failed, Toast.LENGTH_SHORT).show() }
         }
     }
-    // Set by the headphones button of the floating window: the next stop is not a "window closed".
+    // Set by the headphones buttons (floating window and top bar): the next stop is not a "window closed".
     var audioOnlyFromPip by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
         if (audioOnlyFromPip) {
@@ -714,7 +717,7 @@ fun VideoPlayerScreen(
         onDispose { player?.removeListener(listener) }
     }
 
-    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !scaleMenu && !titleExpanded && !seeking) { controls = false }
+    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !scaleMenu && !titleExpanded && !seeking && !sleepDialog && !subtitlesDialog && !audioTracks && info == null) { controls = false }
     ImmersiveWhile(!controls)
     LightSystemBarIcons()
 
@@ -786,15 +789,17 @@ fun VideoPlayerScreen(
                 topControls = { p, visible ->
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
                         PlayerDefaults.TopControls(p, visible, Modifier.fillMaxWidth()) {
-                            Row(
+                            Column(
                                 Modifier
                                     .fillMaxWidth()
                                     .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)))
                                     .statusBarsPadding()
                                     .padding(horizontal = 4.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                IconButton(onClick = exit) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White) }
+                                var titleCut by remember { mutableStateOf(false) }
+                                // Row 1: back, the file name (takes all the room it can), the three-dot menu.
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(onClick = exit) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White) }
                                 Row(
                                     Modifier
                                         .weight(1f)
@@ -808,13 +813,16 @@ fun VideoPlayerScreen(
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.weight(1f, fill = false),
+                                        onTextLayout = { titleCut = it.hasVisualOverflow },
                                     )
-                                    Icon(
-                                        Icons.Rounded.KeyboardArrowDown,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.rotate(if (titleExpanded) 180f else 0f),
-                                    )
+                                    if (titleCut || titleExpanded) {
+                                        Icon(
+                                            Icons.Rounded.KeyboardArrowDown,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.rotate(if (titleExpanded) 180f else 0f),
+                                        )
+                                    }
                                     if (titleExpanded) {
                                         // Full file name in a popup under the title, so the other top-bar buttons never move.
                                         val maxWidth = (LocalConfiguration.current.screenWidthDp - 24).dp
@@ -836,96 +844,11 @@ fun VideoPlayerScreen(
                                         }
                                     }
                                 }
-                                CompositionLocalProvider(LocalContentColor provides Color.White) {
-                                    SpeedButton(p, Color.White, save = SpeedSave(saveSpeed, onSaveSpeedChange))
-                                }
-                                if (activity != null && VideoPip.isSupported(activity)) {
-                                    IconButton(onClick = { VideoPip.enter(activity, p) }) {
-                                        Icon(Icons.Rounded.PictureInPictureAlt, contentDescription = stringResource(R.string.media_pip), tint = Color.White)
-                                    }
-                                }
-                                IconButton(onClick = rotate) {
-                                    Icon(Icons.Rounded.ScreenRotation, contentDescription = stringResource(R.string.media_rotate_screen), tint = Color.White)
-                                }
-                                Box {
-                                    IconButton(onClick = { scaleMenu = true; controls = true }) {
-                                        Icon(
-                                            Icons.Rounded.AspectRatio,
-                                            contentDescription = stringResource(R.string.media_screen_size),
-                                            tint = Color.White,
-                                        )
-                                    }
-                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }) {
-                                        listOf(
-                                            VideoScaleMode.FIT to R.string.media_fit_screen,
-                                            VideoScaleMode.FILL to R.string.media_fill_screen,
-                                            VideoScaleMode.STRETCH to R.string.media_stretch,
-                                            VideoScaleMode.RATIO_16_9 to R.string.media_ratio_16_9,
-                                            VideoScaleMode.RATIO_4_3 to R.string.media_ratio_4_3,
-                                            VideoScaleMode.RATIO_21_9 to R.string.media_ratio_21_9,
-                                            VideoScaleMode.ORIGINAL to R.string.media_original_size,
-                                        ).forEach { (mode, label) ->
-                                            DropdownMenuItem(
-                                                text = { Text(stringResource(label)) },
-                                                trailingIcon = {
-                                                    if (zoomState.mode == mode) Icon(Icons.Rounded.Check, contentDescription = null)
-                                                },
-                                                onClick = {
-                                                    zoomState.select(mode)
-                                                    scaleMenu = false
-                                                },
-                                            )
-                                        }
-                                    }
-                                }
                                 Box {
                                     IconButton(onClick = { menu = true }) {
                                         Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more), tint = Color.White)
                                     }
                                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.model_sheet_video_info)) },
-                                            leadingIcon = { Icon(Icons.Rounded.Movie, contentDescription = null) },
-                                            onClick = {
-                                                menu = false
-                                                info = p?.currentMediaItem?.mediaId ?: path
-                                            },
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.media_audio_tracks)) },
-                                            leadingIcon = { Icon(Icons.Rounded.Audiotrack, contentDescription = null) },
-                                            onClick = {
-                                                menu = false
-                                                audioTracks = true
-                                            },
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.media_subtitles)) },
-                                            leadingIcon = { Icon(Icons.Rounded.Subtitles, contentDescription = null) },
-                                            onClick = {
-                                                menu = false
-                                                subtitlesDialog = true
-                                            },
-                                        )
-                                        DropdownMenuItem(
-                                            text = {
-                                                Column {
-                                                    Text(stringResource(R.string.media_sleep_timer))
-                                                    sleepEndsAt?.let { end ->
-                                                        Text(
-                                                            stringResource(R.string.media_sleep_timer_left, SleepTimer.format(end - android.os.SystemClock.elapsedRealtime())),
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            color = MaterialTheme.colorScheme.primary,
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            leadingIcon = { Icon(Icons.Rounded.Alarm, contentDescription = null) },
-                                            onClick = {
-                                                menu = false
-                                                sleepDialog = true
-                                            },
-                                        )
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.media_auto_hide_controls)) },
                                             trailingIcon = { Switch(checked = autoHide, onCheckedChange = null) },
@@ -977,6 +900,80 @@ fun VideoPlayerScreen(
                                             trailingIcon = { Switch(checked = playAlone, onCheckedChange = null) },
                                             onClick = { onPlayAloneChange(!playAlone) },
                                         )
+                                    }
+                                }
+                                }
+                                // Row 2: the tool buttons under the back button, standard 48dp spacing; scrolls sideways when there are more than fit.
+                                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
+                                    CompositionLocalProvider(LocalContentColor provides Color.White) {
+                                        SpeedButton(p, Color.White, save = SpeedSave(saveSpeed, onSaveSpeedChange))
+                                    }
+                                    if (activity != null && VideoPip.isSupported(activity)) {
+                                        IconButton(onClick = { VideoPip.enter(activity, p) }) {
+                                            Icon(Icons.Rounded.PictureInPictureAlt, contentDescription = stringResource(R.string.media_pip), tint = Color.White)
+                                        }
+                                    }
+                                    IconButton(onClick = rotate) {
+                                        Icon(Icons.Rounded.ScreenRotation, contentDescription = stringResource(R.string.media_rotate_screen), tint = Color.White)
+                                    }
+                                Box {
+                                    IconButton(onClick = { scaleMenu = true; controls = true }) {
+                                        Icon(
+                                            Icons.Rounded.AspectRatio,
+                                            contentDescription = stringResource(R.string.media_screen_size),
+                                            tint = Color.White,
+                                        )
+                                    }
+                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }) {
+                                        listOf(
+                                            VideoScaleMode.FIT to R.string.media_fit_screen,
+                                            VideoScaleMode.FILL to R.string.media_fill_screen,
+                                            VideoScaleMode.STRETCH to R.string.media_stretch,
+                                            VideoScaleMode.RATIO_16_9 to R.string.media_ratio_16_9,
+                                            VideoScaleMode.RATIO_4_3 to R.string.media_ratio_4_3,
+                                            VideoScaleMode.RATIO_21_9 to R.string.media_ratio_21_9,
+                                            VideoScaleMode.ORIGINAL to R.string.media_original_size,
+                                        ).forEach { (mode, label) ->
+                                            DropdownMenuItem(
+                                                text = { Text(stringResource(label)) },
+                                                trailingIcon = {
+                                                    if (zoomState.mode == mode) Icon(Icons.Rounded.Check, contentDescription = null)
+                                                },
+                                                onClick = {
+                                                    zoomState.select(mode)
+                                                    scaleMenu = false
+                                                },
+                                            )
+                                        }
+                                    }
+                                }
+                                    // Headphones: switch background play on if it is off, then carry on as audio only.
+                                    IconButton(
+                                        onClick = {
+                                            if (!backgroundPlay) onBackgroundPlayChange(true)
+                                            if (activity != null) {
+                                                audioOnlyFromPip = true
+                                                activity.moveTaskToBack(true)
+                                            }
+                                        },
+                                    ) {
+                                        Icon(Icons.Rounded.Headphones, contentDescription = stringResource(R.string.media_background_play), tint = Color.White)
+                                    }
+                                    IconButton(onClick = { sleepDialog = true; controls = true }) {
+                                        Icon(
+                                            Icons.Rounded.Alarm,
+                                            contentDescription = stringResource(R.string.media_sleep_timer),
+                                            tint = if (sleepEndsAt != null) MaterialTheme.colorScheme.primary else Color.White,
+                                        )
+                                    }
+                                    IconButton(onClick = { subtitlesDialog = true; controls = true }) {
+                                        Icon(Icons.Rounded.Subtitles, contentDescription = stringResource(R.string.media_subtitles), tint = Color.White)
+                                    }
+                                    IconButton(onClick = { audioTracks = true; controls = true }) {
+                                        Icon(Icons.Rounded.Audiotrack, contentDescription = stringResource(R.string.media_audio_tracks), tint = Color.White)
+                                    }
+                                    IconButton(onClick = { info = p?.currentMediaItem?.mediaId ?: path; controls = true }) {
+                                        Icon(Icons.Rounded.Movie, contentDescription = stringResource(R.string.model_sheet_video_info), tint = Color.White)
                                     }
                                 }
                             }
