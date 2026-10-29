@@ -376,7 +376,9 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     /** App went to the background while playing: move playback (audio only) to the media service. */
     fun handOffToBackground(force: Boolean = false) {
         val p = player ?: return
-        if (handedOff || (!force && !p.playWhenReady)) return
+        if (handedOff) return
+        // Paused stays paused: the service gets the playlist (and its notification) but does not start playing.
+        val wasPlaying = p.playWhenReady
         if (force && p.volume == 0f) p.volume = volumeLevel.coerceIn(0.05f, 1f) // "audio only" was asked for: unmute
         val items = backgroundItems(p)
         val index = p.currentMediaItemIndex
@@ -403,7 +405,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             c.shuffleModeEnabled = shuffle
             c.setMediaItems(items, index, position)
             c.prepare()
-            c.play()
+            if (wasPlaying) c.play() else c.pause()
         }, ContextCompat.getMainExecutor(app))
     }
 
@@ -425,8 +427,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun handOffAndClose() {
         val p = player ?: return
-        if (!p.playWhenReady) return
-        if (p.volume == 0f) {
+        val wasPlaying = p.playWhenReady
+        if (wasPlaying && p.volume == 0f) {
             // Muted: there is nothing to listen to in the background.
             resume?.saveNow()
             p.pause()
@@ -450,8 +452,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             c.shuffleModeEnabled = shuffle
             c.setMediaItems(items, index, position)
             c.prepare()
-            c.play()
-            // The service keeps playing without this controller.
+            if (wasPlaying) c.play() else c.pause()
+            // The service keeps the playlist (playing or paused) without this controller.
             MediaController.releaseFuture(future)
         }, ContextCompat.getMainExecutor(app))
     }
