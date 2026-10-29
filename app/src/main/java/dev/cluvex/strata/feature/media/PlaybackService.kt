@@ -146,7 +146,7 @@ class PlaybackService : MediaSessionService() {
     @OptIn(UnstableApi::class)
     override fun onTaskRemoved(rootIntent: Intent?) {
         // Swiping the app out of Recents keeps playing when Background Play is on for what is playing.
-        val keepPlaying = if (isPlayingVideoAudio()) backgroundVideo else backgroundAudio
+        val keepPlaying = (if (isPlayingVideoAudio()) backgroundVideo else backgroundAudio) || BackgroundSession.active
         if (!keepPlaying) pauseAllPlayersAndStopSelf()
     }
 
@@ -189,6 +189,7 @@ class PlaybackService : MediaSessionService() {
 
     @OptIn(UnstableApi::class)
     private fun exitPlayback() {
+        BackgroundSession.end()
         resume?.saveNow()
         // Stop and empty the player first: stopSelf() alone does nothing while the app still holds a controller
         // bound to the service, which left the notification on screen.
@@ -342,7 +343,7 @@ class PlaybackService : MediaSessionService() {
             } else {
                 @Suppress("DEPRECATION") intent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
             }
-            if (key?.keyCode == KeyEvent.KEYCODE_MEDIA_STOP && isPlayingVideoAudio() && backgroundVideo) {
+            if (key?.keyCode == KeyEvent.KEYCODE_MEDIA_STOP && isPlayingVideoAudio() && (backgroundVideo || BackgroundSession.active)) {
                 handler.postDelayed({ this@PlaybackService.triggerNotificationUpdate() }, 300)
                 return true
             }

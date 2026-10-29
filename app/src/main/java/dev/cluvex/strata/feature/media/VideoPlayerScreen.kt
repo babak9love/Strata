@@ -206,7 +206,10 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         // Opened from the notification: carry on from where the background audio got to.
         val start = startOverride?.takeIf { it.path == path }
         startOverride = null
+        // Coming back from the notification is the same playback: its background session carries on.
+        val keepSession = start != null && BackgroundSession.active
         PlaybackService.stopPlayback()
+        if (keepSession) BackgroundSession.start()
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.VIDEO, showHidden) }
             // Subtitle files saved next to the videos (movie.srt, movie.fa.srt, ...), converted to UTF-8.
@@ -549,7 +552,9 @@ fun VideoPlayerScreen(
         vm.setPlayAlone(playAlone)
     }
     LaunchedEffect(path) { vm.open(path, showHidden) }
-    val backgroundPlayNow by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
+    // The headphones buttons turn background play on for this playback only (see BackgroundSession): the saved
+    // setting is never touched, so once the playback is over the setting is exactly as it was (on or off).
+    val backgroundSetting by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
     val onVolumeChangeNow by androidx.compose.runtime.rememberUpdatedState(onVolumeChange)
     LifecycleEventEffect(Lifecycle.Event.ON_START) { vm.reclaimFromBackground() }
     DisposableEffect(Unit) { onDispose { vm.savePosition() } }
@@ -588,7 +593,7 @@ fun VideoPlayerScreen(
             vm.handOffToBackground(force = true)
         // Stopping while in the floating window means the window was closed: stop the video too.
         } else if (activity?.isInPictureInPictureMode == true) vm.player?.pause()
-        else if (backgroundPlayNow) vm.handOffToBackground() else vm.player?.pause()
+        else if (backgroundSetting || BackgroundSession.active) vm.handOffToBackground() else vm.player?.pause()
     }
     var inPip by remember { mutableStateOf(activity?.isInPictureInPictureMode == true) }
     DisposableEffect(activity) {
@@ -641,6 +646,7 @@ fun VideoPlayerScreen(
                         VideoPip.ACTION_NEXT -> player.seekToNext()
                         VideoPip.ACTION_AUDIO_ONLY -> {
                             // Close the floating window; ON_STOP then moves the audio to the background service.
+                            BackgroundSession.start()
                             audioOnlyFromPip = true
                             activity.moveTaskToBack(true)
                         }
@@ -679,7 +685,7 @@ fun VideoPlayerScreen(
         }
     }
     val exit = {
-        if (backgroundPlayNow) vm.handOffAndClose()
+        if (backgroundSetting || BackgroundSession.active) vm.handOffAndClose()
         onBack()
     }
     BackHandler(onBack = exit)
@@ -850,6 +856,14 @@ fun VideoPlayerScreen(
                                     }
                                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                         DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.model_sheet_video_info)) },
+                                            leadingIcon = { Icon(Icons.Rounded.Movie, contentDescription = null) },
+                                            onClick = {
+                                                menu = false
+                                                info = p?.currentMediaItem?.mediaId ?: path
+                                            },
+                                        )
+                                        DropdownMenuItem(
                                             text = { Text(stringResource(R.string.media_auto_hide_controls)) },
                                             trailingIcon = { Switch(checked = autoHide, onCheckedChange = null) },
                                             onClick = { onAutoHideChange(!autoHide) },
@@ -950,7 +964,7 @@ fun VideoPlayerScreen(
                                     // Headphones: switch background play on if it is off, then carry on as audio only.
                                     IconButton(
                                         onClick = {
-                                            if (!backgroundPlay) onBackgroundPlayChange(true)
+                                            BackgroundSession.start()
                                             if (activity != null) {
                                                 audioOnlyFromPip = true
                                                 activity.moveTaskToBack(true)
@@ -971,9 +985,6 @@ fun VideoPlayerScreen(
                                     }
                                     IconButton(onClick = { audioTracks = true; controls = true }) {
                                         Icon(Icons.Rounded.Audiotrack, contentDescription = stringResource(R.string.media_audio_tracks), tint = Color.White)
-                                    }
-                                    IconButton(onClick = { info = p?.currentMediaItem?.mediaId ?: path; controls = true }) {
-                                        Icon(Icons.Rounded.Movie, contentDescription = stringResource(R.string.model_sheet_video_info), tint = Color.White)
                                     }
                                 }
                             }

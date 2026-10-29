@@ -138,7 +138,9 @@ fun MusicPlayerSheet(
     val onPlayModeChangeNow by androidx.compose.runtime.rememberUpdatedState(onPlayModeChange)
     val backToListNow by androidx.compose.runtime.rememberUpdatedState(backToList)
     val onDismissNow by androidx.compose.runtime.rememberUpdatedState(onDismiss)
-    val backgroundPlayNow by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
+    // The headphones button turns background play on for this playback only (see BackgroundSession): the saved
+    // setting is never touched, so once the playback is over the setting is exactly as it was (on or off).
+    val backgroundSetting by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
@@ -165,16 +167,13 @@ fun MusicPlayerSheet(
         c.play()
     }
     // With Background Play off, the music stops when the app is left (home, another app, screen off).
-    var keepPlaying by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-        // The headphones button asked for it explicitly: keep playing even if the setting had not been saved yet.
-        if (!backgroundPlayNow && !keepPlaying) controller?.pause()
-        keepPlaying = false
+        if (!backgroundSetting && !BackgroundSession.active) controller?.pause()
     }
     // Closing the player (swipe down, tap outside, back) with Background Play off stops the music instead of
     // leaving it playing in the service; with it on, the music carries on in the background.
     val closeSheet = {
-        if (!backgroundPlayNow) {
+        if (!backgroundSetting && !BackgroundSession.active) {
             controller?.run {
                 stop()
                 clearMediaItems()
@@ -280,16 +279,12 @@ fun MusicPlayerSheet(
                 SpeedButton(c, save = SpeedSave(saveSpeed, onSaveSpeedChange))
                 // Headphones: switch Background Play on if it is off, then leave the app with the music carrying on.
                 IconButton(onClick = {
-                    if (!backgroundPlay) onBackgroundPlayChange(true)
-                    keepPlaying = true
+                    BackgroundSession.start()
                     var a: Context? = context
                     while (a is ContextWrapper && a !is Activity) a = a.baseContext
                     (a as? Activity)?.moveTaskToBack(true)
                 }) {
                     Icon(Icons.Rounded.Headphones, contentDescription = stringResource(R.string.media_background_play))
-                }
-                IconButton(onClick = { info = controller?.currentMediaItem?.mediaId ?: path }) {
-                    Icon(Icons.Rounded.Audiotrack, contentDescription = stringResource(R.string.model_sheet_audio_info))
                 }
                 IconButton(onClick = { sleepDialog = true }) {
                     Icon(
@@ -299,7 +294,7 @@ fun MusicPlayerSheet(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = { c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
+                TextButton(onClick = { BackgroundSession.end(); c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
             }
         }
         // The player's own volume: a small vertical bar in the free space to the left of the cover.
@@ -316,6 +311,14 @@ fun MusicPlayerSheet(
                 }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.model_sheet_audio_info)) },
+                            leadingIcon = { Icon(Icons.Rounded.Audiotrack, contentDescription = null) },
+                            onClick = {
+                                menu = false
+                                info = controller?.currentMediaItem?.mediaId ?: path
+                            },
+                        )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.media_resume_playback)) },
                             trailingIcon = { Switch(checked = resume, onCheckedChange = null) },
