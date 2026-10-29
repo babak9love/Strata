@@ -263,6 +263,9 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             volumeLevel = minOf(skip.videoVolume.coerceIn(0.05f, MAX_LEVEL), SAFE_LEVEL)
             p.volume = minOf(volumeLevel, 1f)
             p.setMediaItems(list.files.map { mediaItem(it, sidecars[it.path].orEmpty()) }, list.start, if (start != null) start.positionMs else if (resumeEnabled) PlaybackPositions.get(getApplication(), ResumeKind.VIDEO, path) else 0L)
+            // The next video is opened in the background while this one plays (its first seconds are loaded and its
+            // subtitle files read), so Next starts at once instead of waiting for the file to be opened and decoded.
+            p.setPreloadConfiguration(ExoPlayer.PreloadConfiguration(PRELOAD_NEXT_US))
             p.prepare()
             p.playWhenReady = start?.playing ?: true
             title = list.current.name
@@ -522,6 +525,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         @Volatile var startOverride: StartAt? = null
 
         private const val SAVE_INTERVAL_MS = 5_000L
+        private const val PRELOAD_NEXT_US = 5_000_000L
         private const val RELOAD_GRACE_MS = 4_000L
         const val MAX_LEVEL = 1f
         const val SAFE_LEVEL = 1f
@@ -1245,7 +1249,8 @@ fun VideoPlayerScreen(
                 player,
                 abRepeat,
                 onClose = { abPanel = false },
-                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 120.dp, start = 16.dp, end = 16.dp),
+                modifier = Modifier.align(Alignment.Center),
+                draggable = true,
             )
         }
         if (subtitlesDialog && player != null) {

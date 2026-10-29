@@ -4,7 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -36,15 +39,21 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathBuilder
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import dev.cluvex.strata.R
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 /** Loop points of the A-B repeat in the video player; positions are in milliseconds. */
 class AbRepeatState {
@@ -111,7 +120,8 @@ fun AbRepeatEffect(player: Player?, state: AbRepeatState) {
 }
 
 /**
- * The little "A - B Repeat" card: tap A / B to take the current position, X only closes the card (the loop keeps running).
+ * The compact "A - B Repeat" card: tap A / B to take the current position; tap a button that already holds a time
+ * to clear it again (back to the plain "A" / "B" label) and pick a new point. X only closes the card (the loop keeps running).
  * The colors default to the dark look over video; the music sheet passes theme colors.
  */
 @Composable
@@ -123,34 +133,91 @@ fun AbRepeatPanel(
     container: Color = Color(0xF22B2629),
     content: Color = Color.White,
     button: Color = Color(0xFF3A3A3A),
+    draggable: Boolean = false,
+) {
+    // The card can be dragged anywhere inside the area it sits in (the player, or the music sheet) to reach what is underneath.
+    var drag by remember { mutableStateOf(Offset.Zero) }
+    var pos by remember { mutableStateOf(Offset.Zero) }
+    var size by remember { mutableStateOf(IntSize.Zero) }
+    var parentPos by remember { mutableStateOf(Offset.Zero) }
+    var parentSize by remember { mutableStateOf(IntSize.Zero) }
+    val dragModifier = if (draggable) {
+        Modifier
+            .absoluteOffset { IntOffset(drag.x.roundToInt(), drag.y.roundToInt()) }
+            .onGloballyPositioned {
+                pos = it.positionInWindow()
+                size = it.size
+                it.parentLayoutCoordinates?.let { parent ->
+                    parentPos = parent.positionInWindow()
+                    parentSize = parent.size
+                }
+            }
+            .pointerInput(Unit) {
+                detectDragGestures { change, amount ->
+                    change.consume()
+                    val nx = (pos.x + amount.x).coerceIn(parentPos.x, parentPos.x + (parentSize.width - size.width).coerceAtLeast(0))
+                    val ny = (pos.y + amount.y).coerceIn(parentPos.y, parentPos.y + (parentSize.height - size.height).coerceAtLeast(0))
+                    val delta = Offset(nx - pos.x, ny - pos.y)
+                    pos += delta
+                    drag += delta
+                }
+            }
+    } else Modifier
+    AbRepeatCard(player, state, onClose, modifier.then(dragModifier), container, content, button)
+}
+
+@Composable
+private fun AbRepeatCard(
+    player: Player?,
+    state: AbRepeatState,
+    onClose: () -> Unit,
+    modifier: Modifier,
+    container: Color,
+    content: Color,
+    button: Color,
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Surface(
-            modifier = modifier.widthIn(max = 320.dp),
-            shape = RoundedCornerShape(12.dp),
+            modifier = modifier.widthIn(max = 210.dp),
+            shape = RoundedCornerShape(10.dp),
             color = container,
             border = BorderStroke(1.dp, content.copy(alpha = 0.35f)),
         ) {
-            Column(Modifier.padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 16.dp)) {
+            Column(Modifier.padding(start = 10.dp, end = 2.dp, top = 2.dp, bottom = 8.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         stringResource(R.string.media_ab_repeat),
                         color = content,
-                        style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                        style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.common_close), tint = content.copy(alpha = 0.7f))
+                    IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = stringResource(R.string.common_close),
+                            tint = content.copy(alpha = 0.7f),
+                            modifier = Modifier.size(18.dp),
+                        )
                     }
                 }
                 Row(
-                    Modifier.fillMaxWidth().padding(end = 12.dp),
+                    Modifier.fillMaxWidth().padding(end = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    PointButton("A", state.a, button, content, Modifier.weight(1f)) { player?.let { state.setA(it.currentPosition) } }
-                    Icon(Icons.Rounded.SwapHoriz, contentDescription = null, tint = content.copy(alpha = 0.45f))
-                    PointButton("B", state.b, button, content, Modifier.weight(1f)) { player?.let { state.setB(it.currentPosition) } }
+                    PointButton("A", state.a, button, content, Modifier.weight(1f)) {
+                        // A point that already has a time goes back to the plain label so a new one can be taken.
+                        if (state.a != null) state.a = null else player?.let { state.setA(it.currentPosition) }
+                    }
+                    Icon(
+                        Icons.Rounded.SwapHoriz,
+                        contentDescription = null,
+                        tint = content.copy(alpha = 0.45f),
+                        modifier = Modifier.size(16.dp),
+                    )
+                    PointButton("B", state.b, button, content, Modifier.weight(1f)) {
+                        if (state.b != null) state.b = null else player?.let { state.setB(it.currentPosition) }
+                    }
                 }
             }
         }
@@ -161,7 +228,7 @@ fun AbRepeatPanel(
 private fun PointButton(label: String, ms: Long?, container: Color, content: Color, modifier: Modifier, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(52.dp),
+        modifier = modifier.height(34.dp),
         shape = RoundedCornerShape(6.dp),
         color = container,
     ) {
@@ -170,7 +237,7 @@ private fun PointButton(label: String, ms: Long?, container: Color, content: Col
                 if (ms != null) formatTime(ms) else label,
                 color = content,
                 fontWeight = FontWeight.Bold,
-                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
             )
         }
     }

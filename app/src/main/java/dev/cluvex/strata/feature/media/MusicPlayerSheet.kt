@@ -313,17 +313,19 @@ fun MusicPlayerSheet(
                 TextButton(onClick = { BackgroundSession.end(); c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
             }
             AbRepeatEffect(c, abRepeat)
-            if (abPanel) {
-                AbRepeatPanel(
-                    c,
-                    abRepeat,
-                    onClose = { abPanel = false },
-                    modifier = Modifier.fillMaxWidth(),
-                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    content = MaterialTheme.colorScheme.onSurface,
-                    button = MaterialTheme.colorScheme.surfaceContainerHighest,
-                )
-            }
+        }
+        // The A-B card sits in the middle of the sheet and can be dragged anywhere inside it.
+        if (abPanel) {
+            AbRepeatPanel(
+                controller,
+                abRepeat,
+                onClose = { abPanel = false },
+                modifier = Modifier.align(Alignment.Center),
+                container = MaterialTheme.colorScheme.surfaceContainerHigh,
+                content = MaterialTheme.colorScheme.onSurface,
+                button = MaterialTheme.colorScheme.surfaceContainerHighest,
+                draggable = true,
+            )
         }
         // The player's own volume: a small vertical bar in the free space to the left of the cover.
         controller?.let { vc ->
