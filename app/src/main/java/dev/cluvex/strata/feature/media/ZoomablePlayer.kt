@@ -106,11 +106,27 @@ fun ZoomablePlayer(
     topControls: @Composable (Player?, Boolean) -> Unit = { _, _ -> },
     bottomControls: @Composable (Player?, Boolean) -> Unit = { _, _ -> },
 ) {
+    // The size the picture is laid out with. When the next video starts, it keeps the old size until the new video's
+    // first frame is on screen and only then switches, so the old picture is not stretched to the new shape in between
+    // and nothing jumps (and there is no black shutter either).
     var videoSize by remember(player) { mutableStateOf(player?.videoSize ?: VideoSize.UNKNOWN) }
     DisposableEffect(player) {
+        var switching = false
         val listener = object : Player.Listener {
+            override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+                // Repeat-one restarts the same video (same size, and possibly no new first frame): nothing to wait for.
+                switching = reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT
+            }
+
             override fun onVideoSizeChanged(size: VideoSize) {
-                videoSize = size
+                // No picture (audio only) or no size to keep yet: nothing to wait for. A size change inside one video
+                // (no new item) is applied right away, too.
+                if (!switching || size == VideoSize.UNKNOWN || videoSize == VideoSize.UNKNOWN) videoSize = size
+            }
+
+            override fun onRenderedFirstFrame() {
+                switching = false
+                player?.videoSize?.let { videoSize = it }
             }
         }
         player?.addListener(listener)
