@@ -68,6 +68,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -888,6 +895,11 @@ fun VideoPlayerScreen(
                                     .fillMaxWidth()
                                     .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)))
                                     .statusBarsPadding()
+                                    // Landscape: the nav bar (3-button mode) and cutout sit on the sides, keep buttons clear of them.
+                                    .windowInsetsPadding(
+                                        WindowInsets.navigationBars.union(WindowInsets.displayCutout)
+                                            .only(WindowInsetsSides.Horizontal),
+                                    )
                                     .padding(horizontal = 4.dp, vertical = 4.dp),
                             ) {
                                 var titleCut by remember { mutableStateOf(false) }
