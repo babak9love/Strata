@@ -6,6 +6,7 @@ import android.media.AudioManager
 import android.provider.Settings
 import android.view.WindowManager
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.ui.draw.rotate
@@ -735,19 +736,48 @@ fun VideoPlayerScreen(
     // A short tap anywhere (middle or sides) shows or hides the buttons and the seek bar.
     val onMiddleTap = androidx.compose.runtime.rememberUpdatedState<() -> Unit> { controls = !controls }
     val onSideTap = androidx.compose.runtime.rememberUpdatedState<() -> Unit> { controls = !controls }
+    var controlsBeforeHold by remember { mutableStateOf(false) }
     val onHoldStart = androidx.compose.runtime.rememberUpdatedState<() -> Unit> {
         player?.let {
             holdSpeed = it.playbackParameters.speed
             it.setPlaybackSpeed(2f)
             holding = true
+            // Buttons and seek bar stay out of the way while the finger is down.
+            controlsBeforeHold = controls
+            controls = false
         }
     }
     val onHoldEnd = androidx.compose.runtime.rememberUpdatedState<() -> Unit> {
         if (holding) {
             player?.setPlaybackSpeed(holdSpeed)
             holding = false
+            controls = controlsBeforeHold
         }
     }
+
+    // Double tap on the left or right side jumps by the same amounts as the two skip buttons (their values follow
+    // whatever is set there). Quick repeated taps add up in the little label.
+    var tapSeek by remember { mutableStateOf<Pair<Boolean, Int>?>(null) } // (forward, total seconds)
+    LaunchedEffect(tapSeek) {
+        if (tapSeek != null) {
+            delay(700)
+            tapSeek = null
+        }
+    }
+    val onDoubleTap = androidx.compose.runtime.rememberUpdatedState<(Boolean) -> Unit> { forward ->
+        player?.let {
+            val secs = if (forward) seekForwardSeconds else seekBackSeconds
+            val target = it.currentPosition + (if (forward) secs else -secs) * 1000L
+            val end = it.duration
+            it.seekTo(if (forward && end != androidx.media3.common.C.TIME_UNSET) target.coerceAtMost(end) else target.coerceAtLeast(0L))
+            val previous = tapSeek
+            tapSeek = forward to (if (previous != null && previous.first == forward) previous.second + secs else secs)
+        }
+    }
+
+    // Horizontal swipe: moves through the video like the seek bar; the picture jumps when the finger lifts.
+    var swipeTarget by remember { mutableStateOf<Long?>(null) }
+    var swipeFrom by remember { mutableStateOf(0L) }
 
     val direction = LocalLayoutDirection.current
     Box(Modifier.fillMaxSize().background(Color.Black).testTag("video-player")) {
@@ -757,7 +787,46 @@ fun VideoPlayerScreen(
                 state = zoomState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .videoTapGestures(onMiddleTap, onSideTap, onHoldStart, onHoldEnd)
+                    .videoTapGestures(onMiddleTap, onSideTap, onHoldStart, onHoldEnd, onDoubleTap)
+                    .pointerInput(Unit) {
+                        var active = false
+                        var start = 0L
+                        var span = 0L
+                        var total = 0f
+                        val finish = {
+                            if (active) {
+                                swipeTarget?.let { vm.player?.seekTo(it) }
+                                swipeTarget = null
+                                active = false
+                            }
+                        }
+                        detectHorizontalDragGestures(
+                            onDragStart = {
+                                val p = vm.player
+                                val d = p?.duration ?: androidx.media3.common.C.TIME_UNSET
+                                // Not while zoomed in (then one finger pans) and not for streams without a length.
+                                active = p != null && !zoomState.zoomed && d != androidx.media3.common.C.TIME_UNSET && d > 0L && !holding
+                                if (active) {
+                                    start = p!!.currentPosition
+                                    // A full width swipe covers the whole video, at most 3 minutes for long ones.
+                                    span = minOf(d, 180_000L)
+                                    total = 0f
+                                    swipeFrom = start
+                                    swipeTarget = start
+                                }
+                            },
+                            onHorizontalDrag = { change, dx ->
+                                if (active) {
+                                    change.consume()
+                                    total += dx
+                                    val d = vm.player?.duration ?: 0L
+                                    swipeTarget = (start + (total / size.width * span).toLong()).coerceIn(0L, d.coerceAtLeast(0L))
+                                }
+                            },
+                            onDragEnd = { finish() },
+                            onDragCancel = { active = false; swipeTarget = null },
+                        )
+                    }
                     .pointerInput(Unit) {
                         // Vertical swipe: left half = brightness, right half = volume.
                         var volume = true
@@ -1073,6 +1142,36 @@ fun VideoPlayerScreen(
                     modifier = Modifier.align(if (hud.volume) Alignment.CenterEnd else Alignment.CenterStart),
                 ) {
                     GestureHud(hud)
+                }
+            }
+        }
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(Modifier.fillMaxSize()) {
+                tapSeek?.let { (forward, secs) ->
+                    Text(
+                        text = (if (forward) "+" else "−") + secs + "s",
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier
+                            .align(if (forward) Alignment.CenterEnd else Alignment.CenterStart)
+                            .padding(horizontal = 48.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(Color.Black.copy(alpha = 0.55f))
+                            .padding(horizontal = 18.dp, vertical = 8.dp),
+                    )
+                }
+                swipeTarget?.let { target ->
+                    val diff = (target - swipeFrom) / 1000L
+                    Text(
+                        text = formatTime(target) + "  (" + (if (diff >= 0) "+" else "−") + formatTime(kotlin.math.abs(target - swipeFrom)) + ")",
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.Black.copy(alpha = 0.6f))
+                            .padding(horizontal = 18.dp, vertical = 10.dp),
+                    )
                 }
             }
         }

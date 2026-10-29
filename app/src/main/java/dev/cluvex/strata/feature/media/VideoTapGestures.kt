@@ -2,6 +2,7 @@ package dev.cluvex.strata.feature.media
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -13,6 +14,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  *
  * - Short tap in the middle zone: [onMiddleTap] (show or hide the controls).
  * - Short tap in the left or right zone: [onSideTap] (show or hide the controls).
+ * - Double tap (and further quick taps) in the left or right zone: [onDoubleTap] (true = right side).
  * - Press and hold in the left or right zone: [onHoldStart] right away once the long-press time
  *   passes, and [onHoldEnd] when the finger lifts, the gesture is cancelled or the composable leaves.
  *
@@ -24,6 +26,7 @@ fun Modifier.videoTapGestures(
     onSideTap: State<() -> Unit>,
     onHoldStart: State<() -> Unit>,
     onHoldEnd: State<() -> Unit>,
+    onDoubleTap: State<(Boolean) -> Unit>,
 ): Modifier = pointerInput(Unit) {
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false)
@@ -52,7 +55,31 @@ fun Modifier.videoTapGestures(
         }
 
         when (outcome) {
-            1 -> if (inMiddle) onMiddleTap.value() else onSideTap.value()
+            1 -> if (inMiddle) {
+                onMiddleTap.value()
+            } else {
+                // Side zones: a second tap on the same side within the double-tap time seeks (forward on the right,
+                // back on the left), and every further quick tap seeks again. A single tap waits for that time.
+                val forward = down.position.x > width / 2f
+                var taps = 1
+                while (true) {
+                    val next = withTimeoutOrNull(viewConfiguration.doubleTapTimeoutMillis) {
+                        awaitFirstDown(requireUnconsumed = false)
+                    }
+                    val sameSide = next != null && next.position.x >= 0f &&
+                        (next.position.x > width / 2f) == forward &&
+                        (next.position.x < width / 3f || next.position.x > width * 2f / 3f)
+                    if (next == null || !sameSide) {
+                        if (taps == 1) onSideTap.value()
+                        break
+                    }
+                    val up = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) { waitForUpOrCancellation() }
+                    if (up == null) break
+                    up.consume()
+                    taps++
+                    onDoubleTap.value(forward)
+                }
+            }
             null -> if (!inMiddle) {
                 onHoldStart.value()
                 try {

@@ -143,6 +143,16 @@ class PlaybackService : MediaSessionService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
 
+    /**
+     * With Background Play on, a paused playlist keeps its notification: the service runs in the foreground
+     * even while paused, otherwise it is destroyed as soon as the app lets go of it and the notification vanishes.
+     */
+    @OptIn(UnstableApi::class)
+    override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
+        val keep = (if (isPlayingVideoAudio()) backgroundVideo else backgroundAudio) || BackgroundSession.active
+        super.onUpdateNotification(session, startInForegroundRequired || keep)
+    }
+
     @OptIn(UnstableApi::class)
     override fun onTaskRemoved(rootIntent: Intent?) {
         // Swiping the app out of Recents keeps playing when Background Play is on for what is playing.
