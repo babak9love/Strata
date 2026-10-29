@@ -193,4 +193,5 @@
     <string name="media_subtitle_sync_hint">Positive shows subtitles later, negative earlier.</string>
     <string name="media_subtitle_sync_apply">Apply</string>
     <string name="media_subtitle_sync_reset">Reset</string>
+    <string name="media_ab_repeat">A - B Repeat</string>
 </resources>

@@ -217,6 +217,9 @@
     <string name="model_folder_style_burst">Burst</string>
     <string name="model_folder_style_crimson">Crimson</string>
     <string name="model_folder_style_rose">Rose</string>
+    <string name="model_folder_style_flower">Flower</string>
+    <string name="model_folder_style_fluffy_pink">Fluffy pink</string>
+    <string name="model_folder_style_fluffy_blue">Fluffy blue</string>
     <string name="model_browse_undo">Undo</string>
     <string name="model_bookmark_classic">Classic</string>
     <string name="model_bookmark_outlined">Outlined</string>

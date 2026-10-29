@@ -767,7 +767,9 @@ fun ExplorerScreen(
         }
         Dialog.Sort -> {
             val folder = ui.activePane.path
-            var own by remember(folder) { mutableStateOf(ui.settings.folderSorts.containsKey(FolderSorts.key(folder))) }
+            var own by remember(folder) {
+                mutableStateOf(ui.settings.folderSorts.containsKey(FolderSorts.key(folder)) || ui.settings.sortThisFolderOnly)
+            }
             var order by remember(folder) { mutableStateOf(ui.settings.sortFor(folder)) }
             SortSheet(
                 current = order,
@@ -782,6 +784,7 @@ fun ExplorerScreen(
                 folderName = ui.displayPath(folder).substringAfterLast('/').ifBlank { ui.displayPath(folder) },
                 onThisFolderOnly = { on ->
                     own = on
+                    vm.setSortThisFolderOnly(on)
                     vm.setFolderSort(folder, if (on) order else null)
                     if (!on) order = ui.settings.sortOrder
                 },

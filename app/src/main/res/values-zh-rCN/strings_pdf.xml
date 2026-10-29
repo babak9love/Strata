@@ -185,4 +185,5 @@
     <string name="media_subtitle_sync_hint">正值使字幕延后，负值使字幕提前。</string>
     <string name="media_subtitle_sync_apply">应用</string>
     <string name="media_subtitle_sync_reset">重置</string>
+    <string name="media_ab_repeat">A-B 重复</string>
 </resources>

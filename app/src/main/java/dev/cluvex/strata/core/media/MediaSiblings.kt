@@ -1,6 +1,7 @@
 package dev.cluvex.strata.core.media
 
 import dev.cluvex.strata.core.model.FileItem
+import dev.cluvex.strata.core.model.SortOrder
 import dev.cluvex.strata.core.util.FileKind
 import dev.cluvex.strata.core.util.FileKinds
 import dev.cluvex.strata.core.util.NaturalOrder
@@ -12,15 +13,27 @@ data class MediaList(val files: List<File>, val start: Int) {
 
 object MediaSiblings {
 
-    fun of(file: File, kind: FileKind, showHidden: Boolean = true): MediaList {
+    /**
+     * The files next to [file] of the same [kind], in the order of [sortOrder] (the folder's sort in the file list)
+     * or, when it is null, by name in natural order.
+     */
+    fun of(file: File, kind: FileKind, showHidden: Boolean = true, sortOrder: SortOrder? = null): MediaList {
         val dir = file.parentFile
-        val siblings = dir?.listFiles()
+        val found = dir?.listFiles()
             ?.filter { (showHidden || !it.name.startsWith('.')) && kindOf(it.name) == kind && it.isFile }
             .orEmpty()
-            .sortedWith { a, b -> NaturalOrder.compare(a.name, b.name) }
             .ifEmpty { listOf(file) }
-        val files = if (siblings.any { it.path == file.path }) siblings else (siblings + file).sortedWith { a, b -> NaturalOrder.compare(a.name, b.name) }
+        val all = if (found.any { it.path == file.path }) found else found + file
+        val files = ordered(all, sortOrder)
         return MediaList(files, files.indexOfFirst { it.path == file.path }.coerceAtLeast(0))
+    }
+
+    private fun ordered(files: List<File>, sortOrder: SortOrder?): List<File> {
+        if (sortOrder == null) return files.sortedWith { a, b -> NaturalOrder.compare(a.name, b.name) }
+        val byFile = files.associateWith { FileItem.of(it) }
+        // Same comparator as the file list; only files here, so folders-first does not matter.
+        val comparator = sortOrder.copy(dirsFirst = false).comparator()
+        return files.sortedWith { a, b -> comparator.compare(byFile.getValue(a), byFile.getValue(b)) }
     }
 
     private fun kindOf(name: String): FileKind =

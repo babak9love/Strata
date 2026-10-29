@@ -83,6 +83,7 @@ data class StrataSettings(
     val sortOrder: SortOrder = SortOrder(),
     val folderSorts: Map<String, SortOrder> = emptyMap(),
     val showHidden: Boolean = false,
+    val sortThisFolderOnly: Boolean = true,
     val appearance: AppearancePrefs = AppearancePrefs(),
     val list: ListPrefs = ListPrefs(),
     val behavior: BehaviorPrefs = BehaviorPrefs(),
@@ -118,6 +119,7 @@ class SettingsRepository(private val context: Context) {
         val DIRS_FIRST = booleanPreferencesKey("dirs_first")
         val FOLDER_SORTS = stringPreferencesKey("folder_sorts")
         val SHOW_HIDDEN = booleanPreferencesKey("show_hidden")
+        val SORT_THIS_FOLDER_ONLY = booleanPreferencesKey("sort_this_folder_only")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val DYNAMIC = booleanPreferencesKey("dynamic_color")
         val SEED = intPreferencesKey("seed_color")
@@ -237,7 +239,7 @@ class SettingsRepository(private val context: Context) {
         val ACTION_LAYOUT = stringPreferencesKey("action_layout")
 
         val BOOLEANS = listOf(
-            SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, DYNAMIC, PURE_BLACK, CUSTOM_FILE_ICONS, FOLDER_SHAPED, FOLDER_FIXED_COLOR, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, FOLDER_BADGES, SHOW_DATE,
+            SORT_DESC, DIRS_FIRST, SHOW_HIDDEN, SORT_THIS_FOLDER_ONLY, DYNAMIC, PURE_BLACK, CUSTOM_FILE_ICONS, FOLDER_SHAPED, FOLDER_FIXED_COLOR, COLORFUL_ICONS, HAPTICS, SOUNDS, SOUNDS_IN_SILENT, THUMBNAILS, FOLDER_BADGES, SHOW_DATE,
             SHOW_SIZE, USE_24H, WRAP_NAMES, TILE_FRAME, SHOW_EXTENSIONS, DOUBLE_BACK, ICON_SELECTS, SWIPE_OPENS_DRAWER, SHOW_BOOKMARK_BAR, BOOKMARK_BAR_BOTTOM, BOOKMARK_SWIPE, BOOKMARK_SWIPE_WRAP, BOOKMARK_SWIPE_SLIDE, KEEP_SCREEN_TASKS, KEEP_MTIME, UNDO_ENABLED, SECURE_SCREEN,
             DUAL_PANE, TRASH_DEFAULT, ROOT_ACCESS, SHIZUKU_ACCESS, VERIFY_BEFORE_INSTALL, INSTALL_WITH_ROOT, EDITOR_WRAP,
             EDITOR_LINE_NUMBERS, EDITOR_WHITESPACE, EDITOR_SYMBOL_BAR, EDITOR_AUTO_INDENT, EDITOR_AUTO_PAIRS, EDITOR_HIGHLIGHT_LINE,
@@ -312,6 +314,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun setShowHidden(value: Boolean) = context.dataStore.edit { it[Keys.SHOW_HIDDEN] = value }
+    suspend fun setSortThisFolderOnly(value: Boolean) = context.dataStore.edit { it[Keys.SORT_THIS_FOLDER_ONLY] = value }
     suspend fun setDualPanePreferred(value: Boolean) = context.dataStore.edit { it[Keys.DUAL_PANE] = value }
     suspend fun protectFolder(path: String) = context.dataStore.edit { p ->
         val list = dev.cluvex.strata.core.model.ProtectedFolders.decode(p[Keys.PROTECTED_FOLDERS])
@@ -446,6 +449,7 @@ class SettingsRepository(private val context: Context) {
             folderSorts = FolderSorts.decode(p[Keys.FOLDER_SORTS]),
             protectedFolders = dev.cluvex.strata.core.model.ProtectedFolders.decode(p[Keys.PROTECTED_FOLDERS]),
             showHidden = p[Keys.SHOW_HIDDEN] ?: false,
+            sortThisFolderOnly = p[Keys.SORT_THIS_FOLDER_ONLY] ?: true,
             appearance = readAppearance(p),
             list = readList(p),
             behavior = readBehavior(p),

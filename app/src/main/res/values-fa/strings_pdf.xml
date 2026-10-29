@@ -189,4 +189,5 @@
     <string name="media_subtitle_sync_hint">مثبت: زیرنویس دیرتر نمایش داده می‌شود. منفی: زودتر.</string>
     <string name="media_subtitle_sync_apply">اعمال</string>
     <string name="media_subtitle_sync_reset">بازنشانی</string>
+    <string name="media_ab_repeat">تکرار A - B</string>
 </resources>

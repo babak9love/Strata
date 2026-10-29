@@ -449,6 +449,7 @@ class ExplorerViewModel(
 
     fun setFolderSort(path: String, order: SortOrder?) = viewModelScope.launch { settingsRepo.setFolderSort(path, order) }
     fun setShowHidden(value: Boolean) = viewModelScope.launch { settingsRepo.setShowHidden(value) }
+    fun setSortThisFolderOnly(value: Boolean) = viewModelScope.launch { settingsRepo.setSortThisFolderOnly(value) }
 
     fun setSearchActive(active: Boolean) = _state.update {
         it.copy(searchActive = active, query = if (active) it.query else "")

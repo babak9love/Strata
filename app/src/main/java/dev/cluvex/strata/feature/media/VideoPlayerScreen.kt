@@ -159,6 +159,7 @@ import androidx.media3.ui.compose.material3.buttons.ShuffleButton
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.MediaSiblings
+import dev.cluvex.strata.core.model.SortOrder
 import dev.cluvex.strata.core.media.PlaybackPositions
 import dev.cluvex.strata.core.media.ResumeKind
 import dev.cluvex.strata.core.media.ResumeListener
@@ -207,7 +208,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
     /** Called whenever the repeat or shuffle button changes, so the choice is kept for next time. */
     var onPlayModeChange: (repeatMode: Int, shuffle: Boolean) -> Unit = { _, _ -> }
 
-    fun open(path: String, showHidden: Boolean) {
+    fun open(path: String, showHidden: Boolean, sortOrder: SortOrder? = null) {
         if (opened == path) return
         opened = path
         // A song or an earlier video may still be playing in the background service: stop it first.
@@ -219,7 +220,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         PlaybackService.stopPlayback()
         if (keepSession) BackgroundSession.start()
         viewModelScope.launch {
-            val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.VIDEO, showHidden) }
+            val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.VIDEO, showHidden, sortOrder) }
             // Subtitle files saved next to the videos (movie.srt, movie.fa.srt, ...), converted to UTF-8.
             val sidecars = withContext(Dispatchers.IO) { SubtitleFiles.sidecarsFor(getApplication(), list.files) }
             externals.clear()
@@ -540,6 +541,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
 fun VideoPlayerScreen(
     path: String,
     showHidden: Boolean,
+    sortOrder: SortOrder? = null,
     onBack: () -> Unit,
     autoHide: Boolean = true,
     onAutoHideChange: (Boolean) -> Unit = {},
@@ -566,7 +568,7 @@ fun VideoPlayerScreen(
         vm.onPlayModeChange = onPlayModeChange
         vm.setPlayAlone(playAlone)
     }
-    LaunchedEffect(path) { vm.open(path, showHidden) }
+    LaunchedEffect(path) { vm.open(path, showHidden, sortOrder) }
     // The headphones buttons turn background play on for this playback only (see BackgroundSession): the saved
     // setting is never touched, so once the playback is over the setting is exactly as it was (on or off).
     val backgroundSetting by androidx.compose.runtime.rememberUpdatedState(backgroundPlay)
@@ -582,6 +584,8 @@ fun VideoPlayerScreen(
     var titleExpanded by remember { mutableStateOf(false) }
     var audioTracks by remember { mutableStateOf(false) }
     var sleepDialog by remember { mutableStateOf(false) }
+    val abRepeat = remember { AbRepeatState() }
+    var abPanel by remember { mutableStateOf(false) }
     val sleepEndsAt by SleepTimer.endsAt.collectAsState()
     // Which skip button is being adjusted by a long press: false = rewind, true = forward, null = none.
     var seekDialog by remember { mutableStateOf<Boolean?>(null) }
@@ -750,7 +754,7 @@ fun VideoPlayerScreen(
         onDispose { player?.removeListener(listener) }
     }
 
-    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !scaleMenu && !titleExpanded && !seeking && !sleepDialog && !subtitlesDialog && !audioTracks && info == null) { controls = false }
+    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !scaleMenu && !titleExpanded && !seeking && !sleepDialog && !abPanel && !subtitlesDialog && !audioTracks && info == null) { controls = false }
     ImmersiveWhile(!controls)
     LightSystemBarIcons()
 
@@ -1077,6 +1081,13 @@ fun VideoPlayerScreen(
                                             tint = if (backgroundSetting || BackgroundSession.active) MaterialTheme.colorScheme.primary else Color.White,
                                         )
                                     }
+                                    IconButton(onClick = { abPanel = !abPanel; controls = true }) {
+                                        Icon(
+                                            AbRepeatIcon,
+                                            contentDescription = stringResource(R.string.media_ab_repeat),
+                                            tint = if (abRepeat.armed) MaterialTheme.colorScheme.primary else Color.White,
+                                        )
+                                    }
                                     IconButton(onClick = { sleepDialog = true; controls = true }) {
                                         Icon(
                                             Icons.Rounded.Alarm,
@@ -1224,6 +1235,15 @@ fun VideoPlayerScreen(
         }
         if (audioTracks && player != null) AudioTracksDialog(player) { audioTracks = false }
         if (sleepDialog) SleepTimerDialog { sleepDialog = false }
+        AbRepeatEffect(player, abRepeat)
+        if (abPanel && !inPip) {
+            AbRepeatPanel(
+                player,
+                abRepeat,
+                onClose = { abPanel = false },
+                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 120.dp, start = 16.dp, end = 16.dp),
+            )
+        }
         if (subtitlesDialog && player != null) {
             SubtitleTracksDialog(
                 player = player,

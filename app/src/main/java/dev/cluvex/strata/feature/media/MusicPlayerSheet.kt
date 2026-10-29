@@ -81,6 +81,7 @@ import androidx.media3.ui.compose.material3.buttons.RepeatButton
 import androidx.media3.ui.compose.material3.buttons.ShuffleButton
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.MediaSiblings
+import dev.cluvex.strata.core.model.SortOrder
 import dev.cluvex.strata.core.media.PlaybackPositions
 import dev.cluvex.strata.core.media.ResumeKind
 import dev.cluvex.strata.core.model.FileItem
@@ -121,6 +122,7 @@ fun rememberMediaController(onDisconnected: () -> Unit = {}): MediaController? {
 fun MusicPlayerSheet(
     path: String,
     showHidden: Boolean,
+    sortOrder: SortOrder? = null,
     resume: Boolean = true,
     onResumeChange: (Boolean) -> Unit = {},
     backToList: Boolean = true,
@@ -154,7 +156,7 @@ fun MusicPlayerSheet(
     LaunchedEffect(controller, path) {
         val c = controller ?: return@LaunchedEffect
         if (c.currentMediaItem?.mediaId == path) return@LaunchedEffect
-        val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.AUDIO, showHidden) }
+        val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.AUDIO, showHidden, sortOrder) }
         val behavior = dev.cluvex.strata.core.data.SettingsRepository(context).settings.first().behavior
         if (behavior.saveSpeedAudio) c.setPlaybackSpeed(behavior.speedAudio)
         // Repeat and shuffle come back the way they were left.

@@ -197,4 +197,5 @@
     <string name="media_subtitle_sync_hint">Плюс — субтитры позже, минус — раньше.</string>
     <string name="media_subtitle_sync_apply">Применить</string>
     <string name="media_subtitle_sync_reset">Сбросить</string>
+    <string name="media_ab_repeat">Повтор A - B</string>
 </resources>

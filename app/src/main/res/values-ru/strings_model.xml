@@ -203,6 +203,9 @@
     <string name="model_folder_style_burst">Вспышка</string>
     <string name="model_folder_style_crimson">Багровая</string>
     <string name="model_folder_style_rose">Роза</string>
+    <string name="model_folder_style_flower">Цветок</string>
+    <string name="model_folder_style_fluffy_pink">Пушистая розовая</string>
+    <string name="model_folder_style_fluffy_blue">Пушистая синяя</string>
     <string name="model_browse_undo">Отменить</string>
     <string name="model_bookmark_classic">Классика</string>
     <string name="model_bookmark_outlined">С контуром</string>

@@ -79,6 +79,7 @@ import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.bookmarks.Bookmarks
 import dev.cluvex.strata.core.data.SettingsRepository
 import dev.cluvex.strata.core.data.StrataSettings
+import dev.cluvex.strata.core.data.sortFor
 import dev.cluvex.strata.core.model.FileItem
 import dev.cluvex.strata.core.open.OpenResolver
 import dev.cluvex.strata.core.open.OpenTarget
@@ -515,6 +516,7 @@ fun AppShell(
         is OpenDialog.Music -> MusicPlayerSheet(
             path = d.path,
             showHidden = settings.showHidden,
+            sortOrder = settings.sortFor(java.io.File(d.path).parent ?: "/"),
             resume = settings.behavior.resumeAudio,
             onResumeChange = { v ->
                 if (!v) PlaybackPositions.clearAll(context, ResumeKind.AUDIO)
@@ -648,6 +650,7 @@ private fun Screen(
             VideoPlayerScreen(
                 path = r.path,
                 showHidden = settings.showHidden,
+                sortOrder = settings.sortFor(java.io.File(r.path).parent ?: "/"),
                 onBack = actions.pop,
                 autoHide = settings.behavior.videoAutoHide,
                 onAutoHideChange = { v -> videoScope.launch { settingsRepo.editBehavior { it.copy(videoAutoHide = v) } } },
