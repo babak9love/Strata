@@ -156,7 +156,10 @@ fun ZoomablePlayer(
             val about = centroid - Offset(cw / 2f, ch / 2f)
             val moved = (state.pan - about) * (newZoom / oldZoom) + about + panChange
             state.zoom = newZoom
-            state.pan = if (newZoom <= 1.01f) Offset.Zero else clampPan(moved, newZoom)
+            // Without zoom the picture goes back to the centre, unless it is bigger than the screen (FILL, ORIGINAL):
+            // then two fingers can still pan it to see the cut-off parts.
+            val overflows = base.width > cw + 1f || base.height > ch + 1f
+            state.pan = if (newZoom <= 1.01f && !overflows) Offset.Zero else clampPan(moved, newZoom)
         }
         val zoomedNow = rememberUpdatedState(state.zoomed)
 

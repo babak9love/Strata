@@ -444,6 +444,10 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         resume?.saveNow()
         p.pause()
         val app = getApplication<Application>()
+        // Paused case: nothing starts the service, so it was only "bound". Releasing the controller below then
+        // destroyed it before it could go to the foreground and post its notification. Starting it makes it
+        // outlive the controller; PlaybackService.onUpdateNotification then promotes it to the foreground.
+        runCatching { app.startService(android.content.Intent(app, PlaybackService::class.java)) }
         val future = MediaController.Builder(app, SessionToken(app, ComponentName(app, PlaybackService::class.java))).buildAsync()
         future.addListener({
             val c = runCatching { future.get() }.getOrNull() ?: return@addListener
@@ -454,8 +458,9 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             c.setMediaItems(items, index, position)
             c.prepare()
             if (wasPlaying) c.play() else c.pause()
-            // The service keeps the playlist (playing or paused) without this controller.
-            MediaController.releaseFuture(future)
+            // The service keeps the playlist (playing or paused) without this controller. Let the notification
+            // be posted first, otherwise a paused playlist loses its service.
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ MediaController.releaseFuture(future) }, 1500)
         }, ContextCompat.getMainExecutor(app))
     }
 
@@ -691,7 +696,19 @@ fun VideoPlayerScreen(
         if (backgroundSetting || BackgroundSession.active) vm.handOffAndClose()
         onBack()
     }
-    BackHandler(onBack = exit)
+    // Back (the system button or the arrow in the top bar) in landscape first turns the screen back to portrait;
+    // the next Back leaves the player.
+    val back: () -> Unit = {
+        if (activity != null &&
+            activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+            !activity.isInPictureInPictureMode
+        ) {
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            exit()
+        }
+    }
+    BackHandler(onBack = back)
     seekDialog?.let { forward ->
         SkipLengthDialog(
             title = stringResource(if (forward) R.string.media_seek_forward_title else R.string.media_seek_back_title),
@@ -876,7 +893,7 @@ fun VideoPlayerScreen(
                                 var titleCut by remember { mutableStateOf(false) }
                                 // Row 1: back, the file name (takes all the room it can), the three-dot menu.
                                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                    IconButton(onClick = exit) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White) }
+                                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White) }
                                 Row(
                                     Modifier
                                         .weight(1f)
