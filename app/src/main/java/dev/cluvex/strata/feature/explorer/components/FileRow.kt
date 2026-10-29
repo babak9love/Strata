@@ -462,7 +462,7 @@ private fun FolderIconWithBadge(item: FileItem, iconSize: Dp, shape: Shape) {
             withContext(Dispatchers.IO) {
                 runCatching {
                     File(item.path).listFiles()
-                        ?.filter { it.isFile }
+                        ?.filter { it.isFile && !it.name.startsWith(".") } // hidden files never give the badge
                         ?.minWithOrNull(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
                         ?.let { FileItem.of(it) }
                 }.getOrNull()

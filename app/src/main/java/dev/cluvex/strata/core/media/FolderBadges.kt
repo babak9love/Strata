@@ -133,16 +133,16 @@ object FolderBadges {
     private val imageExt = setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "avif")
     private val videoExt = setOf("mp4", "mkv", "webm", "mov", "avi", "3gp", "m4v")
 
-    /** First image, else video, else APK inside the folder (by name), rendered as a small bitmap. */
+    /** First image, else video, else APK inside the folder (by name; hidden files, whose name starts with a dot, are ignored), rendered as a small bitmap. */
     private fun contentIcon(context: Context, dir: File): Bitmap? {
-        val files = dir.listFiles()?.asSequence()?.take(MAX_ENTRIES)?.filter { it.isFile }?.sortedBy { it.name }?.toList() ?: return null
+        val files = dir.listFiles()?.asSequence()?.filter { it.isFile && !it.name.startsWith(".") }?.take(MAX_ENTRIES)?.sortedBy { it.name }?.toList() ?: return null
         files.firstOrNull { it.extension.lowercase() in imageExt }?.let { f ->
             decodeImage(f)?.let { return it }
         }
         files.firstOrNull { it.extension.lowercase() in videoExt }?.let { f ->
             videoFrame(f)?.let { return it }
         }
-        return apkIcon(context, dir)
+        return apkIcon(context, dir, skipHidden = true)
     }
 
     private fun decodeImage(file: File): Bitmap? {
@@ -174,10 +174,10 @@ object FolderBadges {
         return null
     }
 
-    private fun apkIcon(context: Context, dir: File): Bitmap? {
+    private fun apkIcon(context: Context, dir: File, skipHidden: Boolean = false): Bitmap? {
         val files = runCatching { dir.listFiles() }.getOrNull() ?: return null
         var tries = 0
-        for (f in files.asSequence().take(MAX_ENTRIES).filter { it.isFile && it.extension.equals("apk", ignoreCase = true) }.sortedBy { it.name }) {
+        for (f in files.asSequence().take(MAX_ENTRIES).filter { it.isFile && it.extension.equals("apk", ignoreCase = true) && !(skipHidden && it.name.startsWith(".")) }.sortedBy { it.name }) {
             ApkIcons.load(context, f.path, SIZE)?.let { return it }
             if (++tries >= MAX_APK_TRIES) break
         }
