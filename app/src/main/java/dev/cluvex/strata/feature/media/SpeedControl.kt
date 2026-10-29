@@ -68,8 +68,29 @@ class SpeedSave(val enabled: Boolean, val onChange: (enabled: Boolean, speed: Fl
 @Composable
 fun SpeedButton(player: Player?, tint: Color = LocalContentColor.current, save: SpeedSave? = null) {
     var open by remember { mutableStateOf(false) }
+    // The icon takes the active colour while the speed is anything but the normal 1x; it follows speed changes.
+    var speed by remember(player) { mutableFloatStateOf(player?.playbackParameters?.speed ?: 1f) }
+    androidx.compose.runtime.DisposableEffect(player) {
+        if (player == null) {
+            onDispose { }
+        } else {
+            val listener = object : Player.Listener {
+                override fun onPlaybackParametersChanged(playbackParameters: androidx.media3.common.PlaybackParameters) {
+                    speed = playbackParameters.speed
+                }
+            }
+            speed = player.playbackParameters.speed
+            player.addListener(listener)
+            onDispose { player.removeListener(listener) }
+        }
+    }
+    val changed = kotlin.math.abs(speed - 1f) > 0.001f
     IconButton(onClick = { open = true }, enabled = player != null) {
-        Icon(Icons.Rounded.SlowMotionVideo, contentDescription = stringResource(R.string.media_speed), tint = tint)
+        Icon(
+            Icons.Rounded.SlowMotionVideo,
+            contentDescription = stringResource(R.string.media_speed),
+            tint = if (changed) MaterialTheme.colorScheme.primary else tint,
+        )
     }
     if (open && player != null) SpeedDialog(player, save) { open = false }
 }

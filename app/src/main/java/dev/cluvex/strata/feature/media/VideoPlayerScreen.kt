@@ -971,7 +971,11 @@ fun VideoPlayerScreen(
                                             }
                                         },
                                     ) {
-                                        Icon(Icons.Rounded.Headphones, contentDescription = stringResource(R.string.media_background_play), tint = Color.White)
+                                        Icon(
+                                            Icons.Rounded.Headphones,
+                                            contentDescription = stringResource(R.string.media_background_play),
+                                            tint = if (backgroundSetting || BackgroundSession.active) MaterialTheme.colorScheme.primary else Color.White,
+                                        )
                                     }
                                     IconButton(onClick = { sleepDialog = true; controls = true }) {
                                         Icon(

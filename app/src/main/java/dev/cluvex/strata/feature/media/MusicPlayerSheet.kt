@@ -284,7 +284,11 @@ fun MusicPlayerSheet(
                     while (a is ContextWrapper && a !is Activity) a = a.baseContext
                     (a as? Activity)?.moveTaskToBack(true)
                 }) {
-                    Icon(Icons.Rounded.Headphones, contentDescription = stringResource(R.string.media_background_play))
+                    Icon(
+                        Icons.Rounded.Headphones,
+                        contentDescription = stringResource(R.string.media_background_play),
+                        tint = if (backgroundSetting || BackgroundSession.active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                    )
                 }
                 IconButton(onClick = { sleepDialog = true }) {
                     Icon(
