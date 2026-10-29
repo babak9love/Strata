@@ -52,7 +52,7 @@ class AbRepeatState {
     var b by mutableStateOf<Long?>(null)
 
     /** True when both points are set and the loop is running. */
-    val active: Boolean get() = a != null && b != null
+    val active: Boolean get() = a != null && b != null && b!! > a!!
 
     /** True when any point is set (the toolbar icon is highlighted). */
     val armed: Boolean get() = a != null || b != null
@@ -64,13 +64,16 @@ class AbRepeatState {
     }
 
     fun setB(ms: Long) {
-        // B before (or at) A: the two points swap so the loop is always forward.
         val start = a
-        if (start != null && ms <= start) {
-            b = start
-            a = ms
-        } else {
-            b = ms
+        when {
+            // Same spot as A: a loop of zero length would throw playback back to A all the time, so B is not set.
+            start != null && ms == start -> Unit
+            // B before A: the two points swap so the loop is always forward.
+            start != null && ms < start -> {
+                b = start
+                a = ms
+            }
+            else -> b = ms
         }
     }
 
@@ -79,6 +82,8 @@ class AbRepeatState {
         b = null
     }
 }
+
+private const val RETURN_WINDOW_MS = 1500L
 
 /** While both points are set, jumps back to A each time playback reaches B (or falls outside the loop after B). */
 @Composable
@@ -94,9 +99,12 @@ fun AbRepeatEffect(player: Player?, state: AbRepeatState) {
     val a = state.a
     val b = state.b
     LaunchedEffect(player, a, b) {
-        if (player == null || a == null || b == null) return@LaunchedEffect
+        if (player == null || a == null || b == null || b <= a) return@LaunchedEffect
         while (true) {
-            if (player.currentPosition >= b) player.seekTo(a)
+            // Only the moment playback runs past B sends it back to A. A seek far beyond B (or before A) is left alone,
+            // so the seek bar can be dragged anywhere.
+            val position = player.currentPosition
+            if (position >= b && position < b + RETURN_WINDOW_MS) player.seekTo(a)
             delay(40)
         }
     }

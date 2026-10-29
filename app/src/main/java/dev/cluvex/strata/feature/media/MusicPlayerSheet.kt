@@ -281,8 +281,8 @@ fun MusicPlayerSheet(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SpeedButton(c, save = SpeedSave(saveSpeed, onSaveSpeedChange))
-                // A-B repeat: tapping again clears the points and opens the card; the loop is gone when the player closes.
-                IconButton(onClick = { abRepeat.clear(); abPanel = true }) {
+                // A-B repeat: when it is on, a tap turns it off (clears the points); otherwise it opens the card to set them.
+                IconButton(onClick = { if (abRepeat.armed) { abRepeat.clear(); abPanel = false } else abPanel = true }) {
                     Icon(
                         AbRepeatIcon,
                         contentDescription = stringResource(R.string.media_ab_repeat),

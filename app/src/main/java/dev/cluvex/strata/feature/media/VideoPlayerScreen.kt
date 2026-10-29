@@ -1081,7 +1081,11 @@ fun VideoPlayerScreen(
                                             tint = if (backgroundSetting || BackgroundSession.active) MaterialTheme.colorScheme.primary else Color.White,
                                         )
                                     }
-                                    IconButton(onClick = { abRepeat.clear(); abPanel = true; controls = true }) {
+                                    IconButton(onClick = {
+                                        // On: just turn it off. Off: open the card to set the points.
+                                        if (abRepeat.armed) { abRepeat.clear(); abPanel = false } else abPanel = true
+                                        controls = true
+                                    }) {
                                         Icon(
                                             AbRepeatIcon,
                                             contentDescription = stringResource(R.string.media_ab_repeat),
