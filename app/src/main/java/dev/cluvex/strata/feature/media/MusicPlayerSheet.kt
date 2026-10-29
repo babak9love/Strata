@@ -321,7 +321,7 @@ fun MusicPlayerSheet(
                 abRepeat,
                 onClose = { abPanel = false },
                 modifier = Modifier.align(Alignment.Center),
-                container = MaterialTheme.colorScheme.surfaceContainerHigh,
+                container = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
                 content = MaterialTheme.colorScheme.onSurface,
                 button = MaterialTheme.colorScheme.surfaceContainerHighest,
                 draggable = true,

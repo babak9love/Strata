@@ -101,7 +101,7 @@ fun SubtitleTracksDialog(
     var pickBackground by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+        Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA)) {
             Column(Modifier.padding(vertical = 12.dp)) {
                 Row(Modifier.padding(start = 24.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.media_subtitles), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))

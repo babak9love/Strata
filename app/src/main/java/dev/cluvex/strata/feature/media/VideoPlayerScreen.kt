@@ -946,10 +946,10 @@ fun VideoPlayerScreen(
                                             properties = PopupProperties(focusable = true),
                                         ) {
                                             CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                                                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xF22B2629)) {
+                                                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA)) {
                                                     Text(
                                                         vm.title,
-                                                        color = Color.White,
+                                                        color = MaterialTheme.colorScheme.onSurface,
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         modifier = Modifier.widthIn(max = maxWidth).padding(horizontal = 14.dp, vertical = 12.dp),
                                                     )
@@ -1250,6 +1250,9 @@ fun VideoPlayerScreen(
                 abRepeat,
                 onClose = { abPanel = false },
                 modifier = Modifier.align(Alignment.Center),
+                container = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
+                content = MaterialTheme.colorScheme.onSurface,
+                button = MaterialTheme.colorScheme.surfaceContainerHighest,
                 draggable = true,
             )
         }
@@ -1442,6 +1445,7 @@ private fun SkipLengthDialog(title: String, seconds: Int, onDismiss: () -> Unit,
     var value by remember(seconds) { androidx.compose.runtime.mutableFloatStateOf(seconds.toFloat()) }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
         title = { Text(title) },
         text = {
             Column {

@@ -1,10 +1,18 @@
 package dev.cluvex.strata.feature.media
 
+import android.graphics.Bitmap
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.view.PixelCopy
 import android.view.SurfaceView
 import android.widget.FrameLayout
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -18,6 +26,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -25,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -32,8 +42,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
@@ -43,6 +57,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
+import kotlinx.coroutines.delay
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -69,6 +85,9 @@ class VideoZoomState {
 }
 
 private const val MAX_ZOOM = 10f
+
+/** The copy of the previous video's last picture and the pixel size of the surface it was taken from. */
+private class ShutterFrame(val bitmap: ImageBitmap, val width: Int, val height: Int)
 
 private fun fitInside(aspect: Float, w: Float, h: Float): Size =
     if (w / h > aspect) Size(h * aspect, h) else Size(w, w / aspect)
@@ -107,31 +126,95 @@ fun ZoomablePlayer(
     bottomControls: @Composable (Player?, Boolean) -> Unit = { _, _ -> },
 ) {
     // The size the picture is laid out with. When the next video starts, it keeps the old size until the new video's
-    // first frame is on screen and only then switches, so the old picture is not stretched to the new shape in between
-    // and nothing jumps (and there is no black shutter either).
+    // first frame is on screen and only then switches, so the old picture is not stretched to the new shape in between.
     var videoSize by remember(player) { mutableStateOf(player?.videoSize ?: VideoSize.UNKNOWN) }
+    var surfaceView by remember { mutableStateOf<SurfaceView?>(null) }
+    // The last picture of the previous video, held over the surface while a differently shaped next video gets going:
+    // the surface is resized and gets its first frame behind it, then it fades away, so there is no stretch or jump.
+    var shutter by remember(player) { mutableStateOf<ShutterFrame?>(null) }
+    var shutterAlpha by remember(player) { mutableFloatStateOf(1f) }
+    var shutterRelease by remember(player) { mutableStateOf(false) }
     DisposableEffect(player) {
         var switching = false
+        var seenFrame = false
+        var captured: ShutterFrame? = null
+        var pendingSize: VideoSize? = null
+
+        // Copies what the surface shows now (the old video's last frame) before the next video replaces it.
+        fun capture() {
+            captured = null
+            val sv = surfaceView
+            if (!seenFrame || sv == null || sv.width <= 0 || sv.height <= 0 || Build.VERSION.SDK_INT < 24 || !sv.holder.surface.isValid) return
+            val bitmap = runCatching { Bitmap.createBitmap(sv.width, sv.height, Bitmap.Config.ARGB_8888) }.getOrNull() ?: return
+            runCatching {
+                PixelCopy.request(sv, bitmap, { result ->
+                    if (result == PixelCopy.SUCCESS) captured = ShutterFrame(bitmap.asImageBitmap(), bitmap.width, bitmap.height) else bitmap.recycle()
+                }, Handler(Looper.getMainLooper()))
+            }
+        }
+
+        fun shapeDiffers(old: VideoSize, new: VideoSize): Boolean {
+            val ow = old.width * old.pixelWidthHeightRatio
+            val nw = new.width * new.pixelWidthHeightRatio
+            if (old.height <= 0 || new.height <= 0) return false
+            val oldAspect = ow / old.height
+            val newAspect = nw / new.height
+            if (abs(oldAspect - newAspect) / newAspect > 0.01f) return true
+            return state.mode == VideoScaleMode.ORIGINAL && (abs(ow - nw) > 1f || old.height != new.height)
+        }
+
         val listener = object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
                 // Repeat-one restarts the same video (same size, and possibly no new first frame): nothing to wait for.
-                switching = reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT
+                if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) return
+                switching = true
+                pendingSize = null
+                shutter = null
+                shutterRelease = false
+                capture()
             }
 
             override fun onVideoSizeChanged(size: VideoSize) {
-                // No picture (audio only) or no size to keep yet: nothing to wait for. A size change inside one video
-                // (no new item) is applied right away, too.
-                if (!switching || size == VideoSize.UNKNOWN || videoSize == VideoSize.UNKNOWN) videoSize = size
+                // While the next video starts, an "unknown" size is ignored (the old picture is kept as it is).
+                if (size == VideoSize.UNKNOWN) {
+                    if (!switching) videoSize = size
+                    return
+                }
+                // Nothing to hold on to (first video, audio only before): the size is used at once. A size change inside
+                // one video (no new item) is applied right away, too.
+                if (!switching || videoSize == VideoSize.UNKNOWN) {
+                    videoSize = size
+                    return
+                }
+                pendingSize = size
+                // A differently shaped next video: the old last picture covers the surface until the new layout is ready.
+                val frame = captured
+                if (frame != null && shapeDiffers(videoSize, size)) {
+                    shutterAlpha = 1f
+                    shutterRelease = false
+                    shutter = frame
+                }
             }
 
             override fun onRenderedFirstFrame() {
                 switching = false
-                player?.videoSize?.let { videoSize = it }
+                seenFrame = true
+                (player?.videoSize?.takeIf { it != VideoSize.UNKNOWN } ?: pendingSize)?.let { videoSize = it }
+                shutterRelease = true
             }
         }
         player?.addListener(listener)
         videoSize = player?.videoSize ?: VideoSize.UNKNOWN
         onDispose { player?.removeListener(listener) }
+    }
+    // Once the new video has its first frame and the new layout, the held picture fades out (or after a short time
+    // at the latest, in case no first frame ever comes, e.g. an audio-only file).
+    LaunchedEffect(shutter, shutterRelease) {
+        if (shutter == null) return@LaunchedEffect
+        if (shutterRelease) repeat(3) { withFrameNanos { } } else delay(1500)
+        animate(1f, 0f, animationSpec = tween(140)) { value, _ -> shutterAlpha = value }
+        shutter = null
+        shutterRelease = false
     }
 
     // The screen stays on only while the video is actually playing (or buffering to play), so a paused video,
@@ -222,7 +305,6 @@ fun ZoomablePlayer(
             // screen (FILL, ORIGINAL, zoomed) is cut only by the screen edge.
             val baseW = base.width.roundToInt().coerceAtLeast(1)
             val baseH = base.height.roundToInt().coerceAtLeast(1)
-            var surfaceView by remember { mutableStateOf<SurfaceView?>(null) }
             DisposableEffect(player, surfaceView) {
                 val sv = surfaceView
                 if (player != null && sv != null) {
@@ -258,6 +340,30 @@ fun ZoomablePlayer(
                     sv.translationY = pan.y
                 },
             )
+
+            // The held last picture of the previous video, laid out exactly like the surface was.
+            shutter?.let { frame ->
+                Image(
+                    bitmap = frame.bitmap,
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier
+                        .layout { measurable, c ->
+                            val placeable = measurable.measure(Constraints.fixed(frame.width, frame.height))
+                            layout(c.maxWidth, c.maxHeight) {
+                                placeable.place((c.maxWidth - frame.width) / 2, (c.maxHeight - frame.height) / 2)
+                            }
+                        }
+                        .graphicsLayer {
+                            alpha = shutterAlpha
+                            val pan = clampPan(state.pan, state.zoom)
+                            scaleX = state.zoom
+                            scaleY = state.zoom
+                            translationX = pan.x
+                            translationY = pan.y
+                        },
+                )
+            }
 
             AnimatedVisibility(
                 visible = showControls,
