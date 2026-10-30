@@ -272,11 +272,21 @@ fun MusicPlayerSheet(
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 SeekBar(c, Modifier.fillMaxWidth())
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ShuffleButton(c)
+                    ShuffleToggleButton(
+                        c,
+                        idleTint = LocalContentColor.current,
+                        activeContainer = MaterialTheme.colorScheme.inverseSurface,
+                        activeTint = MaterialTheme.colorScheme.inverseOnSurface,
+                    )
                     PreviousButton(c)
                     PlayPauseButton(c, Modifier.size(72.dp))
                     NextButton(c)
-                    RepeatButton(c)
+                    RepeatToggleButton(
+                        c,
+                        idleTint = LocalContentColor.current,
+                        activeContainer = MaterialTheme.colorScheme.inverseSurface,
+                        activeTint = MaterialTheme.colorScheme.inverseOnSurface,
+                    )
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {

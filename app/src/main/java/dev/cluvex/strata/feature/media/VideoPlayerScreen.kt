@@ -1134,7 +1134,7 @@ fun VideoPlayerScreen(
                                 // The controls sit over the video, so they are white whatever the theme is.
                                 CompositionLocalProvider(LocalContentColor provides Color.White) {
                                     val hasNext = rememberHasNeighbors(p).second
-                                    ShuffleButton(p, Modifier.size(40.dp))
+                                    ShuffleToggleButton(p, Modifier.size(40.dp), idleTint = Color.White, activeContainer = Color.White, activeTint = Color(0xFF1B1B1B))
                                     CrispButton(40.dp, { p?.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
                                     SkipButton(
                                         onClick = { p?.let { it.seekTo((it.currentPosition - seekBackSeconds * 1000L).coerceAtLeast(0L)) } },
@@ -1155,7 +1155,7 @@ fun VideoPlayerScreen(
                                         onLongClick = { seekDialog = true },
                                     ) { SeekIcon(seekForwardSeconds * 1000L, mirrored = true) }
                                     CrispButton(40.dp, { p?.seekToNext() }, enabled = hasNext) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
-                                    RepeatButton(p, Modifier.size(40.dp))
+                                    RepeatToggleButton(p, Modifier.size(40.dp), idleTint = Color.White, activeContainer = Color.White, activeTint = Color(0xFF1B1B1B))
                                 }
                             }
                         }
