@@ -1503,20 +1503,29 @@ private fun MuteButton(player: Player?, restoreVolume: () -> Float) {
             onDispose { player.removeListener(listener) }
         }
     }
+    // Styled like the repeat button next to it: a plain white icon while the sound is on; when it is muted the icon
+    // turns dark inside a white rounded square.
     Box(
         Modifier
             .size(40.dp)
-            .clip(CircleShape)
-            .background(Color(0xCC1B1B1B))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(enabled = player != null) { player?.volume = if (muted) restoreVolume().coerceIn(0.05f, 1f) else 0f },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
-            contentDescription = stringResource(if (muted) R.string.media_unmute else R.string.media_mute),
-            tint = Color.White,
-            modifier = Modifier.size(22.dp),
-        )
+        Box(
+            Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (muted) Color.White else Color.Transparent),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
+                contentDescription = stringResource(if (muted) R.string.media_unmute else R.string.media_mute),
+                tint = if (muted) Color(0xFF1B1B1B) else Color.White,
+                modifier = Modifier.size(24.dp),
+            )
+        }
     }
 }
 
