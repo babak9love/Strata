@@ -127,7 +127,7 @@ data class AppearancePrefs(
     /** A thin outline in the theme color around menus, dialogs and cards. */
     val popupBorder: Boolean = true,
     /** How strong that outline is (0.05 .. 1). */
-    val popupBorderAlpha: Float = 0.45f,
+    val popupBorderAlpha: Float = 0.5f,
 ) {
     companion object {
         const val MIN_TEXT_SCALE = 0.85f

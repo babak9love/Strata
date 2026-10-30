@@ -504,7 +504,7 @@ class SettingsRepository(private val context: Context) {
             sounds = p[Keys.SOUNDS] ?: true,
             soundsInSilent = p[Keys.SOUNDS_IN_SILENT] ?: false,
             popupBorder = p[Keys.POPUP_BORDER] ?: true,
-            popupBorderAlpha = AppearancePrefs.borderAlpha(p[Keys.POPUP_BORDER_ALPHA] ?: 0.45f),
+            popupBorderAlpha = AppearancePrefs.borderAlpha(p[Keys.POPUP_BORDER_ALPHA] ?: 0.5f),
         )
 
         private fun writeAppearance(p: MutablePreferences, a: AppearancePrefs) {

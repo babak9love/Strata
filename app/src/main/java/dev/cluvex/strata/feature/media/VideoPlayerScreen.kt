@@ -1047,7 +1047,7 @@ fun VideoPlayerScreen(
                                             tint = Color.White,
                                         )
                                     }
-                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA)) {
+                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA), border = popupBorder()) {
                                         listOf(
                                             VideoScaleMode.FIT to R.string.media_fit_screen,
                                             VideoScaleMode.FILL to R.string.media_fill_screen,
