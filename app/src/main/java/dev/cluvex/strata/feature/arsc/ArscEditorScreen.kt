@@ -45,7 +45,7 @@ import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material.icons.rounded.ToggleOn
 import androidx.compose.material.icons.rounded.Tune
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi

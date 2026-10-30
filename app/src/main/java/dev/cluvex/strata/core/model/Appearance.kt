@@ -124,10 +124,18 @@ data class AppearancePrefs(
     val haptics: Boolean = false,
     val sounds: Boolean = true,
     val soundsInSilent: Boolean = false,
+    /** A thin outline in the theme color around menus, dialogs and cards. */
+    val popupBorder: Boolean = true,
+    /** How strong that outline is (0.05 .. 1). */
+    val popupBorderAlpha: Float = 0.45f,
 ) {
     companion object {
         const val MIN_TEXT_SCALE = 0.85f
         const val MAX_TEXT_SCALE = 1.3f
+        const val MIN_BORDER_ALPHA = 0.05f
+
+        /** Whole 5% steps between 5% and 100%. */
+        fun borderAlpha(value: Float): Float = ((value.coerceIn(MIN_BORDER_ALPHA, 1f) * 20).let { kotlin.math.round(it) }) / 20f
 
         fun textScale(value: Float): Float = ((value.coerceIn(MIN_TEXT_SCALE, MAX_TEXT_SCALE) * 20).let { kotlin.math.round(it) }) / 20f
     }

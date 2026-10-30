@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.archive
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.feature.explorer.components.FileNameText
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -35,7 +36,7 @@ import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.automirrored.rounded.ManageSearch
 import androidx.compose.material.icons.rounded.Unarchive
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -263,7 +264,7 @@ fun ArchiveScreen(
                         }
                         Box {
                             IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.archive_options)) }
-                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.explorer_filter)) },
                                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },

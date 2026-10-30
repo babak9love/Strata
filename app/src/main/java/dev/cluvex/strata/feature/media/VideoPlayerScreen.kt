@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.media
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import android.app.Activity
 import android.app.Application
 import android.media.AudioManager
@@ -946,7 +947,7 @@ fun VideoPlayerScreen(
                                             properties = PopupProperties(focusable = true),
                                         ) {
                                             CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                                                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xF22B2629)) {
+                                                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xF22B2629), border = popupBorder()) {
                                                     Text(
                                                         vm.title,
                                                         color = Color.White,
@@ -962,7 +963,7 @@ fun VideoPlayerScreen(
                                     IconButton(onClick = { menu = true }) {
                                         Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more), tint = Color.White)
                                     }
-                                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA)) {
+                                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA), border = popupBorder()) {
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.model_sheet_video_info)) },
                                             leadingIcon = { Icon(Icons.Rounded.Movie, contentDescription = null) },
@@ -1046,7 +1047,7 @@ fun VideoPlayerScreen(
                                             tint = Color.White,
                                         )
                                     }
-                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA)) {
+                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA), border = popupBorder()) {
                                         listOf(
                                             VideoScaleMode.FIT to R.string.media_fit_screen,
                                             VideoScaleMode.FILL to R.string.media_fill_screen,
@@ -1452,7 +1453,7 @@ private fun SkipButton(onClick: () -> Unit, onLongClick: () -> Unit, content: @C
 @Composable
 private fun SkipLengthDialog(title: String, seconds: Int, onDismiss: () -> Unit, onSave: (Int) -> Unit) {
     var value by remember(seconds) { androidx.compose.runtime.mutableFloatStateOf(seconds.toFloat()) }
-    androidx.compose.material3.AlertDialog(
+    dev.cluvex.strata.ui.expressive.AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.width(fixedDialogWidth()),
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),

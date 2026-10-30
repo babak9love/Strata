@@ -140,6 +140,9 @@
     <string name="settings_text_size_sample">Strata keeps your files in order</string>
     <string name="settings_corners">Corners</string>
     <string name="settings_corners_summary">How round cards, sheets and buttons are</string>
+    <string name="settings_popup_border">Theme-colored outline</string>
+    <string name="settings_popup_border_summary">A thin outline around menus, dialogs and cards</string>
+    <string name="settings_popup_border_opacity">Outline opacity</string>
     <string name="settings_group_folder_icons">Folder icons</string>
     <string name="settings_group_icons">Icons</string>
     <string name="settings_colorful_icons">Colorful icons</string>

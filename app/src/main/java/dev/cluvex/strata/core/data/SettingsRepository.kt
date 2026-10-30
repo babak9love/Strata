@@ -138,6 +138,8 @@ class SettingsRepository(private val context: Context) {
         val HAPTICS = booleanPreferencesKey("haptics")
         val SOUNDS = booleanPreferencesKey("ui_sounds")
         val SOUNDS_IN_SILENT = booleanPreferencesKey("ui_sounds_in_silent")
+        val POPUP_BORDER = booleanPreferencesKey("popup_border")
+        val POPUP_BORDER_ALPHA = floatPreferencesKey("popup_border_alpha")
         val VIEW_MODE = stringPreferencesKey("view_mode")
         val THUMBNAILS = booleanPreferencesKey("thumbnails")
         val FOLDER_BADGES = booleanPreferencesKey("folder_badges")
@@ -501,6 +503,8 @@ class SettingsRepository(private val context: Context) {
             haptics = p[Keys.HAPTICS] ?: false,
             sounds = p[Keys.SOUNDS] ?: true,
             soundsInSilent = p[Keys.SOUNDS_IN_SILENT] ?: false,
+            popupBorder = p[Keys.POPUP_BORDER] ?: true,
+            popupBorderAlpha = AppearancePrefs.borderAlpha(p[Keys.POPUP_BORDER_ALPHA] ?: 0.45f),
         )
 
         private fun writeAppearance(p: MutablePreferences, a: AppearancePrefs) {
@@ -522,6 +526,8 @@ class SettingsRepository(private val context: Context) {
             p[Keys.HAPTICS] = a.haptics
             p[Keys.SOUNDS] = a.sounds
             p[Keys.SOUNDS_IN_SILENT] = a.soundsInSilent
+            p[Keys.POPUP_BORDER] = a.popupBorder
+            p[Keys.POPUP_BORDER_ALPHA] = AppearancePrefs.borderAlpha(a.popupBorderAlpha)
         }
 
         internal fun readList(p: Preferences) = ListPrefs(

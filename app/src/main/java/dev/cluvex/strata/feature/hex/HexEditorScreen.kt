@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.hex
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.core.i18n.separator
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -33,7 +34,7 @@ import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -200,7 +201,7 @@ fun HexEditorScreen(
                     }
                     Box {
                         IconButton(onClick = { menuOpen = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more)) }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, border = popupBorder()) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.hex_menu_go_to_offset)) },
                                 onClick = { menuOpen = false; dialog = HexDialog.Goto },
@@ -522,7 +523,7 @@ private fun SearchPanel(
             ) {
                 Box {
                     OutlinedButton(onClick = { typeMenu = true }) { Text(stringResource(type.label)) }
-                    DropdownMenu(expanded = typeMenu, onDismissRequest = { typeMenu = false }) {
+                    DropdownMenu(expanded = typeMenu, onDismissRequest = { typeMenu = false }, border = popupBorder()) {
                         HexDataType.entries.forEach { t ->
                             DropdownMenuItem(text = { Text(stringResource(t.label)) }, onClick = { type = t; typeMenu = false })
                         }

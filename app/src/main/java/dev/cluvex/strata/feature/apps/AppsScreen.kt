@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.apps
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.core.i18n.separator
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -26,7 +27,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Unarchive
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -180,7 +181,7 @@ fun AppsScreen(
                         }
                         Box {
                             IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.apps_options)) }
-                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.apps_show_system)) },
                                     trailingIcon = { Checkbox(checked = s.showSystem, onCheckedChange = null) },

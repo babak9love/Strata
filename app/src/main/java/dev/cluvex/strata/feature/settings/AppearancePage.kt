@@ -1,5 +1,7 @@
 package dev.cluvex.strata.feature.settings
 
+import androidx.compose.material.icons.rounded.Opacity
+import androidx.compose.material.icons.rounded.CropSquare
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -138,6 +140,24 @@ fun AppearancePage(settings: StrataSettings, act: SettingsActions, onBack: () ->
             )
             custom(title = tr(R.string.settings_corners), summary = tr(R.string.settings_corners_summary), icon = Icons.Rounded.RoundedCorner) {
                 ConnectedChoice(CornerStyle.entries, a.corners, { tr(it.short) }, { c -> act.appearance { it.copy(corners = c) } })
+            }
+            switch(
+                tr(R.string.settings_popup_border),
+                a.popupBorder,
+                { v -> act.appearance { it.copy(popupBorder = v) } },
+                summary = tr(R.string.settings_popup_border_summary),
+                icon = Icons.Rounded.CropSquare,
+            )
+            if (a.popupBorder) {
+                slider(
+                    tr(R.string.settings_popup_border_opacity),
+                    a.popupBorderAlpha,
+                    AppearancePrefs.MIN_BORDER_ALPHA..1f,
+                    steps = 18,
+                    valueLabel = { tr(R.string.ui_percent, (it * 100).roundToInt()) },
+                    onChange = { v -> act.appearance { it.copy(popupBorderAlpha = AppearancePrefs.borderAlpha(v)) } },
+                    icon = Icons.Rounded.Opacity,
+                )
             }
         }
         val folderTint = rememberFolderTint()

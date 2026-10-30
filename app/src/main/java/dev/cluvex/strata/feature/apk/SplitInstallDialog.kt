@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.apk
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.core.i18n.separator
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -74,7 +75,7 @@ fun SplitInstallDialog(
     val busy = s.install is InstallPhase.Installing
 
     BasicAlertDialog(onDismissRequest = { if (!busy) onDismiss() }, modifier = Modifier.testTag("split-install")) {
-        Surface(shape = AlertDialogDefaults.shape, color = AlertDialogDefaults.containerColor, tonalElevation = AlertDialogDefaults.TonalElevation) {
+        Surface(shape = AlertDialogDefaults.shape, color = AlertDialogDefaults.containerColor, tonalElevation = AlertDialogDefaults.TonalElevation, border = popupBorder()) {
             Column(Modifier.padding(top = 24.dp, bottom = 12.dp)) {
                 Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 12.dp)) {
                     Text(stringResource(R.string.apk_split_title), style = MaterialTheme.typography.headlineSmall)

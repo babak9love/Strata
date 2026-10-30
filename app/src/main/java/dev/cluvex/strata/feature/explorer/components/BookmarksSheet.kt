@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.explorer.components
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
@@ -31,7 +32,7 @@ import androidx.compose.material.icons.rounded.BookmarkAdd
 import androidx.compose.material.icons.rounded.DragIndicator
 import androidx.compose.material.icons.rounded.Bookmarks
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -322,7 +323,7 @@ private fun GroupHeader(name: String, onRename: () -> Unit, onDelete: () -> Unit
         if (name != Bookmarks.DEFAULT_GROUP) {
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.explorer_group_options)) }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.explorer_rename_group)) }, onClick = { menu = false; onRename() })
                     DropdownMenuItem(text = { Text(stringResource(R.string.explorer_delete_group)) }, onClick = { menu = false; onDelete() })
                 }
@@ -411,7 +412,7 @@ private fun BookmarkRow(
                 }
                 Box {
                     IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.explorer_options_for, bookmark.name)) }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.common_edit)) }, onClick = { menu = false; onEdit() })
                         if (!isFirst) DropdownMenuItem(text = { Text(stringResource(R.string.explorer_move_up)) }, onClick = { menu = false; onMove(-1) })
                         if (!isLast) DropdownMenuItem(text = { Text(stringResource(R.string.explorer_move_down)) }, onClick = { menu = false; onMove(+1) })

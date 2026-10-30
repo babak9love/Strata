@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.dex
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.core.i18n.separator
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -39,7 +40,7 @@ import androidx.compose.material.icons.rounded.NorthEast
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Tag
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -221,7 +222,7 @@ private fun TreePage(s: DexUiState, vm: DexViewModel, snackbar: SnackbarHostStat
                     var menu by remember { mutableStateOf(false) }
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.dex_tools)) }
-                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.dex_menu_to_jar)) }, onClick = { menu = false; vm.toJar { onLocate(it.parent ?: "/", it.path) } })
                             DropdownMenuItem(text = { Text(stringResource(R.string.dex_menu_to_smali)) }, onClick = { menu = false; vm.toSmali { onLocate(it.path, null) } })
                             DropdownMenuItem(text = { Text(stringResource(R.string.dex_decompile_java)) }, onClick = { menu = false; vm.toJava { onLocate(it.path, null) } })

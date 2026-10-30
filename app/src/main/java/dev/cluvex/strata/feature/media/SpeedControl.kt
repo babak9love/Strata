@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.media
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -131,6 +132,7 @@ private fun SpeedDialog(player: Player, save: SpeedSave?, onDismiss: () -> Unit)
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
             contentColor = MaterialTheme.colorScheme.onSurface,
+            border = popupBorder(),
         ) {
             Column(Modifier.padding(start = 24.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

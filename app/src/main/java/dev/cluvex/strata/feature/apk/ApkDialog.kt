@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.apk
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.core.i18n.separator
 import android.graphics.Bitmap
 import android.net.Uri
@@ -32,7 +33,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.GppBad
 import androidx.compose.material.icons.rounded.GppGood
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -125,6 +126,7 @@ fun ApkDialog(
             shape = AlertDialogDefaults.shape,
             color = AlertDialogDefaults.containerColor,
             tonalElevation = AlertDialogDefaults.TonalElevation,
+            border = popupBorder(),
         ) {
             Column(Modifier.padding(top = 24.dp, bottom = 12.dp)) {
                 Header(s, onExtractIcon = vm::extractIcon)
@@ -219,7 +221,7 @@ private fun Header(s: ApkDialogState, onExtractIcon: () -> Unit) {
             } else {
                 Icon(Icons.Rounded.Android, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
             }
-            DropdownMenu(expanded = iconMenu, onDismissRequest = { iconMenu = false }) {
+            DropdownMenu(expanded = iconMenu, onDismissRequest = { iconMenu = false }, border = popupBorder()) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.apk_extract_icon_png)) }, onClick = { iconMenu = false; onExtractIcon() })
             }
         }
@@ -397,7 +399,7 @@ private fun ButtonRow(
                 Text(stringResource(R.string.apk_function), maxLines = 1, softWrap = false)
                 Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
             }
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
                 val pkg = s.manifest?.packageName
                 if (s.manifest != null) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.apk_clone_coexist)) }, onClick = { menu = false; onClone() })

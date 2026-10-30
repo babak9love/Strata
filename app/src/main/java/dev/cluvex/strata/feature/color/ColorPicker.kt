@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.color
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -359,7 +360,7 @@ fun ColorPickerDialog(
     val scope = rememberCoroutineScope()
     val state = rememberColorPickerState(initial)
     BasicAlertDialog(onDismissRequest = onDismiss, modifier = Modifier.testTag("color_picker")) {
-        Surface(shape = AlertDialogDefaults.shape, color = AlertDialogDefaults.containerColor, tonalElevation = AlertDialogDefaults.TonalElevation) {
+        Surface(shape = AlertDialogDefaults.shape, color = AlertDialogDefaults.containerColor, tonalElevation = AlertDialogDefaults.TonalElevation, border = popupBorder()) {
             Column(Modifier.padding(top = 24.dp, bottom = 12.dp)) {
                 Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(horizontal = 24.dp))
                 ColorPickerPanel(

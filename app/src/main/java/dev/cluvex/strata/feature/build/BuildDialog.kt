@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.build
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.core.i18n.separator
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -118,6 +119,7 @@ fun BuildDialog(run: BuildRun, onClose: () -> Unit, autoCloseMillis: Long = 1400
             shape = RoundedCornerShape(28.dp),
             color = colors.surfaceContainerHigh,
             tonalElevation = 6.dp,
+            border = popupBorder(),
             modifier = Modifier
                 .fillMaxWidth(0.94f)
                 .widthIn(max = 600.dp)

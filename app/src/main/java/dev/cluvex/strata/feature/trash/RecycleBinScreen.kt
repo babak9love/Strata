@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.trash
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.feature.explorer.components.FileNameText
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -27,7 +28,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.RestoreFromTrash
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Switch
@@ -319,7 +320,7 @@ private fun TrashRow(
         trailingContent = {
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more)) }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.trash_restore)) },
                         leadingIcon = { Icon(Icons.Rounded.RestoreFromTrash, null) },

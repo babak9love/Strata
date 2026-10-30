@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.explorer.components
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.core.i18n.separator
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -108,7 +109,7 @@ fun BatchRenameDialog(
                         if (history.isNotEmpty()) {
                             Box {
                                 IconButton(onClick = { historyMenu = true }) { Icon(Icons.Rounded.History, contentDescription = stringResource(R.string.explorer_history)) }
-                                DropdownMenu(expanded = historyMenu, onDismissRequest = { historyMenu = false }) {
+                                DropdownMenu(expanded = historyMenu, onDismissRequest = { historyMenu = false }, border = popupBorder()) {
                                     history.forEach { h ->
                                         DropdownMenuItem(
                                             text = {

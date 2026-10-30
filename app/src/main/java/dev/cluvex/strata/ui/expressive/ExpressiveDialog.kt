@@ -74,6 +74,7 @@ fun ExpressiveDialog(
             shape = AlertDialogDefaults.shape,
             color = AlertDialogDefaults.containerColor,
             tonalElevation = AlertDialogDefaults.TonalElevation,
+            border = popupBorder(),
         ) {
             Column(Modifier.padding(24.dp)) {
                 if (hero) {

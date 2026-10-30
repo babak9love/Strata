@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.explorer
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -27,7 +28,7 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SortByAlpha
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -378,7 +379,7 @@ fun ExplorerScreen(
                         IconButton(onClick = { dialog = Dialog.Sort }) { Icon(Icons.Rounded.SortByAlpha, contentDescription = stringResource(R.string.common_sort)) }
                         Box {
                             IconButton(onClick = { overflow = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.explorer_options)) }
-                            DropdownMenu(expanded = overflow, onDismissRequest = { overflow = false }) {
+                            DropdownMenu(expanded = overflow, onDismissRequest = { overflow = false }, border = popupBorder()) {
                                 if (undoEnabled) {
                                     DropdownMenuItem(
                                         text = { Text(if (undoCount > 0) stringResource(R.string.explorer_undo_count, undoCount) else stringResource(R.string.explorer_undo)) },

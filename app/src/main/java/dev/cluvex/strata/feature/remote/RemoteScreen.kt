@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.remote
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.feature.explorer.components.FileNameText
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -43,7 +44,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Terminal
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -219,7 +220,7 @@ fun RemoteScreen(
                         var more by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { more = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more)) }
-                            DropdownMenu(expanded = more, onDismissRequest = { more = false }) {
+                            DropdownMenu(expanded = more, onDismissRequest = { more = false }, border = popupBorder()) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.common_new_folder)) },
                                     leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) },
@@ -385,7 +386,7 @@ private fun ConnectionsList(
                 trailingContent = {
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.common_more)) }
-                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
                             if (c.protocol == RemoteProtocol.SFTP) {
                                 DropdownMenuItem(text = { Text(stringResource(R.string.remote_ssh_terminal)) }, leadingIcon = { Icon(Icons.Rounded.Terminal, null) }, onClick = { menu = false; onSsh(c) })
                             }
@@ -434,7 +435,7 @@ private fun Browser(
                         trailingContent = {
                             Box {
                                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.common_more)) }
-                                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
                                     DropdownMenuItem(text = { Text(stringResource(R.string.remote_download)) }, leadingIcon = { Icon(Icons.Rounded.Download, null) }, onClick = { menu = false; onDownload(e) })
                                     DropdownMenuItem(text = { Text(stringResource(R.string.common_rename)) }, leadingIcon = { Icon(Icons.Rounded.Edit, null) }, onClick = { menu = false; renaming = e })
                                     DropdownMenuItem(text = { Text(stringResource(R.string.common_delete)) }, leadingIcon = { Icon(Icons.Rounded.Delete, null) }, onClick = { menu = false; deleting = e })

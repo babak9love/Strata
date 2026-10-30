@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.media
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.core.i18n.separator
 import android.content.ComponentName
 import android.graphics.BitmapFactory
@@ -364,7 +365,7 @@ fun MusicPlayerSheet(
                 IconButton(onClick = { menu = true }) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more))
                 }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA)) {
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA), border = popupBorder()) {
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.model_sheet_audio_info)) },

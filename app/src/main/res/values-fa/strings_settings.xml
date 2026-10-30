@@ -139,6 +139,9 @@
     <string name="settings_text_size_sample">\u200FStrata فایل‌هایتان را مرتب نگه می‌دارد</string>
     <string name="settings_corners">گوشه‌ها</string>
     <string name="settings_corners_summary">میزان گردی کارت‌ها، برگه‌ها و دکمه‌ها</string>
+    <string name="settings_popup_border">خط دور به رنگ تم</string>
+    <string name="settings_popup_border_summary">یک خط دور نازک دور منوها، پنجره‌ها و کادرها</string>
+    <string name="settings_popup_border_opacity">شفافیت خط دور</string>
     <string name="settings_group_folder_icons">آیکون پوشه‌ها</string>
     <string name="settings_group_icons">آیکون‌ها</string>
     <string name="settings_colorful_icons">نمادهای رنگی</string>

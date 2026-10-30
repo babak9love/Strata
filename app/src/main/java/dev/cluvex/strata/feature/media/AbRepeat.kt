@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.media
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -203,7 +204,7 @@ private fun AbRepeatCard(
             modifier = modifier.widthIn(max = 250.dp),
             shape = RoundedCornerShape(10.dp),
             color = container,
-            border = BorderStroke(1.dp, content.copy(alpha = 0.35f)),
+            border = popupBorder(),
         ) {
             Column(Modifier.padding(start = 12.dp, end = 2.dp, top = 4.dp, bottom = 10.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

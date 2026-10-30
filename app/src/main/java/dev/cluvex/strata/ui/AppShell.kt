@@ -70,7 +70,7 @@ import dev.cluvex.strata.feature.explorer.ShareMode
 import dev.cluvex.strata.core.open.IncomingFiles
 import dev.cluvex.strata.core.util.FileKinds
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import dev.cluvex.strata.core.i18n.tr
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner

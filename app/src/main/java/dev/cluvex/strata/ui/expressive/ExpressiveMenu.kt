@@ -38,6 +38,7 @@ fun ExpressiveMenu(expanded: Boolean, onDismiss: () -> Unit, groups: List<List<M
                 DropdownMenuGroup(
                     shapes = MenuDefaults.groupShape(gi, shown.size),
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = popupBorder(),
                 ) {
                     group.forEachIndexed { i, entry ->
                         DropdownMenuItem(

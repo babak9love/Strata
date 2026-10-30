@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.editor
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import dev.cluvex.strata.core.i18n.separator
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -43,7 +44,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.AlertDialog
+import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -545,7 +546,7 @@ private fun EditorMenu(
     onProcessText: () -> Unit,
     onPreview: (() -> Unit)?,
 ) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss, border = popupBorder()) {
         if (onPreview != null) DropdownMenuItem(text = { Text(stringResource(R.string.editor_preview)) }, onClick = onPreview)
         DropdownMenuItem(text = { Text(stringResource(R.string.editor_menu_go_to_line)) }, onClick = { onDialog(EditorDialog.GoToLine) }, enabled = !state.tooLarge)
         DropdownMenuItem(text = { Text(stringResource(R.string.editor_menu_color)) }, onClick = onColor, enabled = !state.tooLarge && !state.readOnly)

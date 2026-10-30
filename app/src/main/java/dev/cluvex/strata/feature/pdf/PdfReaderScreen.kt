@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.pdf
 
+import dev.cluvex.strata.ui.expressive.popupBorder
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -749,7 +750,7 @@ private fun SearchBar(
         }
         Box {
             IconButton(onClick = { options = true }) { Icon(Icons.Rounded.Tune, contentDescription = stringResource(R.string.pdf_search_options)) }
-            DropdownMenu(expanded = options, onDismissRequest = { options = false }) {
+            DropdownMenu(expanded = options, onDismissRequest = { options = false }, border = popupBorder()) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.pdf_match_case)) },
                     leadingIcon = { if (state.options.matchCase) Icon(Icons.Rounded.Check, contentDescription = null) },
@@ -789,7 +790,7 @@ private fun ReaderMenu(
     onSaveText: () -> Unit,
     onSavePage: () -> Unit,
 ) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss, border = popupBorder()) {
         DropdownMenuItem(text = { Text(stringResource(R.string.pdf_go_to_page_menu)) }, leadingIcon = { Icon(Icons.Rounded.Pages, contentDescription = null) }, onClick = { onDismiss(); onGoTo() })
         HorizontalDivider()
         for (t in ReaderTheme.entries) {
