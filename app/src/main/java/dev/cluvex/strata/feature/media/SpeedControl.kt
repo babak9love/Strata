@@ -111,6 +111,7 @@ private fun SpeedDialog(player: Player, save: SpeedSave?, onDismiss: () -> Unit)
             modifier = Modifier.width(fixedDialogWidth()),
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             Column(Modifier.padding(start = 24.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

@@ -962,7 +962,7 @@ fun VideoPlayerScreen(
                                     IconButton(onClick = { menu = true }) {
                                         Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more), tint = Color.White)
                                     }
-                                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA)) {
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.model_sheet_video_info)) },
                                             leadingIcon = { Icon(Icons.Rounded.Movie, contentDescription = null) },
@@ -1046,7 +1046,7 @@ fun VideoPlayerScreen(
                                             tint = Color.White,
                                         )
                                     }
-                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }) {
+                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA)) {
                                         listOf(
                                             VideoScaleMode.FIT to R.string.media_fit_screen,
                                             VideoScaleMode.FILL to R.string.media_fill_screen,
@@ -1248,11 +1248,16 @@ fun VideoPlayerScreen(
         if (sleepDialog) SleepTimerDialog { sleepDialog = false }
         AbRepeatEffect(player, abRepeat)
         if (abPanel && !inPip) {
+            val abColors = abThemeColors()
             AbRepeatPanel(
                 player,
                 abRepeat,
                 onClose = { abPanel = false },
                 modifier = Modifier.align(Alignment.Center),
+                container = abColors.container,
+                content = abColors.content,
+                button = abColors.button,
+                buttonBorder = abColors.buttonBorder,
                 draggable = true,
             )
         }

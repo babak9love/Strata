@@ -316,14 +316,16 @@ fun MusicPlayerSheet(
         }
         // The A-B card sits in the middle of the sheet and can be dragged anywhere inside it.
         if (abPanel) {
+            val abColors = abThemeColors()
             AbRepeatPanel(
                 controller,
                 abRepeat,
                 onClose = { abPanel = false },
                 modifier = Modifier.align(Alignment.Center),
-                container = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
-                content = MaterialTheme.colorScheme.onSurface,
-                button = MaterialTheme.colorScheme.surfaceContainerHighest,
+                container = abColors.container,
+                content = abColors.content,
+                button = abColors.button,
+                buttonBorder = abColors.buttonBorder,
                 draggable = true,
             )
         }
@@ -339,7 +341,7 @@ fun MusicPlayerSheet(
                 IconButton(onClick = { menu = true }) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more))
                 }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA)) {
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.model_sheet_audio_info)) },

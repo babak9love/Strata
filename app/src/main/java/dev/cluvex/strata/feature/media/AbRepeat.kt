@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -119,6 +120,25 @@ fun AbRepeatEffect(player: Player?, state: AbRepeatState) {
     }
 }
 
+/** Theme colors of the A-B card. */
+class AbThemeColors(val container: Color, val content: Color, val button: Color, val buttonBorder: Color)
+
+/**
+ * The card follows the theme. In the light theme the A and B buttons are white with a thin outline, so they stand out
+ * from the light card (the card and a "highest" surface are almost the same gray there); the dark theme keeps its look.
+ */
+@Composable
+fun abThemeColors(): AbThemeColors {
+    val scheme = androidx.compose.material3.MaterialTheme.colorScheme
+    val light = scheme.surface.luminance() > 0.5f
+    return AbThemeColors(
+        container = scheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
+        content = scheme.onSurface,
+        button = if (light) scheme.surfaceContainerLowest else scheme.surfaceContainerHighest,
+        buttonBorder = if (light) scheme.outline.copy(alpha = 0.45f) else Color.Transparent,
+    )
+}
+
 /**
  * The compact "A - B Repeat" card: tap A / B to take the current position; tap a button that already holds a time
  * to clear it again (back to the plain "A" / "B" label) and pick a new point. X only closes the card (the loop keeps running).
@@ -133,6 +153,7 @@ fun AbRepeatPanel(
     container: Color = Color(0xF22B2629),
     content: Color = Color.White,
     button: Color = Color(0xFF3A3A3A),
+    buttonBorder: Color = Color.Transparent,
     draggable: Boolean = false,
 ) {
     // The card can be dragged anywhere inside the area it sits in (the player, or the music sheet) to reach what is underneath.
@@ -163,7 +184,7 @@ fun AbRepeatPanel(
                 }
             }
     } else Modifier
-    AbRepeatCard(player, state, onClose, modifier.then(dragModifier), container, content, button)
+    AbRepeatCard(player, state, onClose, modifier.then(dragModifier), container, content, button, buttonBorder)
 }
 
 @Composable
@@ -175,6 +196,7 @@ private fun AbRepeatCard(
     container: Color,
     content: Color,
     button: Color,
+    buttonBorder: Color,
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Surface(
@@ -205,7 +227,7 @@ private fun AbRepeatCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    PointButton("A", state.a, button, content, Modifier.weight(1f)) {
+                    PointButton("A", state.a, button, content, buttonBorder, Modifier.weight(1f)) {
                         // A point that already has a time goes back to the plain label so a new one can be taken.
                         if (state.a != null) state.a = null else player?.let { state.setA(it.currentPosition) }
                     }
@@ -215,7 +237,7 @@ private fun AbRepeatCard(
                         tint = content.copy(alpha = 0.45f),
                         modifier = Modifier.size(20.dp),
                     )
-                    PointButton("B", state.b, button, content, Modifier.weight(1f)) {
+                    PointButton("B", state.b, button, content, buttonBorder, Modifier.weight(1f)) {
                         if (state.b != null) state.b = null else player?.let { state.setB(it.currentPosition) }
                     }
                 }
@@ -225,12 +247,13 @@ private fun AbRepeatCard(
 }
 
 @Composable
-private fun PointButton(label: String, ms: Long?, container: Color, content: Color, modifier: Modifier, onClick: () -> Unit) {
+private fun PointButton(label: String, ms: Long?, container: Color, content: Color, border: Color, modifier: Modifier, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         modifier = modifier.height(44.dp),
         shape = RoundedCornerShape(6.dp),
         color = container,
+        border = BorderStroke(1.dp, border),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(
