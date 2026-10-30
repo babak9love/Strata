@@ -28,7 +28,8 @@ object SettingsBackup {
     private val pretty = Json { prettyPrint = true }
 
     fun encode(values: Map<String, Any>): String {
-        val settings = values.toSortedMap().mapNotNull { (name, value) ->
+        val rank = SettingsRepository.Keys.ORDER.withIndex().associate { (index, name) -> name to index }
+        val settings = values.entries.sortedWith(compareBy({ rank[it.key] ?: Int.MAX_VALUE }, { it.key })).mapNotNull { (name, value) ->
             when (value) {
                 is Boolean -> name to JsonPrimitive(value)
                 is Int -> name to JsonPrimitive(value)
