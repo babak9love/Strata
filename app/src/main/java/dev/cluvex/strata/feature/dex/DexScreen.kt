@@ -222,7 +222,7 @@ private fun TreePage(s: DexUiState, vm: DexViewModel, snackbar: SnackbarHostStat
                     var menu by remember { mutableStateOf(false) }
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.dex_tools)) }
-                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             DropdownMenuItem(text = { Text(stringResource(R.string.dex_menu_to_jar)) }, onClick = { menu = false; vm.toJar { onLocate(it.parent ?: "/", it.path) } })
                             DropdownMenuItem(text = { Text(stringResource(R.string.dex_menu_to_smali)) }, onClick = { menu = false; vm.toSmali { onLocate(it.path, null) } })
                             DropdownMenuItem(text = { Text(stringResource(R.string.dex_decompile_java)) }, onClick = { menu = false; vm.toJava { onLocate(it.path, null) } })

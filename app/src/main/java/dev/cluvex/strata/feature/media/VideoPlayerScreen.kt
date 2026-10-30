@@ -963,7 +963,7 @@ fun VideoPlayerScreen(
                                     IconButton(onClick = { menu = true }) {
                                         Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more), tint = Color.White)
                                     }
-                                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA), border = popupBorder()) {
+                                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA)) {
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.model_sheet_video_info)) },
                                             leadingIcon = { Icon(Icons.Rounded.Movie, contentDescription = null) },
@@ -1047,7 +1047,7 @@ fun VideoPlayerScreen(
                                             tint = Color.White,
                                         )
                                     }
-                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA), border = popupBorder()) {
+                                    DropdownMenu(expanded = scaleMenu, onDismissRequest = { scaleMenu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA)) {
                                         listOf(
                                             VideoScaleMode.FIT to R.string.media_fit_screen,
                                             VideoScaleMode.FILL to R.string.media_fill_screen,

@@ -138,7 +138,7 @@ fun NinePatchScreen(path: String, rootEnabled: Boolean, onBack: () -> Unit, vm: 
                     IconButton(onClick = { vm.save() }, enabled = s.dirty && !s.saving) { Icon(Icons.Rounded.Save, contentDescription = stringResource(R.string.common_save)) }
                     Box {
                         IconButton(onClick = { menu = true }, enabled = s.patch != null) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more)) }
-                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             val otherCopy = if (s.form == NinePatchForm.SOURCE) R.string.ninepatch_save_compiled_copy else R.string.ninepatch_save_source_copy
                             DropdownMenuItem(text = { Text(stringResource(otherCopy)) }, onClick = { menu = false; vm.save(asOtherForm = true) })
                             DropdownMenuItem(text = { Text(stringResource(R.string.ninepatch_clear_stretch)) }, onClick = { menu = false; vm.clearStretch() })

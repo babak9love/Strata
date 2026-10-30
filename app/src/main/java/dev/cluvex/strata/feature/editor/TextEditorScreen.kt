@@ -546,7 +546,7 @@ private fun EditorMenu(
     onProcessText: () -> Unit,
     onPreview: (() -> Unit)?,
 ) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss, border = popupBorder()) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         if (onPreview != null) DropdownMenuItem(text = { Text(stringResource(R.string.editor_preview)) }, onClick = onPreview)
         DropdownMenuItem(text = { Text(stringResource(R.string.editor_menu_go_to_line)) }, onClick = { onDialog(EditorDialog.GoToLine) }, enabled = !state.tooLarge)
         DropdownMenuItem(text = { Text(stringResource(R.string.editor_menu_color)) }, onClick = onColor, enabled = !state.tooLarge && !state.readOnly)

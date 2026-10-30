@@ -109,7 +109,7 @@ fun BatchRenameDialog(
                         if (history.isNotEmpty()) {
                             Box {
                                 IconButton(onClick = { historyMenu = true }) { Icon(Icons.Rounded.History, contentDescription = stringResource(R.string.explorer_history)) }
-                                DropdownMenu(expanded = historyMenu, onDismissRequest = { historyMenu = false }, border = popupBorder()) {
+                                DropdownMenu(expanded = historyMenu, onDismissRequest = { historyMenu = false }) {
                                     history.forEach { h ->
                                         DropdownMenuItem(
                                             text = {

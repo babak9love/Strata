@@ -140,7 +140,7 @@
     <string name="settings_corners">Углы</string>
     <string name="settings_corners_summary">Насколько скруглены карточки, панели и кнопки</string>
     <string name="settings_popup_border">Контур цвета темы</string>
-    <string name="settings_popup_border_summary">Тонкий контур вокруг меню, диалогов и карточек</string>
+    <string name="settings_popup_border_summary">Тонкий контур вокруг диалогов</string>
     <string name="settings_popup_border_opacity">Непрозрачность контура</string>
     <string name="settings_group_folder_icons">Значки папок</string>
     <string name="settings_group_icons">Значки</string>

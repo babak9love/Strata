@@ -379,7 +379,7 @@ fun ExplorerScreen(
                         IconButton(onClick = { dialog = Dialog.Sort }) { Icon(Icons.Rounded.SortByAlpha, contentDescription = stringResource(R.string.common_sort)) }
                         Box {
                             IconButton(onClick = { overflow = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.explorer_options)) }
-                            DropdownMenu(expanded = overflow, onDismissRequest = { overflow = false }, border = popupBorder()) {
+                            DropdownMenu(expanded = overflow, onDismissRequest = { overflow = false }) {
                                 if (undoEnabled) {
                                     DropdownMenuItem(
                                         text = { Text(if (undoCount > 0) stringResource(R.string.explorer_undo_count, undoCount) else stringResource(R.string.explorer_undo)) },

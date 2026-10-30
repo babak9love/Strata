@@ -220,7 +220,7 @@ fun RemoteScreen(
                         var more by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { more = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more)) }
-                            DropdownMenu(expanded = more, onDismissRequest = { more = false }, border = popupBorder()) {
+                            DropdownMenu(expanded = more, onDismissRequest = { more = false }) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.common_new_folder)) },
                                     leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) },
@@ -386,7 +386,7 @@ private fun ConnectionsList(
                 trailingContent = {
                     Box {
                         IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.common_more)) }
-                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             if (c.protocol == RemoteProtocol.SFTP) {
                                 DropdownMenuItem(text = { Text(stringResource(R.string.remote_ssh_terminal)) }, leadingIcon = { Icon(Icons.Rounded.Terminal, null) }, onClick = { menu = false; onSsh(c) })
                             }
@@ -435,7 +435,7 @@ private fun Browser(
                         trailingContent = {
                             Box {
                                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(R.string.common_more)) }
-                                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
+                                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                     DropdownMenuItem(text = { Text(stringResource(R.string.remote_download)) }, leadingIcon = { Icon(Icons.Rounded.Download, null) }, onClick = { menu = false; onDownload(e) })
                                     DropdownMenuItem(text = { Text(stringResource(R.string.common_rename)) }, leadingIcon = { Icon(Icons.Rounded.Edit, null) }, onClick = { menu = false; renaming = e })
                                     DropdownMenuItem(text = { Text(stringResource(R.string.common_delete)) }, leadingIcon = { Icon(Icons.Rounded.Delete, null) }, onClick = { menu = false; deleting = e })

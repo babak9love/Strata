@@ -264,7 +264,7 @@ fun ArchiveScreen(
                         }
                         Box {
                             IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.archive_options)) }
-                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
+                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.explorer_filter)) },
                                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },

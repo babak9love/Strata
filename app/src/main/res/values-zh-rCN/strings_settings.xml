@@ -140,7 +140,7 @@
     <string name="settings_corners">圆角</string>
     <string name="settings_corners_summary">卡片、面板和按钮的圆润程度</string>
     <string name="settings_popup_border">主题色轮廓</string>
-    <string name="settings_popup_border_summary">菜单、对话框和卡片周围的细轮廓线</string>
+    <string name="settings_popup_border_summary">对话框周围的细轮廓线</string>
     <string name="settings_popup_border_opacity">轮廓不透明度</string>
     <string name="settings_group_folder_icons">文件夹图标</string>
     <string name="settings_group_icons">图标</string>

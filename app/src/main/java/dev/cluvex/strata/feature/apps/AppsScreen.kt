@@ -181,7 +181,7 @@ fun AppsScreen(
                         }
                         Box {
                             IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.apps_options)) }
-                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
+                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.apps_show_system)) },
                                     trailingIcon = { Checkbox(checked = s.showSystem, onCheckedChange = null) },

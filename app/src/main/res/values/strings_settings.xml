@@ -141,7 +141,7 @@
     <string name="settings_corners">Corners</string>
     <string name="settings_corners_summary">How round cards, sheets and buttons are</string>
     <string name="settings_popup_border">Theme-colored outline</string>
-    <string name="settings_popup_border_summary">A thin outline around menus, dialogs and cards</string>
+    <string name="settings_popup_border_summary">A thin outline around dialogs</string>
     <string name="settings_popup_border_opacity">Outline opacity</string>
     <string name="settings_group_folder_icons">Folder icons</string>
     <string name="settings_group_icons">Icons</string>

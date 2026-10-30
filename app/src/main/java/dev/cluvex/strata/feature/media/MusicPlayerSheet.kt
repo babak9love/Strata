@@ -365,7 +365,7 @@ fun MusicPlayerSheet(
                 IconButton(onClick = { menu = true }) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more))
                 }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA), border = popupBorder()) {
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = PANEL_ALPHA)) {
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.model_sheet_audio_info)) },

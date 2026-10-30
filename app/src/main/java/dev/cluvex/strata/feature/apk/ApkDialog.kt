@@ -221,7 +221,7 @@ private fun Header(s: ApkDialogState, onExtractIcon: () -> Unit) {
             } else {
                 Icon(Icons.Rounded.Android, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
             }
-            DropdownMenu(expanded = iconMenu, onDismissRequest = { iconMenu = false }, border = popupBorder()) {
+            DropdownMenu(expanded = iconMenu, onDismissRequest = { iconMenu = false }) {
                 DropdownMenuItem(text = { Text(stringResource(R.string.apk_extract_icon_png)) }, onClick = { iconMenu = false; onExtractIcon() })
             }
         }
@@ -399,7 +399,7 @@ private fun ButtonRow(
                 Text(stringResource(R.string.apk_function), maxLines = 1, softWrap = false)
                 Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
             }
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 val pkg = s.manifest?.packageName
                 if (s.manifest != null) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.apk_clone_coexist)) }, onClick = { menu = false; onClone() })

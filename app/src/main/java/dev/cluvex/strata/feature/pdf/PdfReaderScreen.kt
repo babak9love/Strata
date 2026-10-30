@@ -750,7 +750,7 @@ private fun SearchBar(
         }
         Box {
             IconButton(onClick = { options = true }) { Icon(Icons.Rounded.Tune, contentDescription = stringResource(R.string.pdf_search_options)) }
-            DropdownMenu(expanded = options, onDismissRequest = { options = false }, border = popupBorder()) {
+            DropdownMenu(expanded = options, onDismissRequest = { options = false }) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.pdf_match_case)) },
                     leadingIcon = { if (state.options.matchCase) Icon(Icons.Rounded.Check, contentDescription = null) },
@@ -790,7 +790,7 @@ private fun ReaderMenu(
     onSaveText: () -> Unit,
     onSavePage: () -> Unit,
 ) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss, border = popupBorder()) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         DropdownMenuItem(text = { Text(stringResource(R.string.pdf_go_to_page_menu)) }, leadingIcon = { Icon(Icons.Rounded.Pages, contentDescription = null) }, onClick = { onDismiss(); onGoTo() })
         HorizontalDivider()
         for (t in ReaderTheme.entries) {

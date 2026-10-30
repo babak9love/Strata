@@ -201,7 +201,7 @@ fun HexEditorScreen(
                     }
                     Box {
                         IconButton(onClick = { menuOpen = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more)) }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, border = popupBorder()) {
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.hex_menu_go_to_offset)) },
                                 onClick = { menuOpen = false; dialog = HexDialog.Goto },
@@ -523,7 +523,7 @@ private fun SearchPanel(
             ) {
                 Box {
                     OutlinedButton(onClick = { typeMenu = true }) { Text(stringResource(type.label)) }
-                    DropdownMenu(expanded = typeMenu, onDismissRequest = { typeMenu = false }, border = popupBorder()) {
+                    DropdownMenu(expanded = typeMenu, onDismissRequest = { typeMenu = false }) {
                         HexDataType.entries.forEach { t ->
                             DropdownMenuItem(text = { Text(stringResource(t.label)) }, onClick = { type = t; typeMenu = false })
                         }

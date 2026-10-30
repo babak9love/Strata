@@ -323,7 +323,7 @@ private fun GroupHeader(name: String, onRename: () -> Unit, onDelete: () -> Unit
         if (name != Bookmarks.DEFAULT_GROUP) {
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.explorer_group_options)) }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.explorer_rename_group)) }, onClick = { menu = false; onRename() })
                     DropdownMenuItem(text = { Text(stringResource(R.string.explorer_delete_group)) }, onClick = { menu = false; onDelete() })
                 }
@@ -412,7 +412,7 @@ private fun BookmarkRow(
                 }
                 Box {
                     IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.explorer_options_for, bookmark.name)) }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.common_edit)) }, onClick = { menu = false; onEdit() })
                         if (!isFirst) DropdownMenuItem(text = { Text(stringResource(R.string.explorer_move_up)) }, onClick = { menu = false; onMove(-1) })
                         if (!isLast) DropdownMenuItem(text = { Text(stringResource(R.string.explorer_move_down)) }, onClick = { menu = false; onMove(+1) })

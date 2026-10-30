@@ -320,7 +320,7 @@ private fun TrashRow(
         trailingContent = {
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.common_more)) }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, border = popupBorder()) {
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.trash_restore)) },
                         leadingIcon = { Icon(Icons.Rounded.RestoreFromTrash, null) },
