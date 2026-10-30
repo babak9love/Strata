@@ -66,7 +66,13 @@ class SpeedSave(val enabled: Boolean, val onChange: (enabled: Boolean, speed: Fl
 
 /** Playback-speed icon button; tapping it opens a ruler-style speed dialog. Works for any [Player] (video or audio). */
 @Composable
-fun SpeedButton(player: Player?, tint: Color = LocalContentColor.current, save: SpeedSave? = null) {
+fun SpeedButton(
+    player: Player?,
+    tint: Color = LocalContentColor.current,
+    save: SpeedSave? = null,
+    activeContainer: Color = Color.Unspecified,
+    activeTint: Color = Color.Unspecified,
+) {
     var open by remember { mutableStateOf(false) }
     // The icon takes the active colour while the speed is anything but the normal 1x; it follows speed changes.
     var speed by remember(player) { mutableFloatStateOf(player?.playbackParameters?.speed ?: 1f) }
@@ -85,12 +91,25 @@ fun SpeedButton(player: Player?, tint: Color = LocalContentColor.current, save: 
         }
     }
     val changed = kotlin.math.abs(speed - 1f) > 0.001f
-    IconButton(onClick = { open = true }, enabled = player != null) {
-        Icon(
-            Icons.Rounded.SlowMotionVideo,
+    if (activeContainer != Color.Unspecified) {
+        ActiveIconButton(
+            active = changed,
+            onClick = { open = true },
+            icon = Icons.Rounded.SlowMotionVideo,
             contentDescription = stringResource(R.string.media_speed),
-            tint = if (changed) MaterialTheme.colorScheme.primary else tint,
+            idleTint = tint,
+            activeContainer = activeContainer,
+            activeTint = activeTint,
+            enabled = player != null,
         )
+    } else {
+        IconButton(onClick = { open = true }, enabled = player != null) {
+            Icon(
+                Icons.Rounded.SlowMotionVideo,
+                contentDescription = stringResource(R.string.media_speed),
+                tint = if (changed) MaterialTheme.colorScheme.primary else tint,
+            )
+        }
     }
     if (open && player != null) SpeedDialog(player, save) { open = false }
 }

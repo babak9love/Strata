@@ -280,35 +280,46 @@ fun MusicPlayerSheet(
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                SpeedButton(c, save = SpeedSave(saveSpeed, onSaveSpeedChange))
+                SpeedButton(
+                    c,
+                    save = SpeedSave(saveSpeed, onSaveSpeedChange),
+                    activeContainer = MaterialTheme.colorScheme.inverseSurface,
+                    activeTint = MaterialTheme.colorScheme.inverseOnSurface,
+                )
                 // A-B repeat: when it is on, a tap turns it off (clears the points); otherwise it opens the card to set them.
-                IconButton(onClick = { if (abRepeat.armed) { abRepeat.clear(); abPanel = false } else abPanel = true }) {
-                    Icon(
-                        AbRepeatIcon,
-                        contentDescription = stringResource(R.string.media_ab_repeat),
-                        tint = if (abRepeat.armed) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                    )
-                }
+                ActiveIconButton(
+                    active = abRepeat.armed,
+                    onClick = { if (abRepeat.armed) { abRepeat.clear(); abPanel = false } else abPanel = true },
+                    icon = AbRepeatIcon,
+                    contentDescription = stringResource(R.string.media_ab_repeat),
+                    idleTint = LocalContentColor.current,
+                    activeContainer = MaterialTheme.colorScheme.inverseSurface,
+                    activeTint = MaterialTheme.colorScheme.inverseOnSurface,
+                )
                 // Headphones: switch Background Play on if it is off, then leave the app with the music carrying on.
-                IconButton(onClick = {
-                    BackgroundSession.start()
-                    var a: Context? = context
-                    while (a is ContextWrapper && a !is Activity) a = a.baseContext
-                    (a as? Activity)?.moveTaskToBack(true)
-                }) {
-                    Icon(
-                        Icons.Rounded.Headphones,
-                        contentDescription = stringResource(R.string.media_background_play),
-                        tint = if (backgroundSetting || BackgroundSession.active) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                    )
-                }
-                IconButton(onClick = { sleepDialog = true }) {
-                    Icon(
-                        Icons.Rounded.Alarm,
-                        contentDescription = stringResource(R.string.media_sleep_timer),
-                        tint = if (sleepEndsAt != null) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                    )
-                }
+                ActiveIconButton(
+                    active = backgroundSetting || BackgroundSession.active,
+                    onClick = {
+                        BackgroundSession.start()
+                        var a: Context? = context
+                        while (a is ContextWrapper && a !is Activity) a = a.baseContext
+                        (a as? Activity)?.moveTaskToBack(true)
+                    },
+                    icon = Icons.Rounded.Headphones,
+                    contentDescription = stringResource(R.string.media_background_play),
+                    idleTint = LocalContentColor.current,
+                    activeContainer = MaterialTheme.colorScheme.inverseSurface,
+                    activeTint = MaterialTheme.colorScheme.inverseOnSurface,
+                )
+                ActiveIconButton(
+                    active = sleepEndsAt != null,
+                    onClick = { sleepDialog = true },
+                    icon = Icons.Rounded.Alarm,
+                    contentDescription = stringResource(R.string.media_sleep_timer),
+                    idleTint = LocalContentColor.current,
+                    activeContainer = MaterialTheme.colorScheme.inverseSurface,
+                    activeTint = MaterialTheme.colorScheme.inverseOnSurface,
+                )
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { BackgroundSession.end(); c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
             }

@@ -1028,7 +1028,7 @@ fun VideoPlayerScreen(
                                 // Row 2: the tool buttons under the back button, standard 48dp spacing; scrolls sideways when there are more than fit.
                                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
                                     CompositionLocalProvider(LocalContentColor provides Color.White) {
-                                        SpeedButton(p, Color.White, save = SpeedSave(saveSpeed, onSaveSpeedChange))
+                                        SpeedButton(p, Color.White, save = SpeedSave(saveSpeed, onSaveSpeedChange), activeContainer = Color.White, activeTint = Color(0xFF1B1B1B))
                                     }
                                     if (activity != null && VideoPip.isSupported(activity)) {
                                         IconButton(onClick = { VideoPip.enter(activity, p) }) {
@@ -1070,7 +1070,8 @@ fun VideoPlayerScreen(
                                     }
                                 }
                                     // Headphones: switch background play on if it is off, then carry on as audio only.
-                                    IconButton(
+                                    ActiveIconButton(
+                                        active = backgroundSetting || BackgroundSession.active,
                                         onClick = {
                                             BackgroundSession.start()
                                             if (activity != null) {
@@ -1078,31 +1079,34 @@ fun VideoPlayerScreen(
                                                 activity.moveTaskToBack(true)
                                             }
                                         },
-                                    ) {
-                                        Icon(
-                                            Icons.Rounded.Headphones,
-                                            contentDescription = stringResource(R.string.media_background_play),
-                                            tint = if (backgroundSetting || BackgroundSession.active) MaterialTheme.colorScheme.primary else Color.White,
-                                        )
-                                    }
-                                    IconButton(onClick = {
+                                        icon = Icons.Rounded.Headphones,
+                                        contentDescription = stringResource(R.string.media_background_play),
+                                        idleTint = Color.White,
+                                        activeContainer = Color.White,
+                                        activeTint = Color(0xFF1B1B1B),
+                                    )
+                                    ActiveIconButton(
                                         // On: just turn it off. Off: open the card to set the points.
-                                        if (abRepeat.armed) { abRepeat.clear(); abPanel = false } else abPanel = true
-                                        controls = true
-                                    }) {
-                                        Icon(
-                                            AbRepeatIcon,
-                                            contentDescription = stringResource(R.string.media_ab_repeat),
-                                            tint = if (abRepeat.armed) MaterialTheme.colorScheme.primary else Color.White,
-                                        )
-                                    }
-                                    IconButton(onClick = { sleepDialog = true; controls = true }) {
-                                        Icon(
-                                            Icons.Rounded.Alarm,
-                                            contentDescription = stringResource(R.string.media_sleep_timer),
-                                            tint = if (sleepEndsAt != null) MaterialTheme.colorScheme.primary else Color.White,
-                                        )
-                                    }
+                                        active = abRepeat.armed,
+                                        onClick = {
+                                            if (abRepeat.armed) { abRepeat.clear(); abPanel = false } else abPanel = true
+                                            controls = true
+                                        },
+                                        icon = AbRepeatIcon,
+                                        contentDescription = stringResource(R.string.media_ab_repeat),
+                                        idleTint = Color.White,
+                                        activeContainer = Color.White,
+                                        activeTint = Color(0xFF1B1B1B),
+                                    )
+                                    ActiveIconButton(
+                                        active = sleepEndsAt != null,
+                                        onClick = { sleepDialog = true; controls = true },
+                                        icon = Icons.Rounded.Alarm,
+                                        contentDescription = stringResource(R.string.media_sleep_timer),
+                                        idleTint = Color.White,
+                                        activeContainer = Color.White,
+                                        activeTint = Color(0xFF1B1B1B),
+                                    )
                                     IconButton(onClick = { subtitlesDialog = true; controls = true }) {
                                         Icon(Icons.Rounded.Subtitles, contentDescription = stringResource(R.string.media_subtitles), tint = Color.White)
                                     }
