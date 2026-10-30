@@ -1028,7 +1028,7 @@ fun VideoPlayerScreen(
                                 // Row 2: the tool buttons under the back button, standard 48dp spacing; scrolls sideways when there are more than fit.
                                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
                                     CompositionLocalProvider(LocalContentColor provides Color.White) {
-                                        SpeedButton(p, Color.White, save = SpeedSave(saveSpeed, onSaveSpeedChange), activeContainer = MaterialTheme.colorScheme.primaryContainer, activeTint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                        SpeedButton(p, Color.White, save = SpeedSave(saveSpeed, onSaveSpeedChange), activeContainer = MaterialTheme.colorScheme.primary, activeTint = MaterialTheme.colorScheme.onPrimary)
                                     }
                                     if (activity != null && VideoPip.isSupported(activity)) {
                                         IconButton(onClick = { VideoPip.enter(activity, p) }) {
@@ -1082,8 +1082,8 @@ fun VideoPlayerScreen(
                                         icon = Icons.Rounded.Headphones,
                                         contentDescription = stringResource(R.string.media_background_play),
                                         idleTint = Color.White,
-                                        activeContainer = MaterialTheme.colorScheme.primaryContainer,
-                                        activeTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        activeContainer = MaterialTheme.colorScheme.primary,
+                                        activeTint = MaterialTheme.colorScheme.onPrimary,
                                     )
                                     ActiveIconButton(
                                         // On: just turn it off. Off: open the card to set the points.
@@ -1095,8 +1095,8 @@ fun VideoPlayerScreen(
                                         icon = AbRepeatIcon,
                                         contentDescription = stringResource(R.string.media_ab_repeat),
                                         idleTint = Color.White,
-                                        activeContainer = MaterialTheme.colorScheme.primaryContainer,
-                                        activeTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        activeContainer = MaterialTheme.colorScheme.primary,
+                                        activeTint = MaterialTheme.colorScheme.onPrimary,
                                     )
                                     ActiveIconButton(
                                         active = sleepEndsAt != null,
@@ -1104,8 +1104,8 @@ fun VideoPlayerScreen(
                                         icon = Icons.Rounded.Alarm,
                                         contentDescription = stringResource(R.string.media_sleep_timer),
                                         idleTint = Color.White,
-                                        activeContainer = MaterialTheme.colorScheme.primaryContainer,
-                                        activeTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        activeContainer = MaterialTheme.colorScheme.primary,
+                                        activeTint = MaterialTheme.colorScheme.onPrimary,
                                     )
                                     IconButton(onClick = { subtitlesDialog = true; controls = true }) {
                                         Icon(Icons.Rounded.Subtitles, contentDescription = stringResource(R.string.media_subtitles), tint = Color.White)
@@ -1134,7 +1134,7 @@ fun VideoPlayerScreen(
                                 // The controls sit over the video, so they are white whatever the theme is.
                                 CompositionLocalProvider(LocalContentColor provides Color.White) {
                                     val hasNext = rememberHasNeighbors(p).second
-                                    ShuffleToggleButton(p, Modifier.size(40.dp), idleTint = Color.White, activeContainer = MaterialTheme.colorScheme.primaryContainer, activeTint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    ShuffleToggleButton(p, Modifier.size(40.dp), idleTint = Color.White, activeContainer = MaterialTheme.colorScheme.primary, activeTint = MaterialTheme.colorScheme.onPrimary)
                                     CrispButton(40.dp, { p?.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
                                     SkipButton(
                                         onClick = { p?.let { it.seekTo((it.currentPosition - seekBackSeconds * 1000L).coerceAtLeast(0L)) } },
@@ -1155,7 +1155,7 @@ fun VideoPlayerScreen(
                                         onLongClick = { seekDialog = true },
                                     ) { SeekIcon(seekForwardSeconds * 1000L, mirrored = true) }
                                     CrispButton(40.dp, { p?.seekToNext() }, enabled = hasNext) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
-                                    RepeatToggleButton(p, Modifier.size(40.dp), idleTint = Color.White, activeContainer = MaterialTheme.colorScheme.primaryContainer, activeTint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    RepeatToggleButton(p, Modifier.size(40.dp), idleTint = Color.White, activeContainer = MaterialTheme.colorScheme.primary, activeTint = MaterialTheme.colorScheme.onPrimary)
                                 }
                             }
                         }
@@ -1508,7 +1508,7 @@ private fun MuteButton(player: Player?, restoreVolume: () -> Float) {
         }
     }
     // Styled like the repeat button next to it: a plain white icon while the sound is on; when it is muted the icon
-    // sits in a rounded square in the theme's soft color.
+    // sits in a rounded square in the theme's main color.
     Box(
         Modifier
             .size(40.dp)
@@ -1520,13 +1520,13 @@ private fun MuteButton(player: Player?, restoreVolume: () -> Float) {
             Modifier
                 .size(30.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(if (muted) MaterialTheme.colorScheme.primaryContainer else Color.Transparent),
+                .background(if (muted) MaterialTheme.colorScheme.primary else Color.Transparent),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 if (muted) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
                 contentDescription = stringResource(if (muted) R.string.media_unmute else R.string.media_mute),
-                tint = if (muted) MaterialTheme.colorScheme.onPrimaryContainer else Color.White,
+                tint = if (muted) MaterialTheme.colorScheme.onPrimary else Color.White,
                 modifier = Modifier.size(24.dp),
             )
         }

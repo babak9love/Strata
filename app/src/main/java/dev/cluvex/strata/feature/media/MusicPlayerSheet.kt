@@ -160,7 +160,9 @@ fun MusicPlayerSheet(
         if (c.currentMediaItem?.mediaId == path) return@LaunchedEffect
         val list = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.AUDIO, showHidden, sortOrder) }
         val behavior = dev.cluvex.strata.core.data.SettingsRepository(context).settings.first().behavior
-        if (behavior.saveSpeedAudio) c.setPlaybackSpeed(behavior.speedAudio)
+        // The speed is the saved one only when "Save" was ticked; otherwise every new playback starts at normal speed.
+        // (The playback service keeps one player alive between sessions, so without this the last speed would stay.)
+        c.setPlaybackSpeed(if (behavior.saveSpeedAudio) behavior.speedAudio else 1f)
         // Repeat and shuffle come back the way they were left.
         c.repeatMode = behavior.repeatAudio.coerceIn(0, 2)
         c.shuffleModeEnabled = behavior.shuffleAudio
@@ -275,8 +277,8 @@ fun MusicPlayerSheet(
                     ShuffleToggleButton(
                         c,
                         idleTint = LocalContentColor.current,
-                        activeContainer = MaterialTheme.colorScheme.primaryContainer,
-                        activeTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        activeContainer = MaterialTheme.colorScheme.primary,
+                        activeTint = MaterialTheme.colorScheme.onPrimary,
                     )
                     PreviousButton(c)
                     PlayPauseButton(c, Modifier.size(72.dp))
@@ -284,8 +286,8 @@ fun MusicPlayerSheet(
                     RepeatToggleButton(
                         c,
                         idleTint = LocalContentColor.current,
-                        activeContainer = MaterialTheme.colorScheme.primaryContainer,
-                        activeTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        activeContainer = MaterialTheme.colorScheme.primary,
+                        activeTint = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
             }
@@ -293,8 +295,8 @@ fun MusicPlayerSheet(
                 SpeedButton(
                     c,
                     save = SpeedSave(saveSpeed, onSaveSpeedChange),
-                    activeContainer = MaterialTheme.colorScheme.primaryContainer,
-                    activeTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    activeContainer = MaterialTheme.colorScheme.primary,
+                    activeTint = MaterialTheme.colorScheme.onPrimary,
                 )
                 // A-B repeat: when it is on, a tap turns it off (clears the points); otherwise it opens the card to set them.
                 ActiveIconButton(
@@ -303,8 +305,8 @@ fun MusicPlayerSheet(
                     icon = AbRepeatIcon,
                     contentDescription = stringResource(R.string.media_ab_repeat),
                     idleTint = LocalContentColor.current,
-                    activeContainer = MaterialTheme.colorScheme.primaryContainer,
-                    activeTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    activeContainer = MaterialTheme.colorScheme.primary,
+                    activeTint = MaterialTheme.colorScheme.onPrimary,
                 )
                 // Headphones: switch Background Play on if it is off, then leave the app with the music carrying on.
                 ActiveIconButton(
@@ -318,8 +320,8 @@ fun MusicPlayerSheet(
                     icon = Icons.Rounded.Headphones,
                     contentDescription = stringResource(R.string.media_background_play),
                     idleTint = LocalContentColor.current,
-                    activeContainer = MaterialTheme.colorScheme.primaryContainer,
-                    activeTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    activeContainer = MaterialTheme.colorScheme.primary,
+                    activeTint = MaterialTheme.colorScheme.onPrimary,
                 )
                 ActiveIconButton(
                     active = sleepEndsAt != null,
@@ -327,8 +329,8 @@ fun MusicPlayerSheet(
                     icon = Icons.Rounded.Alarm,
                     contentDescription = stringResource(R.string.media_sleep_timer),
                     idleTint = LocalContentColor.current,
-                    activeContainer = MaterialTheme.colorScheme.primaryContainer,
-                    activeTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    activeContainer = MaterialTheme.colorScheme.primary,
+                    activeTint = MaterialTheme.colorScheme.onPrimary,
                 )
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { BackgroundSession.end(); c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
