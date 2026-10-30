@@ -1059,7 +1059,7 @@ fun VideoPlayerScreen(
                                             DropdownMenuItem(
                                                 text = { Text(stringResource(label)) },
                                                 trailingIcon = {
-                                                    if (zoomState.mode == mode) Icon(Icons.Rounded.Check, contentDescription = null)
+                                                    if (zoomState.mode == mode) Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                                 },
                                                 onClick = {
                                                     zoomState.select(mode)

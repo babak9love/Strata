@@ -124,8 +124,8 @@ fun AbRepeatEffect(player: Player?, state: AbRepeatState) {
 class AbThemeColors(val container: Color, val content: Color, val button: Color, val buttonBorder: Color)
 
 /**
- * The card follows the theme. In the light theme the A and B buttons are white with a thin outline, so they stand out
- * from the light card (the card and a "highest" surface are almost the same gray there); the dark theme keeps its look.
+ * The card follows the theme. The A and B buttons have a thin outline in the theme color; in the light theme they are
+ * also white, so they stand out from the light card (the card and a "highest" surface are almost the same gray there).
  */
 @Composable
 fun abThemeColors(): AbThemeColors {
@@ -135,7 +135,7 @@ fun abThemeColors(): AbThemeColors {
         container = scheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
         content = scheme.onSurface,
         button = if (light) scheme.surfaceContainerLowest else scheme.surfaceContainerHighest,
-        buttonBorder = if (light) scheme.outline.copy(alpha = 0.45f) else Color.Transparent,
+        buttonBorder = scheme.primary,
     )
 }
 
