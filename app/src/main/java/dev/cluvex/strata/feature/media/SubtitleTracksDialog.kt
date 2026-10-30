@@ -1,5 +1,7 @@
 package dev.cluvex.strata.feature.media
 
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -100,8 +102,8 @@ fun SubtitleTracksDialog(
     var pickText by remember { mutableStateOf(false) }
     var pickBackground by remember { mutableStateOf(false) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA)) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Surface(modifier = Modifier.width(fixedDialogWidth()), shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA)) {
             Column(Modifier.padding(vertical = 12.dp)) {
                 Row(Modifier.padding(start = 24.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(R.string.media_subtitles), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))

@@ -946,10 +946,10 @@ fun VideoPlayerScreen(
                                             properties = PopupProperties(focusable = true),
                                         ) {
                                             CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                                                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA)) {
+                                                Surface(shape = RoundedCornerShape(12.dp), color = Color(0xF22B2629)) {
                                                     Text(
                                                         vm.title,
-                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        color = Color.White,
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         modifier = Modifier.widthIn(max = maxWidth).padding(horizontal = 14.dp, vertical = 12.dp),
                                                     )
@@ -1127,29 +1127,32 @@ fun VideoPlayerScreen(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                val hasNext = rememberHasNeighbors(p).second
-                                CompositionLocalProvider(LocalContentColor provides Color.White) { ShuffleButton(p, Modifier.size(40.dp)) }
-                                CrispButton(40.dp, { p?.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
-                                SkipButton(
-                                    onClick = { p?.let { it.seekTo((it.currentPosition - seekBackSeconds * 1000L).coerceAtLeast(0L)) } },
-                                    onLongClick = { seekDialog = false },
-                                ) { SeekIcon(seekBackSeconds * 1000L, mirrored = false) }
-                                val play = rememberPlayPauseButtonState(p)
-                                CrispButton(80.dp, { play.onClick() }) {
-                                    Icon(if (play.showPlay) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, null, Modifier.size(80.dp))
+                                // The controls sit over the video, so they are white whatever the theme is.
+                                CompositionLocalProvider(LocalContentColor provides Color.White) {
+                                    val hasNext = rememberHasNeighbors(p).second
+                                    ShuffleButton(p, Modifier.size(40.dp))
+                                    CrispButton(40.dp, { p?.seekToPrevious() }) { Icon(Icons.Rounded.SkipPrevious, null, Modifier.size(40.dp)) }
+                                    SkipButton(
+                                        onClick = { p?.let { it.seekTo((it.currentPosition - seekBackSeconds * 1000L).coerceAtLeast(0L)) } },
+                                        onLongClick = { seekDialog = false },
+                                    ) { SeekIcon(seekBackSeconds * 1000L, mirrored = false) }
+                                    val play = rememberPlayPauseButtonState(p)
+                                    CrispButton(80.dp, { play.onClick() }) {
+                                        Icon(if (play.showPlay) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, null, Modifier.size(80.dp))
+                                    }
+                                    SkipButton(
+                                        onClick = {
+                                            p?.let {
+                                                val target = it.currentPosition + seekForwardSeconds * 1000L
+                                                val end = it.duration
+                                                it.seekTo(if (end != androidx.media3.common.C.TIME_UNSET) target.coerceAtMost(end) else target)
+                                            }
+                                        },
+                                        onLongClick = { seekDialog = true },
+                                    ) { SeekIcon(seekForwardSeconds * 1000L, mirrored = true) }
+                                    CrispButton(40.dp, { p?.seekToNext() }, enabled = hasNext) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
+                                    RepeatButton(p, Modifier.size(40.dp))
                                 }
-                                SkipButton(
-                                    onClick = {
-                                        p?.let {
-                                            val target = it.currentPosition + seekForwardSeconds * 1000L
-                                            val end = it.duration
-                                            it.seekTo(if (end != androidx.media3.common.C.TIME_UNSET) target.coerceAtMost(end) else target)
-                                        }
-                                    },
-                                    onLongClick = { seekDialog = true },
-                                ) { SeekIcon(seekForwardSeconds * 1000L, mirrored = true) }
-                                CrispButton(40.dp, { p?.seekToNext() }, enabled = hasNext) { Icon(Icons.Rounded.SkipNext, null, Modifier.size(40.dp)) }
-                                CompositionLocalProvider(LocalContentColor provides Color.White) { RepeatButton(p, Modifier.size(40.dp)) }
                             }
                         }
                         AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
@@ -1250,9 +1253,6 @@ fun VideoPlayerScreen(
                 abRepeat,
                 onClose = { abPanel = false },
                 modifier = Modifier.align(Alignment.Center),
-                container = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
-                content = MaterialTheme.colorScheme.onSurface,
-                button = MaterialTheme.colorScheme.surfaceContainerHighest,
                 draggable = true,
             )
         }
@@ -1445,6 +1445,8 @@ private fun SkipLengthDialog(title: String, seconds: Int, onDismiss: () -> Unit,
     var value by remember(seconds) { androidx.compose.runtime.mutableFloatStateOf(seconds.toFloat()) }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.width(fixedDialogWidth()),
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
         title = { Text(title) },
         text = {

@@ -178,32 +178,32 @@ private fun AbRepeatCard(
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Surface(
-            modifier = modifier.widthIn(max = 210.dp),
+            modifier = modifier.widthIn(max = 250.dp),
             shape = RoundedCornerShape(10.dp),
             color = container,
             border = BorderStroke(1.dp, content.copy(alpha = 0.35f)),
         ) {
-            Column(Modifier.padding(start = 10.dp, end = 2.dp, top = 2.dp, bottom = 8.dp)) {
+            Column(Modifier.padding(start = 12.dp, end = 2.dp, top = 4.dp, bottom = 10.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         stringResource(R.string.media_ab_repeat),
                         color = content,
-                        style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                        style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
+                    IconButton(onClick = onClose, modifier = Modifier.size(38.dp)) {
                         Icon(
                             Icons.Rounded.Close,
                             contentDescription = stringResource(R.string.common_close),
                             tint = content.copy(alpha = 0.7f),
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }
                 Row(
-                    Modifier.fillMaxWidth().padding(end = 8.dp),
+                    Modifier.fillMaxWidth().padding(end = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     PointButton("A", state.a, button, content, Modifier.weight(1f)) {
                         // A point that already has a time goes back to the plain label so a new one can be taken.
@@ -213,7 +213,7 @@ private fun AbRepeatCard(
                         Icons.Rounded.SwapHoriz,
                         contentDescription = null,
                         tint = content.copy(alpha = 0.45f),
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(20.dp),
                     )
                     PointButton("B", state.b, button, content, Modifier.weight(1f)) {
                         if (state.b != null) state.b = null else player?.let { state.setB(it.currentPosition) }
@@ -228,7 +228,7 @@ private fun AbRepeatCard(
 private fun PointButton(label: String, ms: Long?, container: Color, content: Color, modifier: Modifier, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(34.dp),
+        modifier = modifier.height(44.dp),
         shape = RoundedCornerShape(6.dp),
         color = container,
     ) {
@@ -237,7 +237,7 @@ private fun PointButton(label: String, ms: Long?, container: Color, content: Col
                 if (ms != null) formatTime(ms) else label,
                 color = content,
                 fontWeight = FontWeight.Bold,
-                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
             )
         }
     }

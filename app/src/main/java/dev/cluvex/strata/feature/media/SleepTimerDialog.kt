@@ -75,6 +75,8 @@ fun SleepTimerDialog(onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.width(fixedDialogWidth()),
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
         containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
         title = { Text(stringResource(R.string.media_sleep_timer)) },
         text = {

@@ -108,7 +108,7 @@ private fun SpeedDialog(player: Player, save: SpeedSave?, onDismiss: () -> Unit)
     // Fixed width (not the platform default) so the dialog has the same size in the video player and the music sheet.
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
-            modifier = Modifier.padding(horizontal = 28.dp).widthIn(max = 560.dp).fillMaxWidth(),
+            modifier = Modifier.width(fixedDialogWidth()),
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = PANEL_ALPHA),
         ) {
