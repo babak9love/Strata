@@ -35,7 +35,10 @@ import dev.cluvex.strata.MainActivity
 import dev.cluvex.strata.core.data.SettingsRepository
 import dev.cluvex.strata.core.media.ResumeKind
 import dev.cluvex.strata.core.media.ResumeListener
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.DecoderManager
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 
+@OptIn(UnstableApi::class)
 class PlaybackService : MediaSessionService() {
 
     private var session: MediaSession? = null
@@ -46,6 +49,9 @@ class PlaybackService : MediaSessionService() {
     @Volatile private var playAloneAudio = true
     @Volatile private var playAloneVideo = true
     private var exo: ExoPlayer? = null
+
+    /** Switches the audio decoder (hardware, software, FFmpeg) of the service's player; the music player's Decoder button uses it. */
+    private var decoderManager: DecoderManager? = null
     @Volatile private var seekBackMs = 5_000L
     @Volatile private var seekForwardMs = 15_000L
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -62,13 +68,17 @@ class PlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        val dm = DecoderManager()
         val player = ExoPlayer.Builder(this)
+            .setRenderersFactory(NextRenderersFactory(this).setDecoderManager(dm))
             .setAudioAttributes(
                 AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
                  true,
             )
             .setHandleAudioBecomingNoisy(true)
             .build()
+        dm.attach(player)
+        decoderManager = dm
         scope.launch {
             SettingsRepository(applicationContext).settings.map { it.behavior.resumeAudio }.distinctUntilChanged()
                 .collect { resumeEnabled = it }
@@ -216,6 +226,8 @@ class PlaybackService : MediaSessionService() {
         resume?.saveNow()
         resume = null
         scope.cancel()
+        decoderManager?.detach()
+        decoderManager = null
         session?.run {
             player.release()
             release()
@@ -250,6 +262,10 @@ class PlaybackService : MediaSessionService() {
         fun stopPlayback() {
             instance?.exitPlayback()
         }
+
+        /** The audio decoder switch of the running service, or null if it is not running. Must be called on the main thread. */
+        @OptIn(UnstableApi::class)
+        fun decoderManager(): DecoderManager? = instance?.decoderManager
 
         /** Pauses whatever the service is playing (used by the sleep timer). Must be called on the main thread. */
         fun pausePlayback() {

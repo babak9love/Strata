@@ -52,10 +52,13 @@ private fun presetOf(video: DecoderMode, audio: DecoderMode): Preset? =
 /**
  * Picks the decoder for the video. The top list changes video and audio together; "Advanced" opens
  * two lists to set the video decoder and the audio decoder separately (for example HW video with FFmpeg audio).
+ *
+ * With [audioOnly] (the music player) there is no video: the dialog is a single list that sets only the audio
+ * decoder, and the "Advanced" part is left out.
  */
 @OptIn(UnstableApi::class)
 @Composable
-fun DecoderDialog(manager: DecoderManager, onDismiss: () -> Unit) {
+fun DecoderDialog(manager: DecoderManager, audioOnly: Boolean = false, onDismiss: () -> Unit) {
     var video by remember { mutableStateOf(manager.videoMode) }
     var audio by remember { mutableStateOf(manager.audioMode) }
     val preset = presetOf(video, audio)
@@ -82,6 +85,15 @@ fun DecoderDialog(manager: DecoderManager, onDismiss: () -> Unit) {
                     }
                 }
                 Column(Modifier.verticalScroll(rememberScrollState())) {
+                    if (audioOnly) {
+                        DecoderMode.entries.forEach { mode ->
+                            DecoderRow(modeLabel(mode), modeHint(mode), audio == mode) {
+                                manager.selectAudioDecoder(mode)
+                                audio = mode
+                            }
+                        }
+                        return@Column
+                    }
                     Preset.entries.forEach { entry ->
                         DecoderRow(presetLabel(entry), presetHint(entry), preset == entry) {
                             manager.selectVideoDecoder(entry.video)

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Headphones
+import androidx.compose.material.icons.rounded.Memory
 import android.content.ContextWrapper
 import android.content.Context
 import android.app.Activity
@@ -148,6 +149,7 @@ fun MusicPlayerSheet(
     var menu by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
     var sleepDialog by remember { mutableStateOf(false) }
+    var decoderDialog by remember { mutableStateOf(false) }
     val abRepeat = remember { AbRepeatState() }
     var abPanel by remember { mutableStateOf(false) }
     val sleepEndsAt by SleepTimer.endsAt.collectAsState()
@@ -333,6 +335,12 @@ fun MusicPlayerSheet(
                     activeContainer = MaterialTheme.colorScheme.primary,
                     activeTint = MaterialTheme.colorScheme.onPrimary,
                 )
+                // Decoder: hardware, software or FFmpeg for the audio (there is no video here, so no advanced part).
+                PlaybackService.decoderManager()?.let {
+                    IconButton(onClick = { decoderDialog = true }) {
+                        Icon(Icons.Rounded.Memory, contentDescription = stringResource(R.string.media_decoder_title))
+                    }
+                }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { BackgroundSession.end(); c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
             }
@@ -420,6 +428,7 @@ fun MusicPlayerSheet(
         }
     }
     if (sleepDialog) SleepTimerDialog { sleepDialog = false }
+    if (decoderDialog) PlaybackService.decoderManager()?.let { DecoderDialog(it, audioOnly = true) { decoderDialog = false } }
     info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.AUDIO, onDismiss = { info = null }) }
 }
 
