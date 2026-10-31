@@ -15,7 +15,9 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.DecoderManager
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.FloatWavExtractorsFactory
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaController
@@ -71,6 +73,8 @@ class PlaybackService : MediaSessionService() {
         val dm = DecoderManager()
         val player = ExoPlayer.Builder(this)
             .setRenderersFactory(NextRenderersFactory(this).setDecoderManager(dm))
+            // Opens 64-bit float WAV files, which the stock WAV extractor rejects.
+            .setMediaSourceFactory(DefaultMediaSourceFactory(this, FloatWavExtractorsFactory()))
             .setAudioAttributes(
                 AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
                  true,
