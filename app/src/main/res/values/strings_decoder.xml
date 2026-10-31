@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_decoder_title">Decoder</string>
+    <string name="media_decoder_video">Video</string>
+    <string name="media_decoder_audio">Audio</string>
+    <string name="media_decoder_auto">Auto (HW+)</string>
+    <string name="media_decoder_auto_hint">Hardware, then software, then FFmpeg</string>
+    <string name="media_decoder_hw">HW decoder</string>
+    <string name="media_decoder_hw_hint">Hardware MediaCodec only</string>
+    <string name="media_decoder_sw">SW decoder</string>
+    <string name="media_decoder_sw_hint">Software MediaCodec only</string>
+    <string name="media_decoder_ffmpeg">FFmpeg</string>
+    <string name="media_decoder_ffmpeg_hint">Bundled FFmpeg only</string>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_decoder_title">解码器</string>
+    <string name="media_decoder_video">视频</string>
+    <string name="media_decoder_audio">音频</string>
+    <string name="media_decoder_auto">自动 (HW+)</string>
+    <string name="media_decoder_auto_hint">先硬件,再软件,最后 FFmpeg</string>
+    <string name="media_decoder_hw">HW 解码器</string>
+    <string name="media_decoder_hw_hint">仅硬件 MediaCodec</string>
+    <string name="media_decoder_sw">SW 解码器</string>
+    <string name="media_decoder_sw_hint">仅软件 MediaCodec</string>
+    <string name="media_decoder_ffmpeg">FFmpeg</string>
+    <string name="media_decoder_ffmpeg_hint">仅内置 FFmpeg</string>
+</resources>

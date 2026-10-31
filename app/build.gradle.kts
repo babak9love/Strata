@@ -114,6 +114,8 @@ android {
             excludes += "/META-INF/services/sun.net.spi.nameservice.NameServiceDescriptor"
             excludes += "/resources/api_database.ser"
             excludes += "/LICENSE"
+            // The FFmpeg AAR also ships x86 libraries; Strata only targets arm64-v8a, armeabi-v7a and x86_64.
+            excludes += "**/x86/*.so"
         }
     }
 }
@@ -122,6 +124,8 @@ kotlin {
     jvmToolchain(17)
     compilerOptions {
         freeCompilerArgs.add("-Xannotation-default-target=param-property")
+        // app/libs/media3ext-release.aar is built with a newer Kotlin than this project; read its metadata anyway.
+        freeCompilerArgs.add("-Xskip-metadata-version-check")
     }
 }
 
@@ -208,6 +212,8 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.media3.ui.compose)
     implementation(libs.media3.ui.compose.material3)
+    // FFmpeg 9.0.1 decoders for Media3 (NextLib), built from source. See app/libs/README.md.
+    implementation(files("libs/media3ext-release.aar"))
 
     implementation(libs.jadx.core)
     implementation(libs.jadx.dex.input)

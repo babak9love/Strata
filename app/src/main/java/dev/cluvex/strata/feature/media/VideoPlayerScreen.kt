@@ -91,6 +91,10 @@ import androidx.compose.material.icons.rounded.Crop
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Memory
+import androidx.media3.common.util.UnstableApi
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.DecoderManager
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 import androidx.compose.material.icons.rounded.PictureInPictureAlt
 import androidx.compose.material.icons.rounded.ScreenRotation
 import androidx.compose.material3.DropdownMenu
@@ -175,9 +179,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+@OptIn(UnstableApi::class)
 class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     var player by mutableStateOf<ExoPlayer?>(null)
+
+    /** Switches the video and audio decoder (hardware, software, FFmpeg) of [player]. */
+    var decoderManager by mutableStateOf<DecoderManager?>(null)
         private set
     var title by mutableStateOf("")
         private set
@@ -228,11 +236,14 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             sidecars.forEach { (video, subs) -> externals[video] = subs.toMutableList() }
             val skip = dev.cluvex.strata.core.data.SettingsRepository(getApplication()).settings.first().behavior
             playAlone = skip.playAloneVideo
+            val dm = DecoderManager()
             val p = ExoPlayer.Builder(getApplication())
+                .setRenderersFactory(NextRenderersFactory(getApplication()).setDecoderManager(dm))
                 .setAudioAttributes(VIDEO_AUDIO_ATTRIBUTES, skip.playAloneVideo)
                 .setSeekBackIncrementMs(skip.seekBackSeconds * 1000L)
                 .setSeekForwardIncrementMs(skip.seekForwardSeconds * 1000L)
                 .build()
+            dm.attach(p)
             p.addListener(object : Player.Listener {
                 override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                     title = mediaItem?.mediaMetadata?.displayTitle?.toString().orEmpty()
@@ -270,6 +281,7 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
             p.prepare()
             p.playWhenReady = start?.playing ?: true
             title = list.current.name
+            decoderManager = dm
             player = p
             SleepTimer.videoPauser = { p.pause() }
             saveJob?.cancel()
@@ -510,6 +522,8 @@ class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
         releaseBackground()
         saveJob?.cancel()
         resume?.saveNow()
+        decoderManager?.detach()
+        decoderManager = null
         player?.release()
         player = null
     }
@@ -588,6 +602,7 @@ fun VideoPlayerScreen(
     var info by remember { mutableStateOf<String?>(null) }
     var titleExpanded by remember { mutableStateOf(false) }
     var audioTracks by remember { mutableStateOf(false) }
+    var decoderDialog by remember { mutableStateOf(false) }
     var sleepDialog by remember { mutableStateOf(false) }
     val abRepeat = remember { AbRepeatState() }
     var abPanel by remember { mutableStateOf(false) }
@@ -759,7 +774,7 @@ fun VideoPlayerScreen(
         onDispose { player?.removeListener(listener) }
     }
 
-    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !scaleMenu && !titleExpanded && !seeking && !sleepDialog && !abPanel && !subtitlesDialog && !audioTracks && info == null) { controls = false }
+    if (player != null) AutoHideControls(player, controls && autoHide && !menu && !scaleMenu && !titleExpanded && !seeking && !sleepDialog && !abPanel && !subtitlesDialog && !audioTracks && !decoderDialog && info == null) { controls = false }
     ImmersiveWhile(!controls)
     LightSystemBarIcons()
 
@@ -957,6 +972,11 @@ fun VideoPlayerScreen(
                                                 }
                                             }
                                         }
+                                    }
+                                }
+                                vm.decoderManager?.let {
+                                    IconButton(onClick = { decoderDialog = true; controls = true }) {
+                                        Icon(Icons.Rounded.Memory, contentDescription = stringResource(R.string.media_decoder_title), tint = Color.White)
                                     }
                                 }
                                 Box {
@@ -1250,6 +1270,7 @@ fun VideoPlayerScreen(
             }
         }
         if (audioTracks && player != null) AudioTracksDialog(player) { audioTracks = false }
+        vm.decoderManager?.let { if (decoderDialog) DecoderDialog(it) { decoderDialog = false } }
         if (sleepDialog) SleepTimerDialog { sleepDialog = false }
         AbRepeatEffect(player, abRepeat)
         if (abPanel && !inPip) {

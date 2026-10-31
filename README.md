@@ -33,6 +33,10 @@ native/build.sh
 ./gradlew :app:assembleDebug
 ```
 
+## FFmpeg
+
+The video player can use FFmpeg 9.0.1 (hardware, software or FFmpeg decoder, chosen per video and per audio track from the decoder button in the top bar). The decoders come from [NextLib](https://github.com/anilbeesetti/nextlib) and are bundled as `app/libs/media3ext-release.aar`; see `app/libs/README.md` for how it was built and how to rebuild it.
+
 ## Support the developer
 
 Strata is free and open source. If it saves you time and you'd like to help it grow, you can send a donation to one of these addresses. Every bit of support is appreciated. Thank you!

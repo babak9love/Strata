@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_decoder_title">Декодер</string>
+    <string name="media_decoder_video">Видео</string>
+    <string name="media_decoder_audio">Звук</string>
+    <string name="media_decoder_auto">Авто (HW+)</string>
+    <string name="media_decoder_auto_hint">Сначала аппаратный, затем программный, затем FFmpeg</string>
+    <string name="media_decoder_hw">Декодер HW</string>
+    <string name="media_decoder_hw_hint">Только аппаратный MediaCodec</string>
+    <string name="media_decoder_sw">Декодер SW</string>
+    <string name="media_decoder_sw_hint">Только программный MediaCodec</string>
+    <string name="media_decoder_ffmpeg">FFmpeg</string>
+    <string name="media_decoder_ffmpeg_hint">Только встроенный FFmpeg</string>
+</resources>

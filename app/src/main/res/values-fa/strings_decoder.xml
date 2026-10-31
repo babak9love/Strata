@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_decoder_title">دیکودر</string>
+    <string name="media_decoder_video">تصویر</string>
+    <string name="media_decoder_audio">صدا</string>
+    <string name="media_decoder_auto">خودکار (HW+)</string>
+    <string name="media_decoder_auto_hint">اول سخت‌افزار، بعد نرم‌افزار، بعد FFmpeg</string>
+    <string name="media_decoder_hw">دیکودر HW</string>
+    <string name="media_decoder_hw_hint">فقط MediaCodec سخت‌افزاری</string>
+    <string name="media_decoder_sw">دیکودر SW</string>
+    <string name="media_decoder_sw_hint">فقط MediaCodec نرم‌افزاری</string>
+    <string name="media_decoder_ffmpeg">FFmpeg</string>
+    <string name="media_decoder_ffmpeg_hint">فقط FFmpeg داخلی</string>
+</resources>
