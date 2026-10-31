@@ -114,11 +114,18 @@ fun PropertiesSheet(
                     .takeIf { it == FileKind.AUDIO || it == FileKind.VIDEO }
                 if (mediaKind != null) {
                     var expanded by remember(single.path) { mutableStateOf(false) }
+                    val mediaRes = androidx.compose.ui.platform.LocalContext.current.resources
                     var sections by remember(single.path) { mutableStateOf<List<MediaSection>?>(null) }
+                    var preview by remember(single.path) { mutableStateOf<android.graphics.Bitmap?>(null) }
                     LaunchedEffect(single.path, expanded) {
                         if (expanded && sections == null) {
-                            sections = withContext(Dispatchers.IO) { MediaInfoReader.read(single.path) }
+                            sections = withContext(Dispatchers.IO) { MediaInfoReader.read(single.path, mediaRes) }
                                 .filter { mediaKind == FileKind.VIDEO || it.title != R.string.media_section_video }
+                        }
+                    }
+                    LaunchedEffect(single.path, expanded) {
+                        if (expanded && preview == null) {
+                            preview = withContext(Dispatchers.IO) { MediaInfoReader.preview(single.path, video = mediaKind == FileKind.VIDEO) }
                         }
                     }
                     Row(
@@ -139,7 +146,7 @@ fun PropertiesSheet(
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
-                    AnimatedVisibility(expanded) { MediaInfoBody(sections) }
+                    AnimatedVisibility(expanded) { MediaInfoBody(sections, preview) }
                 } else {
                     InfoRow(stringResource(R.string.common_type), typeText)
                 }

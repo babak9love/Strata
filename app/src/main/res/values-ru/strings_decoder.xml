@@ -11,4 +11,9 @@
     <string name="media_decoder_sw_hint">Только программный MediaCodec</string>
     <string name="media_decoder_ffmpeg">FFmpeg</string>
     <string name="media_decoder_ffmpeg_hint">Только встроенный FFmpeg</string>
+    <string name="media_decoder_advanced">Дополнительно</string>
+    <string name="media_decoder_advanced_hint">Отдельный декодер для видео и звука</string>
+    <string name="media_decoder_simple_hw_hint">Видео аппаратно, звук автоматически</string>
+    <string name="media_decoder_simple_sw_hint">Видео программно, звук автоматически</string>
+    <string name="media_decoder_simple_ffmpeg_hint">FFmpeg для видео и звука</string>
 </resources>

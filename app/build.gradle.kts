@@ -99,6 +99,8 @@ android {
         jniLibs {
             useLegacyPackaging = true
             keepDebugSymbols += "**/*.so"
+            // Both FFmpeg AARs ship the same libavcodec/libavutil/libswscale (CI checks they are identical).
+            pickFirsts += listOf("**/libavcodec.so", "**/libavutil.so", "**/libswscale.so")
         }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -214,6 +216,8 @@ dependencies {
     implementation(libs.media3.ui.compose.material3)
     // FFmpeg 9.0.1 decoders for Media3 (NextLib), built from source. See app/libs/README.md.
     implementation(files("libs/media3ext-release.aar"))
+    // File details through FFmpeg: every audio track, subtitles, chapters, preview frame, cover art.
+    implementation(files("libs/mediainfo-release.aar"))
 
     implementation(libs.jadx.core)
     implementation(libs.jadx.dex.input)

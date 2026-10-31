@@ -1,23 +1,31 @@
 package dev.cluvex.strata.core.media
 
+import android.content.res.Resources
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.os.Build
 import androidx.annotation.StringRes
 import dev.cluvex.strata.R
+import io.github.anilbeesetti.nextlib.mediainfo.MediaInfo
+import io.github.anilbeesetti.nextlib.mediainfo.MediaInfoBuilder
+import io.github.anilbeesetti.nextlib.mediainfo.MediaThumbnailRetriever
+import java.io.File
 import java.util.Locale
 
-/** One labelled value in the media details list. */
-data class MediaRow(@StringRes val label: Int, val value: String)
+/** One labelled value in the media details list. [labelText] replaces [label] when the label is built at runtime (a chapter time, "Subtitle 2"). */
+data class MediaRow(@StringRes val label: Int, val value: String, val labelText: String? = null)
 
-/** Rows grouped under a section heading. */
-data class MediaSection(@StringRes val title: Int, val rows: List<MediaRow>)
+/** Rows grouped under a section heading. [subtitle] is appended to the heading ("Track 2 · English"). */
+data class MediaSection(@StringRes val title: Int, val rows: List<MediaRow>, val subtitle: String? = null)
 
 /**
  * Reads technical details and tags of an audio/video file by parsing its header only
- * (nothing is played). Uses the framework MediaExtractor + MediaMetadataRetriever, so it
- * works offline on every supported API level; some fields (e.g. bit depth) need newer Android.
+ * (nothing is played). FFmpeg (NextLib MediaInfo) lists every audio track, the subtitles and the chapters
+ * and opens containers Android does not know; the framework MediaExtractor + MediaMetadataRetriever add the tags and
+ * the bit depth and are the fallback when FFmpeg cannot read the file. Some fields (e.g. bit depth) need newer Android.
  */
 object MediaInfoReader {
 
@@ -36,10 +44,43 @@ object MediaInfoReader {
         null
     }
 
-    fun read(path: String): List<MediaSection> {
-        val general = mutableListOf<MediaRow>()
-        val audio = mutableListOf<MediaRow>()
-        val video = mutableListOf<MediaRow>()
+    private const val DISP_DEFAULT = 0x1
+    private const val DISP_DUB = 0x2
+    private const val DISP_ORIGINAL = 0x4
+    private const val DISP_COMMENT = 0x8
+    private const val DISP_LYRICS = 0x10
+    private const val DISP_FORCED = 0x40
+    private const val DISP_HEARING_IMPAIRED = 0x80
+    private const val DISP_VISUAL_IMPAIRED = 0x100
+    private const val DISP_ATTACHED_PIC = 0x400
+
+    /** FFmpeg frame decoding allocates a full-size bitmap; skip it above this many pixels (about 4K). */
+    private const val MAX_FFMPEG_FRAME_PIXELS = 10_000_000
+
+    /** Recent results, so reopening the same file does not parse it again. */
+    private val cache = object : LinkedHashMap<String, List<MediaSection>>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<MediaSection>>?): Boolean = size > 24
+    }
+
+    /**
+     * Details of [path]. With [res] the stream flags and the numbered labels are localised; without it they are left out.
+     * Blocking: call it off the main thread.
+     */
+    fun read(path: String, res: Resources? = null): List<MediaSection> {
+        val file = File(path)
+        val key = "$path|${file.lastModified()}|${file.length()}|${Locale.getDefault()}|${res != null}"
+        synchronized(cache) { cache[key] }?.let { return it }
+        val result = readUncached(path, res)
+        if (result.isNotEmpty()) synchronized(cache) { cache[key] = result }
+        return result
+    }
+
+    private fun readUncached(path: String, res: Resources?): List<MediaSection> {
+        var mime: String? = null
+        var durationMs: Long? = null
+        var overallBitrate: Long? = null
+        var bitsPerSample: Int? = null
+        var captureFps: String? = null
         val tags = mutableListOf<MediaRow>()
 
         val retriever = MediaMetadataRetriever()
@@ -47,13 +88,9 @@ object MediaInfoReader {
             retriever.setDataSource(path)
             fun meta(key: Int): String? = runCatching { retriever.extractMetadata(key) }.getOrNull()?.trim()?.takeIf { it.isNotEmpty() }
 
-            meta(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)?.let { general += MediaRow(R.string.media_format, it) }
-            meta(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?.takeIf { it > 0 }?.let {
-                general += MediaRow(R.string.media_duration, duration(it))
-            }
-            meta(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toLongOrNull()?.takeIf { it > 0 }?.let {
-                general += MediaRow(R.string.media_bitrate, kbps(it))
-            }
+            mime = meta(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
+            durationMs = meta(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?.takeIf { it > 0 }
+            overallBitrate = meta(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toLongOrNull()?.takeIf { it > 0 }
 
             fun tag(label: Int, key: Int) { meta(key)?.let { tags += MediaRow(label, it) } }
             tag(R.string.media_title, MediaMetadataRetriever.METADATA_KEY_TITLE)
@@ -69,22 +106,278 @@ object MediaInfoReader {
             tag(R.string.media_writer, MediaMetadataRetriever.METADATA_KEY_WRITER)
             tag(R.string.media_location, MediaMetadataRetriever.METADATA_KEY_LOCATION)
 
-            val bitsPerSample = if (Build.VERSION.SDK_INT >= 31) meta(MediaMetadataRetriever.METADATA_KEY_BITS_PER_SAMPLE)?.toIntOrNull() else null
-            val captureFps = if (Build.VERSION.SDK_INT >= 23) meta(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE) else null
-
-            readTracks(path, audio, video, bitsPerSample, captureFps)
+            bitsPerSample = if (Build.VERSION.SDK_INT >= 31) meta(MediaMetadataRetriever.METADATA_KEY_BITS_PER_SAMPLE)?.toIntOrNull() else null
+            captureFps = if (Build.VERSION.SDK_INT >= 23) meta(MediaMetadataRetriever.METADATA_KEY_CAPTURE_FRAMERATE) else null
         } catch (_: Throwable) {
             // Unreadable / unsupported file: show whatever was collected.
         } finally {
             runCatching { retriever.release() }
         }
 
+        // The framework's view of the tracks: the fallback, and the source of the bit depth.
+        val fwAudio = mutableListOf<MediaRow>()
+        val fwVideo = mutableListOf<MediaRow>()
+        readTracks(path, fwAudio, fwVideo, bitsPerSample, captureFps)
+
+        val ff = probe(path)
+        val general = mutableListOf<MediaRow>()
+        if (ff != null) {
+            general += MediaRow(R.string.media_format, ff.format)
+            mime?.let { general += MediaRow(R.string.media_mime_type, it) }
+            (ff.duration.takeIf { it > 0 } ?: durationMs)?.let { general += MediaRow(R.string.media_duration, duration(it)) }
+        } else {
+            mime?.let { general += MediaRow(R.string.media_format, it) }
+            durationMs?.let { general += MediaRow(R.string.media_duration, duration(it)) }
+        }
+        overallBitrate?.let { general += MediaRow(R.string.media_bitrate, kbps(it)) }
+
+        val streams: List<MediaSection> = try {
+            if (ff != null) ffmpegSections(ff, fwAudio, fwVideo, res) else frameworkSections(fwAudio, fwVideo)
+        } catch (_: Throwable) {
+            frameworkSections(fwAudio, fwVideo)
+        } finally {
+            runCatching { ff?.release() }
+        }
+
         return buildList {
             if (general.isNotEmpty()) add(MediaSection(R.string.media_section_general, general))
-            if (audio.isNotEmpty()) add(MediaSection(R.string.media_section_audio, audio))
-            if (video.isNotEmpty()) add(MediaSection(R.string.media_section_video, video))
+            addAll(streams)
             if (tags.isNotEmpty()) add(MediaSection(R.string.media_section_tags, tags))
         }
+    }
+
+    private fun frameworkSections(audio: List<MediaRow>, video: List<MediaRow>): List<MediaSection> = buildList {
+        if (audio.isNotEmpty()) add(MediaSection(R.string.media_section_audio, audio))
+        if (video.isNotEmpty()) add(MediaSection(R.string.media_section_video, video))
+    }
+
+    /** Opens [path] with FFmpeg; null when FFmpeg cannot read it (or its libraries are missing). */
+    private fun probe(path: String): MediaInfo? = try {
+        MediaInfoBuilder().from(path).build()
+    } catch (_: Throwable) {
+        null
+    }
+
+    private fun ffmpegSections(ff: MediaInfo, fwAudio: List<MediaRow>, fwVideo: List<MediaRow>, res: Resources?): List<MediaSection> {
+        val out = mutableListOf<MediaSection>()
+
+        // Every audio track gets its own section.
+        val audioStreams = ff.audioStreams
+        if (audioStreams.isEmpty()) {
+            if (fwAudio.isNotEmpty()) out += MediaSection(R.string.media_section_audio, fwAudio)
+        }
+        audioStreams.forEachIndexed { i, a ->
+            val rows = mutableListOf<MediaRow>()
+            a.title.clean()?.let { rows += MediaRow(R.string.media_title, it) }
+            rows += MediaRow(R.string.media_codec, a.codecName)
+            if (a.channels > 0) rows += MediaRow(R.string.media_channels, channelsText(a.channels, a.channelLayout))
+            if (a.sampleRate > 0) rows += MediaRow(R.string.media_sample_rate, hz(a.sampleRate))
+            sampleFormat(a.sampleFormat)?.let { rows += MediaRow(R.string.media_sample_format, it) }
+            if (a.bitRate > 0) rows += MediaRow(R.string.media_bitrate, kbps(a.bitRate))
+            // Bit depth is only known for the first track, from the framework reader.
+            if (i == 0) fwAudio.firstOrNull { it.label == R.string.media_bit_depth }?.let { rows += it }
+            val lang = languageName(a.language)
+            lang?.let { rows += MediaRow(R.string.media_language, it) }
+            flags(a.disposition, res)?.let { rows += MediaRow(R.string.media_flags, it) }
+            val sub = if (audioStreams.size > 1) listOfNotNull(res?.getString(R.string.media_audio_track_n, i + 1), lang).joinToString(" · ") else null
+            out += MediaSection(R.string.media_section_audio, rows, sub?.takeIf { it.isNotEmpty() })
+        }
+
+        // Video: FFmpeg only reports the first video stream. An attached picture is cover art, not a video.
+        val v = ff.videoStream
+        if (v != null && (v.disposition and DISP_ATTACHED_PIC) == 0) {
+            val rows = mutableListOf<MediaRow>()
+            v.title.clean()?.let { rows += MediaRow(R.string.media_title, it) }
+            rows += MediaRow(R.string.media_codec, v.codecName)
+            if (v.frameWidth > 0 && v.frameHeight > 0) {
+                val swap = v.rotation == 90 || v.rotation == 270
+                val w = if (swap) v.frameHeight else v.frameWidth
+                val h = if (swap) v.frameWidth else v.frameHeight
+                rows += MediaRow(R.string.media_resolution, "$w × $h")
+                rows += MediaRow(R.string.media_aspect_ratio, aspectRatio(w, h))
+            }
+            if (v.frameRate > 0) rows += MediaRow(R.string.media_frame_rate, trim(v.frameRate) + " fps")
+            if (v.bitRate > 0) rows += MediaRow(R.string.media_bitrate, kbps(v.bitRate))
+            else fwVideo.firstOrNull { it.label == R.string.media_bitrate }?.let { rows += it }
+            if (v.rotation != 0) rows += MediaRow(R.string.media_rotation, "${v.rotation}°")
+            languageName(v.language)?.let { rows += MediaRow(R.string.media_language, it) }
+            flags(v.disposition, res)?.let { rows += MediaRow(R.string.media_flags, it) }
+            out += MediaSection(R.string.media_section_video, rows)
+        } else if (v != null) {
+            // The first "video" stream is the cover picture; the framework reader may still find a real video track.
+            if (fwVideo.isNotEmpty()) out += MediaSection(R.string.media_section_video, fwVideo)
+            val rows = mutableListOf<MediaRow>()
+            rows += MediaRow(R.string.media_codec, v.codecName)
+            if (v.frameWidth > 0 && v.frameHeight > 0) rows += MediaRow(R.string.media_resolution, "${v.frameWidth} × ${v.frameHeight}")
+            out += MediaSection(R.string.media_section_cover, rows)
+        } else if (fwVideo.isNotEmpty()) {
+            out += MediaSection(R.string.media_section_video, fwVideo)
+        }
+
+        // Subtitle tracks.
+        if (ff.subtitleStreams.isNotEmpty()) {
+            val rows = ff.subtitleStreams.mapIndexed { i, st ->
+                val value = listOfNotNull(languageName(st.language), st.codecName, st.title.clean(), flags(st.disposition, res)).joinToString(" · ")
+                MediaRow(R.string.media_subtitles, value, labelText = res?.getString(R.string.media_subtitle_track_n, i + 1) ?: "#${i + 1}")
+            }
+            out += MediaSection(R.string.media_section_subtitles, rows)
+        }
+
+        // Chapters: start time and title.
+        if (ff.chapters.isNotEmpty()) {
+            val rows = ff.chapters.mapIndexed { i, c ->
+                val name = c.title.clean() ?: res?.getString(R.string.media_chapter_n, i + 1) ?: "#${i + 1}"
+                val length = (c.end - c.start).takeIf { it > 0 }?.let { " · ${duration(it)}" } ?: ""
+                MediaRow(R.string.media_section_chapters, name + length, labelText = duration(c.start.coerceAtLeast(0)))
+            }
+            out += MediaSection(R.string.media_section_chapters, rows)
+        }
+        return out
+    }
+
+    /**
+     * A picture for the details sheet: a frame from the video, or the cover art of an audio file. Null when there is none.
+     * Blocking: call it off the main thread.
+     */
+    fun preview(path: String, video: Boolean, maxSide: Int = 1024): Bitmap? {
+        val bitmap: Bitmap = (
+            try {
+                if (video) videoFrame(path) else coverArt(path)
+            } catch (_: Throwable) {
+                null
+            }
+            ) ?: return null
+        return runCatching { scaleDown(bitmap, maxSide) }.getOrNull() ?: bitmap
+    }
+
+    private fun videoFrame(path: String): Bitmap? {
+        // The framework first (hardware decoder, cheap), then FFmpeg for codecs the phone cannot decode.
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(path)
+            val ms = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+            retriever.getFrameAtTime(ms / 3 * 1000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)?.let { return it }
+        } catch (_: Throwable) {
+        } finally {
+            runCatching { retriever.release() }
+        }
+        val info = probe(path) ?: return null
+        return try {
+            val v = info.videoStream
+            if (v != null && info.supportsFrameLoading && v.frameWidth.toLong() * v.frameHeight <= MAX_FFMPEG_FRAME_PIXELS) info.getFrame() else null
+        } catch (_: Throwable) {
+            null
+        } finally {
+            runCatching { info.release() }
+        }
+    }
+
+    private fun coverArt(path: String): Bitmap? {
+        var bytes: ByteArray? = null
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(path)
+            bytes = retriever.embeddedPicture
+        } catch (_: Throwable) {
+        } finally {
+            runCatching { retriever.release() }
+        }
+        if (bytes == null) {
+            // FFmpeg also reads the pictures inside FLAC, Ogg and Opus files.
+            val thumbs = MediaThumbnailRetriever()
+            try {
+                thumbs.setDataSource(path)
+                bytes = thumbs.getEmbeddedPicture()
+            } catch (_: Throwable) {
+            } finally {
+                runCatching { thumbs.release() }
+            }
+        }
+        return bytes?.let { decodeSampled(it) }
+    }
+
+    private fun decodeSampled(bytes: ByteArray, maxSide: Int = 1024): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        var sample = 1
+        while (bounds.outWidth / sample > maxSide * 2 || bounds.outHeight / sample > maxSide * 2) sample *= 2
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
+    }
+
+    private fun scaleDown(b: Bitmap, maxSide: Int): Bitmap {
+        val longest = maxOf(b.width, b.height)
+        if (longest <= maxSide) return b
+        val k = maxSide.toFloat() / longest
+        val out = Bitmap.createScaledBitmap(b, (b.width * k).toInt().coerceAtLeast(1), (b.height * k).toInt().coerceAtLeast(1), true)
+        if (out !== b) b.recycle()
+        return out
+    }
+
+    private fun String?.clean(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
+
+    private val iso639B = mapOf(
+        "alb" to "sqi", "arm" to "hye", "baq" to "eus", "bur" to "mya", "chi" to "zho", "cze" to "ces", "dut" to "nld",
+        "fre" to "fra", "geo" to "kat", "ger" to "deu", "gre" to "ell", "ice" to "isl", "mac" to "mkd", "mao" to "mri",
+        "may" to "msa", "per" to "fas", "rum" to "ron", "slo" to "slk", "tib" to "bod", "wel" to "cym",
+    )
+
+    /** "Persian (fas)" for an ISO 639 code, or the code itself when Android does not know the language; null for "und". */
+    private fun languageName(code: String?): String? {
+        val raw = code.clean()?.lowercase() ?: return null
+        if (raw == "und" || raw == "zxx") return null
+        val tag = iso639B[raw] ?: raw
+        val name = Locale.forLanguageTag(tag).getDisplayLanguage(Locale.getDefault())
+        return if (name.isNullOrBlank() || name.equals(tag, ignoreCase = true)) raw
+        else name.replaceFirstChar { it.uppercase() } + " ($raw)"
+    }
+
+    private fun flags(disposition: Int, res: Resources?): String? {
+        if (res == null) return null
+        val names = buildList {
+            if ((disposition and DISP_DEFAULT) != 0) add(res.getString(R.string.media_flag_default))
+            if ((disposition and DISP_FORCED) != 0) add(res.getString(R.string.media_flag_forced))
+            if ((disposition and DISP_DUB) != 0) add(res.getString(R.string.media_flag_dub))
+            if ((disposition and DISP_ORIGINAL) != 0) add(res.getString(R.string.media_flag_original))
+            if ((disposition and DISP_COMMENT) != 0) add(res.getString(R.string.media_flag_comment))
+            if ((disposition and DISP_HEARING_IMPAIRED) != 0) add(res.getString(R.string.media_flag_hearing_impaired))
+            if ((disposition and DISP_VISUAL_IMPAIRED) != 0) add(res.getString(R.string.media_flag_visual_impaired))
+            if ((disposition and DISP_LYRICS) != 0) add(res.getString(R.string.media_flag_lyrics))
+        }
+        return names.takeIf { it.isNotEmpty() }?.joinToString(", ")
+    }
+
+    /** "6 (5.1(side))": the channel count, then FFmpeg's layout name when it has one. */
+    private fun channelsText(count: Int, layout: String?): String {
+        val l = layout.clean()
+        return if (l == null || l.contains("channel", ignoreCase = true)) channels(count) else "$count ($l)"
+    }
+
+    /** FFmpeg sample format names ("fltp", "s16") with what they mean. */
+    private fun sampleFormat(name: String?): String? {
+        val s = name.clean() ?: return null
+        val planar = s.endsWith("p")
+        val base = if (planar) s.removeSuffix("p") else s
+        val meaning = when (base) {
+            "u8" -> "8-bit"
+            "s16" -> "16-bit"
+            "s32" -> "32-bit"
+            "s64" -> "64-bit"
+            "flt" -> "32-bit float"
+            "dbl" -> "64-bit float"
+            else -> return s
+        }
+        return if (planar) "$s ($meaning, planar)" else "$s ($meaning)"
+    }
+
+    private fun gcd(a: Int, b: Int): Int = if (b == 0) a else gcd(b, a % b)
+
+    /** "16:9" for a simple ratio, otherwise "2.39:1". */
+    private fun aspectRatio(w: Int, h: Int): String {
+        val g = gcd(w, h).coerceAtLeast(1)
+        val rw = w / g
+        val rh = h / g
+        return if (rw <= 32 && rh <= 32) "$rw:$rh" else String.format(Locale.US, "%.2f:1", w.toDouble() / h)
     }
 
     private fun readTracks(path: String, audio: MutableList<MediaRow>, video: MutableList<MediaRow>, bitsPerSample: Int?, captureFps: String?) {

@@ -23,4 +23,24 @@
     <string name="media_composer">Composer</string>
     <string name="media_writer">Writer</string>
     <string name="media_location">Location</string>
+    <!-- File details through FFmpeg -->
+    <string name="media_section_subtitles">Subtitles</string>
+    <string name="media_section_chapters">Chapters</string>
+    <string name="media_section_cover">Cover art</string>
+    <string name="media_mime_type">MIME type</string>
+    <string name="media_aspect_ratio">Aspect ratio</string>
+    <string name="media_rotation">Rotation</string>
+    <string name="media_language">Language</string>
+    <string name="media_sample_format">Sample format</string>
+    <string name="media_flags">Flags</string>
+    <string name="media_flag_default">Default</string>
+    <string name="media_flag_forced">Forced</string>
+    <string name="media_flag_dub">Dubbed</string>
+    <string name="media_flag_original">Original</string>
+    <string name="media_flag_comment">Commentary</string>
+    <string name="media_flag_hearing_impaired">Hearing impaired</string>
+    <string name="media_flag_visual_impaired">Visual impaired</string>
+    <string name="media_flag_lyrics">Lyrics</string>
+    <string name="media_chapter_n">Chapter %1$d</string>
+    <string name="media_preview">Preview</string>
 </resources>

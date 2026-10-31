@@ -11,4 +11,9 @@
     <string name="media_decoder_sw_hint">仅软件 MediaCodec</string>
     <string name="media_decoder_ffmpeg">FFmpeg</string>
     <string name="media_decoder_ffmpeg_hint">仅内置 FFmpeg</string>
+    <string name="media_decoder_advanced">高级</string>
+    <string name="media_decoder_advanced_hint">分别设置视频和音频解码器</string>
+    <string name="media_decoder_simple_hw_hint">视频用硬件解码,音频自动</string>
+    <string name="media_decoder_simple_sw_hint">视频用软件解码,音频自动</string>
+    <string name="media_decoder_simple_ffmpeg_hint">视频和音频都用 FFmpeg</string>
 </resources>

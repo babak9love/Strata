@@ -23,4 +23,24 @@
     <string name="media_composer">آهنگساز</string>
     <string name="media_writer">نویسنده</string>
     <string name="media_location">مکان</string>
+    <!-- File details through FFmpeg -->
+    <string name="media_section_subtitles">زیرنویس‌ها</string>
+    <string name="media_section_chapters">فصل‌ها</string>
+    <string name="media_section_cover">تصویر جلد</string>
+    <string name="media_mime_type">نوع MIME</string>
+    <string name="media_aspect_ratio">نسبت تصویر</string>
+    <string name="media_rotation">چرخش</string>
+    <string name="media_language">زبان</string>
+    <string name="media_sample_format">فرمت نمونه</string>
+    <string name="media_flags">ویژگی‌ها</string>
+    <string name="media_flag_default">پیش‌فرض</string>
+    <string name="media_flag_forced">اجباری</string>
+    <string name="media_flag_dub">دوبله</string>
+    <string name="media_flag_original">اصلی</string>
+    <string name="media_flag_comment">توضیحات</string>
+    <string name="media_flag_hearing_impaired">ویژه ناشنوایان</string>
+    <string name="media_flag_visual_impaired">ویژه نابینایان</string>
+    <string name="media_flag_lyrics">متن آهنگ</string>
+    <string name="media_chapter_n">فصل %1$d</string>
+    <string name="media_preview">پیش‌نمایش</string>
 </resources>

@@ -88,3 +88,6 @@
 
 -dontoptimize
 -keep class com.android.tools.r8.** { *; }
+
+# NextLib (FFmpeg decoders and media info): its native code calls back into these classes by name.
+-keep class io.github.anilbeesetti.nextlib.** { *; }

@@ -26,21 +26,38 @@ jobs:
 
       - name: Verify the bundled FFmpeg
         run: |
-          aar=app/libs/media3ext-release.aar
-          if [ ! -f "$aar" ]; then
-            echo "::error::$aar is missing. Rebuild it from https://github.com/anilbeesetti/nextlib (see app/libs/README.md)."
-            exit 1
-          fi
-          for abi in arm64-v8a armeabi-v7a x86_64; do
-            unzip -l "$aar" | grep -q "jni/$abi/libavcodec.so" || { echo "::error::$aar has no $abi FFmpeg libraries."; exit 1; }
+          dec=app/libs/media3ext-release.aar
+          inf=app/libs/mediainfo-release.aar
+          for aar in "$dec" "$inf"; do
+            if [ ! -f "$aar" ]; then
+              echo "::error::$aar is missing. Rebuild it from https://github.com/anilbeesetti/nextlib (see app/libs/README.md)."
+              exit 1
+            fi
           done
-          ver=$(unzip -p "$aar" jni/arm64-v8a/libavcodec.so | strings | grep -o 'FFmpeg version [0-9.]*' | head -1)
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            for lib in libavcodec libavutil libswscale libswresample libmedia3ext; do
+              unzip -l "$dec" | grep -q "jni/$abi/$lib.so" || { echo "::error::$dec has no $abi $lib.so."; exit 1; }
+            done
+            for lib in libavformat libmediainfo; do
+              unzip -l "$inf" | grep -q "jni/$abi/$lib.so" || { echo "::error::$inf has no $abi $lib.so."; exit 1; }
+            done
+            # Both AARs ship these three; the app keeps the first one it finds, so they must be the same build.
+            for lib in libavcodec libavutil libswscale; do
+              a=$(unzip -p "$dec" "jni/$abi/$lib.so" | sha256sum | cut -d' ' -f1)
+              b=$(unzip -p "$inf" "jni/$abi/$lib.so" | sha256sum | cut -d' ' -f1)
+              if [ "$a" != "$b" ]; then
+                echo "::error::$abi $lib.so differs between the two AARs. Build both from the same NextLib commit."
+                exit 1
+              fi
+            done
+          done
+          ver=$(unzip -p "$dec" jni/arm64-v8a/libavcodec.so | strings | grep -o 'FFmpeg version [0-9.]*' | head -1)
           echo "Bundled: $ver"
           if [ "$ver" != "FFmpeg version 9.0.1" ]; then
-            echo "::error::Expected FFmpeg 9.0.1 in $aar, found: ${ver:-nothing}"
+            echo "::error::Expected FFmpeg 9.0.1 in $dec, found: ${ver:-nothing}"
             exit 1
           fi
-          echo "FFmpeg check passed: $ver" >> "$GITHUB_STEP_SUMMARY"
+          echo "FFmpeg check passed: $ver (decoders and media info use the same libraries)" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/setup-java@v6
         with:

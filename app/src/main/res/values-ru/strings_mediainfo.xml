@@ -23,4 +23,24 @@
     <string name="media_composer">Композитор</string>
     <string name="media_writer">Автор</string>
     <string name="media_location">Место</string>
+    <!-- File details through FFmpeg -->
+    <string name="media_section_subtitles">Субтитры</string>
+    <string name="media_section_chapters">Главы</string>
+    <string name="media_section_cover">Обложка</string>
+    <string name="media_mime_type">Тип MIME</string>
+    <string name="media_aspect_ratio">Соотношение сторон</string>
+    <string name="media_rotation">Поворот</string>
+    <string name="media_language">Язык</string>
+    <string name="media_sample_format">Формат сэмплов</string>
+    <string name="media_flags">Признаки</string>
+    <string name="media_flag_default">По умолчанию</string>
+    <string name="media_flag_forced">Принудительные</string>
+    <string name="media_flag_dub">Дубляж</string>
+    <string name="media_flag_original">Оригинал</string>
+    <string name="media_flag_comment">Комментарии</string>
+    <string name="media_flag_hearing_impaired">Для слабослышащих</string>
+    <string name="media_flag_visual_impaired">Для слабовидящих</string>
+    <string name="media_flag_lyrics">Текст песни</string>
+    <string name="media_chapter_n">Глава %1$d</string>
+    <string name="media_preview">Предпросмотр</string>
 </resources>

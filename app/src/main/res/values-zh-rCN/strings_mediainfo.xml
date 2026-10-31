@@ -23,4 +23,24 @@
     <string name="media_composer">作曲</string>
     <string name="media_writer">作者</string>
     <string name="media_location">位置</string>
+    <!-- File details through FFmpeg -->
+    <string name="media_section_subtitles">字幕</string>
+    <string name="media_section_chapters">章节</string>
+    <string name="media_section_cover">封面</string>
+    <string name="media_mime_type">MIME 类型</string>
+    <string name="media_aspect_ratio">宽高比</string>
+    <string name="media_rotation">旋转</string>
+    <string name="media_language">语言</string>
+    <string name="media_sample_format">采样格式</string>
+    <string name="media_flags">标志</string>
+    <string name="media_flag_default">默认</string>
+    <string name="media_flag_forced">强制</string>
+    <string name="media_flag_dub">配音</string>
+    <string name="media_flag_original">原声</string>
+    <string name="media_flag_comment">评论</string>
+    <string name="media_flag_hearing_impaired">听障辅助</string>
+    <string name="media_flag_visual_impaired">视障辅助</string>
+    <string name="media_flag_lyrics">歌词</string>
+    <string name="media_chapter_n">第 %1$d 章</string>
+    <string name="media_preview">预览</string>
 </resources>
