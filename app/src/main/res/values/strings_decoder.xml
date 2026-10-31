@@ -16,4 +16,5 @@
     <string name="media_decoder_simple_hw_hint">Hardware video, audio stays automatic</string>
     <string name="media_decoder_simple_sw_hint">Software video, audio stays automatic</string>
     <string name="media_decoder_simple_ffmpeg_hint">FFmpeg for video and audio</string>
+    <string name="media_decoder_in_use">In use: %1$s</string>
 </resources>

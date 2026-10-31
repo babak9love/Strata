@@ -9,9 +9,9 @@ import coil3.gif.AnimatedImageDecoder
 import coil3.gif.GifDecoder
 import coil3.request.crossfade
 import coil3.svg.SvgDecoder
-import coil3.video.VideoFrameDecoder
 import dev.cluvex.strata.core.media.ApkIconFetcher
 import dev.cluvex.strata.core.media.ApkIconKeyer
+import dev.cluvex.strata.core.media.FfmpegVideoFrameDecoder
 import dev.cluvex.strata.core.media.FolderBadgeFetcher
 import dev.cluvex.strata.core.media.FolderBadgeKeyer
 import dev.cluvex.strata.core.remote.SafFileSystem
@@ -42,7 +42,7 @@ class StrataApp : Application(), SingletonImageLoader.Factory {
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         ImageLoader.Builder(context)
             .components {
-                add(VideoFrameDecoder.Factory())
+                add(FfmpegVideoFrameDecoder.Factory())
                 if (Build.VERSION.SDK_INT >= 28) add(AnimatedImageDecoder.Factory()) else add(GifDecoder.Factory())
                 add(SvgDecoder.Factory())
                 add(ApkIconFetcher.Factory())

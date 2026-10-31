@@ -16,4 +16,5 @@
     <string name="media_decoder_simple_hw_hint">视频用硬件解码,音频自动</string>
     <string name="media_decoder_simple_sw_hint">视频用软件解码,音频自动</string>
     <string name="media_decoder_simple_ffmpeg_hint">视频和音频都用 FFmpeg</string>
+    <string name="media_decoder_in_use">正在使用:%1$s</string>
 </resources>

@@ -27,13 +27,13 @@ import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Headphones
-import androidx.compose.material.icons.rounded.Memory
 import android.content.ContextWrapper
 import android.content.Context
 import android.app.Activity
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButton
@@ -335,12 +335,6 @@ fun MusicPlayerSheet(
                     activeContainer = MaterialTheme.colorScheme.primary,
                     activeTint = MaterialTheme.colorScheme.onPrimary,
                 )
-                // Decoder: hardware, software or FFmpeg for the audio (there is no video here, so no advanced part).
-                PlaybackService.decoderManager()?.let {
-                    IconButton(onClick = { decoderDialog = true }) {
-                        Icon(Icons.Rounded.Memory, contentDescription = stringResource(R.string.media_decoder_title))
-                    }
-                }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = { BackgroundSession.end(); c.stop(); c.clearMediaItems(); onDismiss() }) { Text(stringResource(R.string.common_stop)) }
             }
@@ -383,6 +377,16 @@ fun MusicPlayerSheet(
                                 info = controller?.currentMediaItem?.mediaId ?: path
                             },
                         )
+                        if (controller != null) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.media_decoder_title)) },
+                                leadingIcon = { Icon(Icons.Rounded.Memory, contentDescription = null) },
+                                onClick = {
+                                    menu = false
+                                    decoderDialog = true
+                                },
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.media_resume_playback)) },
                             trailingIcon = { Switch(checked = resume, onCheckedChange = null) },

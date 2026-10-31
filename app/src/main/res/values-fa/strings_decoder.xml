@@ -16,4 +16,5 @@
     <string name="media_decoder_simple_hw_hint">تصویر سخت‌افزاری، صدا خودکار</string>
     <string name="media_decoder_simple_sw_hint">تصویر نرم‌افزاری، صدا خودکار</string>
     <string name="media_decoder_simple_ffmpeg_hint">FFmpeg برای تصویر و صدا</string>
+    <string name="media_decoder_in_use">در حال استفاده: %1$s</string>
 </resources>

@@ -35,7 +35,7 @@ native/build.sh
 
 ## FFmpeg
 
-The video player can use FFmpeg 9.0.1 (hardware, software or FFmpeg decoder, chosen per video and per audio track from the decoder button in the top bar). The decoders come from [NextLib](https://github.com/anilbeesetti/nextlib) and are bundled as `app/libs/media3ext-release.aar`; see `app/libs/README.md` for how it was built and how to rebuild it. The "Video info" and "Audio info" sheets also use FFmpeg (`mediainfo-release.aar`): every audio track, subtitles, chapters, track languages and flags, a preview frame and cover art.
+The video player can use FFmpeg 9.0.1 (hardware, software or FFmpeg decoder, chosen per video and per audio track from the decoder button in the top bar; the music player has the same choice in its menu, and the file list falls back to an FFmpeg frame for the thumbnail of a video the phone cannot decode, and with Auto it falls back to FFmpeg for audio the phone cannot decode). The decoders come from [NextLib](https://github.com/anilbeesetti/nextlib) and are bundled as `app/libs/media3ext-release.aar`; see `app/libs/README.md` for how it was built and how to rebuild it. The "Video info" and "Audio info" sheets also use FFmpeg (`mediainfo-release.aar`): every audio track, subtitles, chapters, track languages and flags, a preview frame and cover art.
 
 ## Support the developer
 

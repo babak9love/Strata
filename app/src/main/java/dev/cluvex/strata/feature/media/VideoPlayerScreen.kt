@@ -179,7 +179,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-@OptIn(UnstableApi::class)
+@androidx.annotation.OptIn(UnstableApi::class)
 class VideoPlayerViewModel(app: Application) : AndroidViewModel(app) {
 
     var player by mutableStateOf<ExoPlayer?>(null)

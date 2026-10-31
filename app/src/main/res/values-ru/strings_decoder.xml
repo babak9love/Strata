@@ -16,4 +16,5 @@
     <string name="media_decoder_simple_hw_hint">Видео аппаратно, звук автоматически</string>
     <string name="media_decoder_simple_sw_hint">Видео программно, звук автоматически</string>
     <string name="media_decoder_simple_ffmpeg_hint">FFmpeg для видео и звука</string>
+    <string name="media_decoder_in_use">Используется: %1$s</string>
 </resources>

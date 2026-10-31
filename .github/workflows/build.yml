@@ -24,6 +24,10 @@ jobs:
 
       - uses: actions/checkout@v7
 
+      # Uploading through the GitHub website (or some Git clients) drops the executable bit of scripts.
+      - name: Make the build scripts executable
+        run: chmod +x gradlew native/*.sh
+
       - name: Verify the bundled FFmpeg
         run: |
           dec=app/libs/media3ext-release.aar
@@ -80,10 +84,10 @@ jobs:
         run: cargo install cargo-ndk --locked
 
       - name: Fetch PDFium
-        run: bash native/fetch-pdfium.sh
+        run: native/fetch-pdfium.sh
 
       - name: Build the native core
-        run: bash native/build.sh
+        run: native/build.sh
 
       - name: Build the debug APK
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}

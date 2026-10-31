@@ -50,13 +50,11 @@ private fun presetOf(video: DecoderMode, audio: DecoderMode): Preset? =
     Preset.entries.firstOrNull { it.video == video && it.audio == audio }
 
 /**
- * Picks the decoder for the video. The top list changes video and audio together; "Advanced" opens
- * two lists to set the video decoder and the audio decoder separately (for example HW video with FFmpeg audio).
- *
- * With [audioOnly] (the music player) there is no video: the dialog is a single list that sets only the audio
- * decoder, and the "Advanced" part is left out.
+ * Picks the decoder. For a video the top list changes video and audio together and "Advanced" opens two lists to
+ * set them separately (for example HW video with FFmpeg audio). With [audioOnly] (the music player) there is just
+ * the audio list: Auto already falls back to FFmpeg for what the phone cannot decode, the other modes force one decoder.
  */
-@OptIn(UnstableApi::class)
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun DecoderDialog(manager: DecoderManager, audioOnly: Boolean = false, onDismiss: () -> Unit) {
     var video by remember { mutableStateOf(manager.videoMode) }
@@ -64,6 +62,9 @@ fun DecoderDialog(manager: DecoderManager, audioOnly: Boolean = false, onDismiss
     val preset = presetOf(video, audio)
     // A combination the simple list cannot express (set earlier in Advanced) opens the advanced part right away.
     var advanced by remember { mutableStateOf(presetOf(manager.videoMode, manager.audioMode) == null) }
+    // The decoders that were running when the dialog opened (Auto resolves to one of hardware, software or FFmpeg).
+    val activeVideo = remember { manager.activeVideoMode }
+    val activeAudio = remember { manager.activeAudioMode }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
@@ -86,60 +87,68 @@ fun DecoderDialog(manager: DecoderManager, audioOnly: Boolean = false, onDismiss
                 }
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     if (audioOnly) {
+                        activeAudio?.let { InUseLine(modeLabel(it)) }
                         DecoderMode.entries.forEach { mode ->
                             DecoderRow(modeLabel(mode), modeHint(mode), audio == mode) {
                                 manager.selectAudioDecoder(mode)
                                 audio = mode
                             }
                         }
-                        return@Column
-                    }
-                    Preset.entries.forEach { entry ->
-                        DecoderRow(presetLabel(entry), presetHint(entry), preset == entry) {
-                            manager.selectVideoDecoder(entry.video)
-                            manager.selectAudioDecoder(entry.audio)
-                            video = entry.video
-                            audio = entry.audio
-                        }
-                    }
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { advanced = !advanced }
-                            .padding(start = 24.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                stringResource(R.string.media_decoder_advanced),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                            Text(
-                                stringResource(R.string.media_decoder_advanced_hint),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Icon(
-                            Icons.Rounded.KeyboardArrowDown,
-                            contentDescription = null,
-                            modifier = Modifier.rotate(if (advanced) 180f else 0f),
+                    } else {
+                        val videoTitle = stringResource(R.string.media_decoder_video)
+                        val audioTitle = stringResource(R.string.media_decoder_audio)
+                        val inUse = listOfNotNull(
+                            activeVideo?.let { "$videoTitle: ${modeLabel(it)}" },
+                            activeAudio?.let { "$audioTitle: ${modeLabel(it)}" },
                         )
-                    }
-                    if (advanced) {
-                        SectionTitle(stringResource(R.string.media_decoder_video))
-                        DecoderMode.entries.forEach { mode ->
-                            DecoderRow(modeLabel(mode), modeHint(mode), video == mode) {
-                                manager.selectVideoDecoder(mode)
-                                video = mode
+                        if (inUse.isNotEmpty()) InUseLine(inUse.joinToString(" · "))
+                        Preset.entries.forEach { entry ->
+                            DecoderRow(presetLabel(entry), presetHint(entry), preset == entry) {
+                                manager.selectVideoDecoder(entry.video)
+                                manager.selectAudioDecoder(entry.audio)
+                                video = entry.video
+                                audio = entry.audio
                             }
                         }
-                        SectionTitle(stringResource(R.string.media_decoder_audio))
-                        DecoderMode.entries.forEach { mode ->
-                            DecoderRow(modeLabel(mode), modeHint(mode), audio == mode) {
-                                manager.selectAudioDecoder(mode)
-                                audio = mode
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { advanced = !advanced }
+                                .padding(start = 24.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    stringResource(R.string.media_decoder_advanced),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                Text(
+                                    stringResource(R.string.media_decoder_advanced_hint),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Icon(
+                                Icons.Rounded.KeyboardArrowDown,
+                                contentDescription = null,
+                                modifier = Modifier.rotate(if (advanced) 180f else 0f),
+                            )
+                        }
+                        if (advanced) {
+                            SectionTitle(videoTitle)
+                            DecoderMode.entries.forEach { mode ->
+                                DecoderRow(modeLabel(mode), modeHint(mode), video == mode) {
+                                    manager.selectVideoDecoder(mode)
+                                    video = mode
+                                }
+                            }
+                            SectionTitle(audioTitle)
+                            DecoderMode.entries.forEach { mode ->
+                                DecoderRow(modeLabel(mode), modeHint(mode), audio == mode) {
+                                    manager.selectAudioDecoder(mode)
+                                    audio = mode
+                                }
                             }
                         }
                     }
@@ -188,6 +197,16 @@ private fun modeHint(mode: DecoderMode): String = stringResource(
         DecoderMode.FFMPEG -> R.string.media_decoder_ffmpeg_hint
     },
 )
+
+@Composable
+private fun InUseLine(text: String) {
+    Text(
+        stringResource(R.string.media_decoder_in_use, text),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 4.dp),
+    )
+}
 
 @Composable
 private fun SectionTitle(text: String) {

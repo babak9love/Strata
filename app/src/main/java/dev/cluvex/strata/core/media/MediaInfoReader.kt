@@ -13,7 +13,11 @@ import io.github.anilbeesetti.nextlib.mediainfo.MediaInfo
 import io.github.anilbeesetti.nextlib.mediainfo.MediaInfoBuilder
 import io.github.anilbeesetti.nextlib.mediainfo.MediaThumbnailRetriever
 import java.io.File
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
 
 /** One labelled value in the media details list. [labelText] replaces [label] when the label is built at runtime (a chapter time, "Subtitle 2"). */
 data class MediaRow(@StringRes val label: Int, val value: String, val labelText: String? = null)
@@ -99,7 +103,8 @@ object MediaInfoReader {
             tag(R.string.media_album_artist, MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST)
             tag(R.string.media_genre, MediaMetadataRetriever.METADATA_KEY_GENRE)
             tag(R.string.media_year, MediaMetadataRetriever.METADATA_KEY_YEAR)
-            if (meta(MediaMetadataRetriever.METADATA_KEY_YEAR) == null) tag(R.string.media_year, MediaMetadataRetriever.METADATA_KEY_DATE)
+            // The creation date, readable. Files without one carry a placeholder (1904 in MP4, 1970), which is dropped.
+            dateText(meta(MediaMetadataRetriever.METADATA_KEY_DATE))?.let { tags += MediaRow(R.string.media_date, it) }
             tag(R.string.media_track, MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)
             tag(R.string.media_disc, MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER)
             tag(R.string.media_composer, MediaMetadataRetriever.METADATA_KEY_COMPOSER)
@@ -261,6 +266,26 @@ object MediaInfoReader {
         } finally {
             runCatching { retriever.release() }
         }
+        return ffmpegVideoFrame(path)
+    }
+
+    /**
+     * A frame (at a third of the video) decoded by FFmpeg alone, scaled to at most [maxSide] pixels: for videos the
+     * phone's own decoders cannot open, such as the thumbnails of the file list. Null when FFmpeg cannot decode it either.
+     * Blocking: call it off the main thread.
+     */
+    fun ffmpegFrame(path: String, maxSide: Int = 512): Bitmap? {
+        val bitmap = (
+            try {
+                ffmpegVideoFrame(path)
+            } catch (_: Throwable) {
+                null
+            }
+            ) ?: return null
+        return runCatching { scaleDown(bitmap, maxSide) }.getOrNull() ?: bitmap
+    }
+
+    private fun ffmpegVideoFrame(path: String): Bitmap? {
         val info = probe(path) ?: return null
         return try {
             val v = info.videoStream
@@ -312,6 +337,26 @@ object MediaInfoReader {
         val out = Bitmap.createScaledBitmap(b, (b.width * k).toInt().coerceAtLeast(1), (b.height * k).toInt().coerceAtLeast(1), true)
         if (out !== b) b.recycle()
         return out
+    }
+
+    /**
+     * The date of [raw] in the phone's format ("Mar 14, 2025, 6:30 PM"), or null when it is empty or a placeholder.
+     * Android reports it as yyyyMMdd'T'HHmmss.SSS'Z' (UTC); a date before 1971 is never real (MP4 stores 1904, others 1970 for "none").
+     */
+    private fun dateText(raw: String?): String? {
+        val s = raw.clean() ?: return null
+        if (s.length >= 15) {
+            val parser = SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+                isLenient = false
+            }
+            val date = runCatching { parser.parse(s.substring(0, 15)) }.getOrNull() ?: return null
+            val year = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { time = date }.get(Calendar.YEAR)
+            return if (year < 1971) null else DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(date)
+        }
+        // A short value is a plain year or date.
+        val year = s.take(4).toIntOrNull() ?: return null
+        return if (year >= 1971) s else null
     }
 
     private fun String?.clean(): String? = this?.trim()?.takeIf { it.isNotEmpty() }

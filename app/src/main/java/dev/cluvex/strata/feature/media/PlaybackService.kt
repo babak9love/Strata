@@ -15,6 +15,8 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.DecoderManager
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaSession
@@ -35,8 +37,6 @@ import dev.cluvex.strata.MainActivity
 import dev.cluvex.strata.core.data.SettingsRepository
 import dev.cluvex.strata.core.media.ResumeKind
 import dev.cluvex.strata.core.media.ResumeListener
-import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.DecoderManager
-import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 
 @OptIn(UnstableApi::class)
 class PlaybackService : MediaSessionService() {
@@ -50,8 +50,8 @@ class PlaybackService : MediaSessionService() {
     @Volatile private var playAloneVideo = true
     private var exo: ExoPlayer? = null
 
-    /** Switches the audio decoder (hardware, software, FFmpeg) of the service's player; the music player's Decoder button uses it. */
-    private var decoderManager: DecoderManager? = null
+    /** Switches the audio decoder (hardware, software, FFmpeg); Auto already falls back to FFmpeg for what the phone cannot decode. */
+    private var decoders: DecoderManager? = null
     @Volatile private var seekBackMs = 5_000L
     @Volatile private var seekForwardMs = 15_000L
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -78,7 +78,7 @@ class PlaybackService : MediaSessionService() {
             .setHandleAudioBecomingNoisy(true)
             .build()
         dm.attach(player)
-        decoderManager = dm
+        decoders = dm
         scope.launch {
             SettingsRepository(applicationContext).settings.map { it.behavior.resumeAudio }.distinctUntilChanged()
                 .collect { resumeEnabled = it }
@@ -226,8 +226,8 @@ class PlaybackService : MediaSessionService() {
         resume?.saveNow()
         resume = null
         scope.cancel()
-        decoderManager?.detach()
-        decoderManager = null
+        decoders?.detach()
+        decoders = null
         session?.run {
             player.release()
             release()
@@ -239,6 +239,9 @@ class PlaybackService : MediaSessionService() {
 
     companion object {
         @Volatile private var instance: PlaybackService? = null
+
+        /** The decoder switch of the playing service, or null while it is not running. */
+        fun decoderManager(): DecoderManager? = instance?.decoders
 
         /** Extra of the notification's tap intent: open the player of whatever is playing, not just the app. */
         const val EXTRA_OPEN_PLAYER = "strata_open_player"
@@ -262,10 +265,6 @@ class PlaybackService : MediaSessionService() {
         fun stopPlayback() {
             instance?.exitPlayback()
         }
-
-        /** The audio decoder switch of the running service, or null if it is not running. Must be called on the main thread. */
-        @OptIn(UnstableApi::class)
-        fun decoderManager(): DecoderManager? = instance?.decoderManager
 
         /** Pauses whatever the service is playing (used by the sleep timer). Must be called on the main thread. */
         fun pausePlayback() {

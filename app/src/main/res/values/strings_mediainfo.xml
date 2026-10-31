@@ -43,4 +43,5 @@
     <string name="media_flag_lyrics">Lyrics</string>
     <string name="media_chapter_n">Chapter %1$d</string>
     <string name="media_preview">Preview</string>
+    <string name="media_date">Date</string>
 </resources>
