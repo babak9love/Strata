@@ -1,1 +1,4 @@
 *.aar binary
+*.sh text eol=lf
+gradlew text eol=lf
+*.bat text eol=crlf

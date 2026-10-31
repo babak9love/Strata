@@ -80,10 +80,10 @@ jobs:
         run: cargo install cargo-ndk --locked
 
       - name: Fetch PDFium
-        run: native/fetch-pdfium.sh
+        run: bash native/fetch-pdfium.sh
 
       - name: Build the native core
-        run: native/build.sh
+        run: bash native/build.sh
 
       - name: Build the debug APK
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
