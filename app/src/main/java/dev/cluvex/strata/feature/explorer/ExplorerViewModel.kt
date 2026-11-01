@@ -322,6 +322,12 @@ class ExplorerViewModel(
                 return@launch
             }
             val items = listing.items
+            if (!listing.viaRoot && !RemoteUri.isRemote(opened)) {
+                // folders deleted outside the app must not leave their custom icon behind
+                withContext(Dispatchers.IO) {
+                    dev.cluvex.strata.core.media.FolderBadgeStore.pruneMissingIn(opened, items.map { it.path })
+                }
+            }
             updatePane(pane) { p ->
                 val samePath = p.path == opened
                 val dir = directionOf(p.path, opened)
@@ -640,9 +646,16 @@ class ExplorerViewModel(
         runTask(tr(if (useBin) R.string.explorer_task_to_bin else R.string.explorer_task_deleting), {
             if (useBin) recycleBin.moveToTrash(items) else FileOperations.delete(items, access(ps.path, write = true, viaRoot = ps.viaRoot))
         }, sound = UiSound.TRASH) {
+            forgetFolderBadges(items)
             clearSelection(pane)
             refreshAll()
         }
+    }
+
+    /** Deleted folders lose their custom icon, so a new folder with the same name does not inherit it. */
+    private fun forgetFolderBadges(items: List<FileItem>) {
+        val gone = items.filter { it.isDirectory && !RemoteUri.isRemote(it.path) && !File(it.path).exists() }.map { it.path }
+        dev.cluvex.strata.core.media.FolderBadgeStore.forgetDeleted(gone)
     }
 
     fun canRecycleItems(items: List<FileItem>): Boolean {
@@ -667,6 +680,7 @@ class ExplorerViewModel(
         runTask(tr(if (useBin) R.string.explorer_task_to_bin else R.string.explorer_task_deleting), {
             if (useBin) recycleBin.moveToTrash(items) else FileOperations.delete(items, access(dir, write = true, viaRoot = false))
         }, sound = UiSound.TRASH) {
+            forgetFolderBadges(items)
             refreshAll()
             onDone()
         }

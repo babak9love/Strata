@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.layout.ContentScale
 import dev.cluvex.strata.core.media.ApkIcon
+import dev.cluvex.strata.core.media.AudioCover
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -199,7 +200,7 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
     var apkLoaded by remember(item.path, item.lastModified) { mutableStateOf(false) }
     val look = dev.cluvex.strata.ui.LocalSettings.current.appearance
     val dedicated = if (item.isDirectory) look.folderShaped else look.customFileIcons
-    // Custom icons on: no frame. Off: a framed tile, except the real APK icon (and image / video thumbnails, which fill the tile).
+    // Custom icons on: no frame. Off: a framed tile, except the real APK icon (and image / video / audio-cover thumbnails, which fill the tile).
     val framed = !dedicated && !apkLoaded
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
@@ -228,8 +229,11 @@ private fun Header(item: FileItem, kind: FileKind, local: Boolean, onCustomize: 
                     Icon(kind.icon, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(48.dp))
                 }
             }
-            if (local && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)) {
-                val model = remember(item.path) { item.path.toPath() }
+            if (local && (kind == FileKind.IMAGE || kind == FileKind.VIDEO || kind == FileKind.AUDIO)) {
+                // Audio: the cover embedded in the file (files without one keep the music icon behind). Same 56dp / 16dp tile as image and video.
+                val model: Any = remember(item.path, item.lastModified, kind) {
+                    if (kind == FileKind.AUDIO) AudioCover(item.path, item.lastModified) else item.path.toPath()
+                }
                 AsyncImage(
                     model = model,
                     contentDescription = null,

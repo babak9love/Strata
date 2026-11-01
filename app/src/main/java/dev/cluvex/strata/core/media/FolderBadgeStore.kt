@@ -24,7 +24,7 @@ data class FolderBadgeEntry(
  *  - "app:<package>"  the icon of an installed app
  *  - "auto"           a file inside the folder: its image / video / APK, else the file's own default icon
  *  - "img:<file>"     a PNG the user picked (copied into the app's private storage)
- * A folder with no entry keeps the automatic icon. Entries are keyed by path, so renaming or moving a folder drops its icon.
+ * A folder with no entry keeps the automatic icon. Entries are keyed by path, so renaming or moving a folder drops its icon; deleting a folder forgets it ([forgetDeleted]).
  */
 object FolderBadgeStore {
 
@@ -75,6 +75,38 @@ object FolderBadgeStore {
         val next = _specs.value - path
         _specs.value = next
         save(next)
+    }
+
+    /**
+     * A folder was deleted: forgets its icon, and the icons of any folders that were inside it, so a new folder
+     * created later with the same name starts with the automatic icon.
+     */
+    fun forgetDeleted(paths: Collection<String>) {
+        if (paths.isEmpty()) return
+        val doomed = _specs.value.keys.filter { key ->
+            paths.any { p ->
+                val base = p.trimEnd('/')
+                key == base || key.startsWith("$base/")
+            }
+        }
+        if (doomed.isEmpty()) return
+        doomed.forEach { deleteImageOf(it) }
+        val next = _specs.value - doomed.toSet()
+        _specs.value = next
+        save(next)
+    }
+
+    /**
+     * Called after [dir] was listed successfully: icons of its direct subfolders that are not in [listed] and really
+     * no longer exist (checked again on disk, so hidden folders are safe) were deleted outside the app. Forgets them.
+     */
+    fun pruneMissingIn(dir: String, listed: Collection<String>) {
+        val base = dir.trimEnd('/')
+        val present = listed.toHashSet()
+        val gone = _specs.value.keys.filter { key ->
+            key.substringBeforeLast('/', "") == base && key !in present && !File(key).exists()
+        }
+        if (gone.isNotEmpty()) forgetDeleted(gone)
     }
 
     /** The app / file choices for the settings backup. Own pictures are private files and are not included. */
