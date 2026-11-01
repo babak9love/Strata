@@ -296,8 +296,8 @@ fun FileTile(
                         onSuccess = { covered = true },
                         modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.medium),
                     )
-                    if (kind == FileKind.VIDEO) VideoBadge(item, Modifier.align(Alignment.BottomStart).padding(6.dp))
-                    if (kind == FileKind.AUDIO && covered) AudioBadge(item, Modifier.align(Alignment.BottomStart).padding(6.dp))
+                    if (kind == FileKind.VIDEO) VideoBadge(item, Modifier.align(Alignment.BottomStart).padding(if (list.gridColumns == 4) 4.dp else 6.dp), compact = list.gridColumns == 4)
+                    if (kind == FileKind.AUDIO && covered) AudioBadge(item, Modifier.align(Alignment.BottomStart).padding(if (list.gridColumns == 4) 4.dp else 6.dp), compact = list.gridColumns == 4)
                 }
                 apk -> ApkIconOrKind(item, iconSize, shape)
                 folderBadge -> FolderIconWithBadge(item, iconSize, shape)
