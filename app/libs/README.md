@@ -5,8 +5,8 @@ Two AARs built from the same NextLib commit. Both ship identical FFmpeg librarie
 
 | AAR | What it does | SHA-256 |
 |---|---|---|
-| `media3ext-release.aar` | FFmpeg decoders for Media3 / ExoPlayer and the hardware / software / FFmpeg decoder switch (`DecoderManager`) | `042d9e74edb483a7ee9321d24919183a2025d2fdf9ac73f677ed177211430ad4` |
-| `mediainfo-release.aar` | File details through FFmpeg (`MediaInfoBuilder`): every audio track, subtitles, chapters, language and flags, plus a preview frame and cover art | `c8bc780ce1471829c3767fcc8bd81c0dda3b4d29f57f962235e22ba577465ec8` |
+| `media3ext-release.aar` | FFmpeg decoders for Media3 / ExoPlayer and the hardware / software / FFmpeg decoder switch (`DecoderManager`) | `79345686479796c4c843574f307aa1754df4505d261178d2d105be3951096657` |
+| `mediainfo-release.aar` | File details through FFmpeg (`MediaInfoBuilder`): every audio track, subtitles, chapters, language and flags, plus a preview frame and cover art | `e1f51f0631a5d202d6cc5be6b21111ceab6ad98507af4431f8eca0061c6fc0e5` |
 
 - Source: https://github.com/anilbeesetti/nextlib (GPL-3.0), modules `media3ext` and `mediainfo`, built from `main`
 - FFmpeg 9.0.1 (LGPL v3 build, `--enable-version3`, no `--enable-gpl`), dav1d 1.5.4, mbedTLS 3.6.7
