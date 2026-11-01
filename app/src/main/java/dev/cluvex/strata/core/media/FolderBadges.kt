@@ -155,7 +155,7 @@ object FolderBadges {
 
     private fun videoFrame(file: File): Bitmap? {
         val r = MediaMetadataRetriever()
-        return try {
+        val frame = try {
             r.setDataSource(file.path)
             r.getFrameAtTime(1_000_000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
         } catch (_: Exception) {
@@ -163,6 +163,8 @@ object FolderBadges {
         } finally {
             runCatching { r.release() }
         }
+        // A video the phone cannot decode: FFmpeg can (slower, at most two at a time).
+        return frame ?: MediaInfoReader.ffmpegFrame(file.path, SIZE)
     }
 
     private fun installedAppIcon(context: Context, packages: List<String>): Bitmap? {

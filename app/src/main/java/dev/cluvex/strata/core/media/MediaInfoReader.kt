@@ -275,15 +275,21 @@ object MediaInfoReader {
      * Blocking: call it off the main thread.
      */
     fun ffmpegFrame(path: String, maxSide: Int = 512): Bitmap? {
-        val bitmap = (
+        // Software decoding is heavy: at most two at a time, whoever asks (thumbnails, folder icons).
+        ffmpegFrames.acquireUninterruptibly()
+        val bitmap = try {
             try {
                 ffmpegVideoFrame(path)
             } catch (_: Throwable) {
                 null
             }
-            ) ?: return null
+        } finally {
+            ffmpegFrames.release()
+        } ?: return null
         return runCatching { scaleDown(bitmap, maxSide) }.getOrNull() ?: bitmap
     }
+
+    private val ffmpegFrames = java.util.concurrent.Semaphore(2)
 
     private fun ffmpegVideoFrame(path: String): Bitmap? {
         val info = probe(path) ?: return null
