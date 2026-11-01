@@ -70,6 +70,7 @@ import coil3.decode.BitmapFactoryDecoder
 import coil3.request.ImageRequest
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.ApkIcon
+import dev.cluvex.strata.core.media.AudioCover
 import dev.cluvex.strata.core.media.FolderBadge
 import dev.cluvex.strata.core.model.FileItem
 import java.io.File
@@ -233,7 +234,7 @@ fun FileTile(
     val flashColor = colors.primary.copy(alpha = 0.32f)
     val shape = LocalSettings.current.appearance.iconShape.toShape()
     val kind = FileKinds.of(item)
-    val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)
+    val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO || kind == FileKind.AUDIO)
     val apk = showThumbnail && FileKinds.hasApkIcon(item)
     val folderBadge = showThumbnail && list.folderBadges && item.isDirectory
     val compact = !list.tileFrame && !picture
@@ -357,8 +358,11 @@ private fun trailingInfo(item: FileItem, list: ListPrefs): String? = when {
 @Composable
 private fun thumbnailModel(item: FileItem): Any {
     val context = LocalContext.current
-    return remember(item.path) {
-        if (item.extension == "gif" || item.extension == "webp") {
+    return remember(item.path, item.lastModified) {
+        if (FileKinds.of(item) == FileKind.AUDIO) {
+            // The cover picture inside the file; files without one keep the music icon showing behind.
+            AudioCover(item.path, item.lastModified)
+        } else if (item.extension == "gif" || item.extension == "webp") {
             ImageRequest.Builder(context).data(item.path.toPath()).decoderFactory(BitmapFactoryDecoder.Factory()).build()
         } else {
             item.path.toPath()
@@ -398,7 +402,7 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
                 ) {
                     Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.explorer_selected), tint = colors.onPrimary)
                 }
-                showThumbnail && settings.list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO) -> Box(
+                showThumbnail && settings.list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO || kind == FileKind.AUDIO) -> Box(
                     Modifier.size(iconSize),
                     contentAlignment = Alignment.Center,
                 ) {

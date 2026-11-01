@@ -28,6 +28,7 @@ object FolderBadges {
     private const val SIZE = 128
     private const val MAX_ENTRIES = 400
     private const val MAX_APK_TRIES = 3
+    private const val MAX_AUDIO_TRIES = 8
     private const val PHOTOS_PACKAGE = "com.google.android.apps.photos"
 
     private val imageFolders = setOf("pictures")
@@ -132,8 +133,9 @@ object FolderBadges {
 
     private val imageExt = setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "avif")
     private val videoExt = setOf("mp4", "mkv", "webm", "mov", "avi", "3gp", "m4v")
+    private val audioExt = setOf("mp3", "m4a", "flac", "ogg", "opus", "wav", "aac", "wma", "mka")
 
-    /** First image, else video, else APK inside the folder (by name; hidden files, whose name starts with a dot, are ignored), rendered as a small bitmap. */
+    /** First image, else video, else APK, else music cover inside the folder (by name; hidden files, whose name starts with a dot, are ignored), rendered as a small bitmap. */
     private fun contentIcon(context: Context, dir: File): Bitmap? {
         val files = dir.listFiles()?.asSequence()?.filter { it.isFile && !it.name.startsWith(".") }?.take(MAX_ENTRIES)?.sortedBy { it.name }?.toList() ?: return null
         files.firstOrNull { it.extension.lowercase() in imageExt }?.let { f ->
@@ -142,7 +144,14 @@ object FolderBadges {
         files.firstOrNull { it.extension.lowercase() in videoExt }?.let { f ->
             videoFrame(f)?.let { return it }
         }
-        return apkIcon(context, dir, skipHidden = true)
+        apkIcon(context, dir, skipHidden = true)?.let { return it }
+        // Last: the cover picture of a music file (the first few that have one).
+        var tries = 0
+        for (f in files.asSequence().filter { it.extension.lowercase() in audioExt }) {
+            AudioCovers.load(f.path, f.lastModified(), SIZE)?.let { return it }
+            if (++tries >= MAX_AUDIO_TRIES) break
+        }
+        return null
     }
 
     private fun decodeImage(file: File): Bitmap? {

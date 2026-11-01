@@ -182,7 +182,7 @@
     <string name="settings_descending_summary">Reverse the default order</string>
     <string name="settings_group_previews">Previews</string>
     <string name="settings_thumbnails">Thumbnails</string>
-    <string name="settings_thumbnails_summary">Pictures and videos show a small preview</string>
+    <string name="settings_thumbnails_summary">Pictures, videos and music covers show a small preview</string>
     <string name="settings_folder_badges">Folder badges</string>
     <string name="settings_folder_badges_summary">A small icon in the folder\'s corner, like the app or media it holds</string>
     <string name="settings_show_date">Show date</string>

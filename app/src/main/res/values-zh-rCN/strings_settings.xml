@@ -181,7 +181,7 @@
     <string name="settings_descending_summary">反转默认顺序</string>
     <string name="settings_group_previews">预览</string>
     <string name="settings_thumbnails">缩略图</string>
-    <string name="settings_thumbnails_summary">图片和视频显示小预览图</string>
+    <string name="settings_thumbnails_summary">图片、视频和音乐封面显示小预览图</string>
     <string name="settings_folder_badges">文件夹角标</string>
     <string name="settings_folder_badges_summary">在文件夹角落显示小图标，如其中的应用或媒体</string>
     <string name="settings_show_date">显示日期</string>

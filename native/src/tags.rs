@@ -8,7 +8,7 @@ use lofty::config::WriteOptions;
 use lofty::file::{AudioFile, TaggedFile, TaggedFileExt};
 use lofty::picture::{Picture, PictureType};
 use lofty::probe::Probe;
-use lofty::tag::{ItemKey, Tag};
+use lofty::tag::{ItemKey, Tag, TagType};
 use std::fs;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
@@ -96,6 +96,22 @@ fn set_text(tag: &mut Tag, key: ItemKey, value: &str) {
     }
 }
 
+/// ID3v2.4 has no TYER frame (the year lives in TDRC, the recording date), so for ID3v2 the year is written as the
+/// recording date; the other formats have a plain year/date field.
+fn set_year(tag: &mut Tag, value: &str) {
+    tag.remove_key(&ItemKey::Year);
+    tag.remove_key(&ItemKey::RecordingDate);
+    let v = value.trim();
+    if v.is_empty() {
+        return;
+    }
+    if tag.tag_type() == TagType::Id3v2 {
+        tag.insert_text(ItemKey::RecordingDate, v.to_string());
+    } else {
+        tag.insert_text(ItemKey::Year, v.to_string());
+    }
+}
+
 /// "3/12", "3", "/12" or "" -> (3, 12) style parts; anything that is not a number is dropped.
 fn parse_pair(s: &str) -> (Option<u32>, Option<u32>) {
     let mut it = s.splitn(2, '/');
@@ -128,7 +144,7 @@ fn apply(path: &str, f: &[String], cover_mode: i32, cover: Option<&[u8]>) -> Res
     set_text(tag, ItemKey::TrackArtist, &f[1]);
     set_text(tag, ItemKey::AlbumTitle, &f[2]);
     set_text(tag, ItemKey::AlbumArtist, &f[3]);
-    set_text(tag, ItemKey::Year, &f[4]);
+    set_year(tag, &f[4]);
     set_pair(tag, ItemKey::TrackNumber, ItemKey::TrackTotal, &f[5]);
     set_pair(tag, ItemKey::DiscNumber, ItemKey::DiscTotal, &f[6]);
     set_text(tag, ItemKey::Genre, &f[7]);

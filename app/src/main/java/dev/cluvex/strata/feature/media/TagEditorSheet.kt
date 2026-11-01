@@ -141,7 +141,7 @@ fun TagEditorSheet(path: String, onSaved: () -> Unit, onDismiss: () -> Unit) {
                     Field(R.string.media_album, tags.album, !saving) { tags = tags.copy(album = it) }
                     Field(R.string.media_album_artist, tags.albumArtist, !saving) { tags = tags.copy(albumArtist = it) }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Field(R.string.media_year, tags.year, !saving, Modifier.weight(1f), number = true) { tags = tags.copy(year = it) }
+                        Field(R.string.tag_editor_date, tags.year, !saving, Modifier.weight(1f), number = true) { tags = tags.copy(year = it) }
                         Field(R.string.media_track, tags.track, !saving, Modifier.weight(1f), hint = "3/12") { tags = tags.copy(track = it) }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

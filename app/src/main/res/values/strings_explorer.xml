@@ -255,7 +255,7 @@
     <string name="rename_extension">Extension</string>
     <string name="folder_badge_app">Icon of an app</string>
     <string name="folder_badge_package">Package name</string>
-    <string name="folder_badge_auto">A file inside the folder (image, video, APK or file icon)</string>
+    <string name="folder_badge_auto">A file inside the folder (image, video, APK, music cover or file icon)</string>
     <string name="folder_badge_image">My own picture</string>
     <string name="folder_badge_choose_image">Choose picture…</string>
     <string name="folder_badge_reset">Reset to default badge</string>

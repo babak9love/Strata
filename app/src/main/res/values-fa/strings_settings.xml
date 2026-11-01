@@ -181,7 +181,7 @@
     <string name="settings_descending_summary">معکوس کردن ترتیب پیش‌فرض</string>
     <string name="settings_group_previews">پیش‌نمایش‌ها</string>
     <string name="settings_thumbnails">تصاویر کوچک</string>
-    <string name="settings_thumbnails_summary">تصاویر و ویدیوها یک پیش‌نمایش کوچک نشان می‌دهند</string>
+    <string name="settings_thumbnails_summary">تصاویر، ویدیوها و کاور آهنگ‌ها یک پیش‌نمایش کوچک نشان می‌دهند</string>
     <string name="settings_folder_badges">نشان پوشه‌ها</string>
     <string name="settings_folder_badges_summary">یک نماد کوچک در گوشه‌ی پوشه، مثل برنامه یا رسانه‌ی داخل آن</string>
     <string name="settings_show_date">نمایش تاریخ</string>

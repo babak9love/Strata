@@ -242,7 +242,7 @@
     <string name="rename_extension">扩展名</string>
     <string name="folder_badge_app">应用图标</string>
     <string name="folder_badge_package">包名</string>
-    <string name="folder_badge_auto">文件夹内的文件（图片、视频、APK 或文件图标）</string>
+    <string name="folder_badge_auto">文件夹内的文件（图片、视频、APK、音乐封面或文件图标）</string>
     <string name="folder_badge_image">我自己的图片</string>
     <string name="folder_badge_choose_image">选择图片…</string>
     <string name="folder_badge_reset">恢复默认角标</string>

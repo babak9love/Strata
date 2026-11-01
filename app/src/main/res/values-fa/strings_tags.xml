@@ -6,4 +6,5 @@
     <string name="tag_editor_cover_remove">حذف کاور</string>
     <string name="tag_editor_save_failed">تگ‌ها ذخیره نشدند: %1$s</string>
     <string name="tag_editor_read_failed">تگ‌های این فایل خوانده نمی‌شوند.</string>
+    <string name="tag_editor_date">تاریخ ضبط</string>
 </resources>

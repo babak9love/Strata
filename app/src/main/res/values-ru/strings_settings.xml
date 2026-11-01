@@ -181,7 +181,7 @@
     <string name="settings_descending_summary">Обратный порядок сортировки</string>
     <string name="settings_group_previews">Превью</string>
     <string name="settings_thumbnails">Миниатюры</string>
-    <string name="settings_thumbnails_summary">Для изображений и видео показывается небольшое превью</string>
+    <string name="settings_thumbnails_summary">Для изображений, видео и обложек музыки показывается небольшое превью</string>
     <string name="settings_folder_badges">Значки на папках</string>
     <string name="settings_folder_badges_summary">Маленький значок в углу папки: приложение или медиа внутри</string>
     <string name="settings_show_date">Показывать дату</string>

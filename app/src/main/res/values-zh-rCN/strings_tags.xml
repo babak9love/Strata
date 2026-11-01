@@ -6,4 +6,5 @@
     <string name="tag_editor_cover_remove">移除封面</string>
     <string name="tag_editor_save_failed">无法保存标签：%1$s</string>
     <string name="tag_editor_read_failed">无法读取此文件的标签。</string>
+    <string name="tag_editor_date">录制日期</string>
 </resources>

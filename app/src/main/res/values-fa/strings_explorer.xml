@@ -255,7 +255,7 @@
     <string name="rename_extension">پسوند</string>
     <string name="folder_badge_app">آیکون یک برنامه</string>
     <string name="folder_badge_package">نام بسته (Package name)</string>
-    <string name="folder_badge_auto">یک فایل داخل پوشه (تصویر، ویدیو، APK یا آیکون فایل)</string>
+    <string name="folder_badge_auto">یک فایل داخل پوشه (تصویر، ویدیو، APK، کاور موزیک یا آیکون فایل)</string>
     <string name="folder_badge_image">تصویر دلخواه من</string>
     <string name="folder_badge_choose_image">انتخاب تصویر…</string>
     <string name="folder_badge_reset">بازگشت به نشان پیش‌فرض</string>
