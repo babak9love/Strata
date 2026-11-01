@@ -55,12 +55,12 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Tag editor for one audio file. [onSaved] runs after the file was rewritten (the player uses it to reload the item),
+ * Tag editor for one audio file. [onSaved] runs after the file was rewritten, with the tags and the cover now in it (the player shows them at once),
  * then the sheet closes itself through [onDismiss].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TagEditorSheet(path: String, onSaved: () -> Unit, onDismiss: () -> Unit) {
+fun TagEditorSheet(path: String, onSaved: (tags: AudioTags, cover: ByteArray?) -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -164,7 +164,7 @@ fun TagEditorSheet(path: String, onSaved: () -> Unit, onDismiss: () -> Unit) {
                                     saving = false
                                     if (result == null) {
                                         MediaScannerConnection.scanFile(context, arrayOf(path), null, null)
-                                        onSaved()
+                                        onSaved(tags, coverBytes)
                                         onDismiss()
                                     } else {
                                         error = context.getString(R.string.tag_editor_save_failed, result)

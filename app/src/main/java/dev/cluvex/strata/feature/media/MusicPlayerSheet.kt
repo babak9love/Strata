@@ -446,16 +446,31 @@ fun MusicPlayerSheet(
     tagEdit?.let { f ->
         TagEditorSheet(
             path = f,
-            // The file was rewritten: load it again so the title, artist and cover shown here and in the notification are the new ones.
-            onSaved = {
-                controller?.let { c ->
-                    val index = (0 until c.mediaItemCount).firstOrNull { c.getMediaItemAt(it).mediaId == f }
-                    if (index != null) {
-                        val wasCurrent = index == c.currentMediaItemIndex
-                        val position = c.currentPosition
-                        c.replaceMediaItem(index, songItem(File(f)))
-                        if (wasCurrent) c.seekTo(index, position)
+            // The file was rewritten: show the new title, artist and cover here at once, and give the player the same
+            // data (the notification too) instead of waiting for it to read the file again.
+            onSaved = { tags, cover ->
+                val fresh = MediaMetadata.Builder()
+                    .setTitle(tags.title.ifBlank { null })
+                    .setDisplayTitle(tags.title.ifBlank { File(f).nameWithoutExtension })
+                    .setArtist(tags.artist.ifBlank { null })
+                    .setAlbumTitle(tags.album.ifBlank { null })
+                    .setAlbumArtist(tags.albumArtist.ifBlank { null })
+                    .apply { if (cover != null) setArtworkData(cover, MediaMetadata.PICTURE_TYPE_FRONT_COVER) }
+                    .build()
+                val c = controller
+                val index = c?.let { ctl -> (0 until ctl.mediaItemCount).firstOrNull { ctl.getMediaItemAt(it).mediaId == f } }
+                if (c != null && index != null) {
+                    val wasCurrent = index == c.currentMediaItemIndex
+                    val position = c.currentPosition
+                    if (wasCurrent) {
+                        metadata = fresh
+                        artwork = cover?.let { b -> runCatching { BitmapFactory.decodeByteArray(b, 0, b.size)?.asImageBitmap() }.getOrNull() }
                     }
+                    c.replaceMediaItem(index, songItem(File(f)).buildUpon().setMediaMetadata(fresh).build())
+                    if (wasCurrent) c.seekTo(index, position)
+                } else if (f == path) {
+                    metadata = fresh
+                    artwork = cover?.let { b -> runCatching { BitmapFactory.decodeByteArray(b, 0, b.size)?.asImageBitmap() }.getOrNull() }
                 }
             },
             onDismiss = { tagEdit = null },
