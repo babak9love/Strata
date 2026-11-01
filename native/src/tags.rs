@@ -96,8 +96,8 @@ fn set_text(tag: &mut Tag, key: ItemKey, value: &str) {
     }
 }
 
-/// ID3v2.4 has no TYER frame (the year lives in TDRC, the recording date), so for ID3v2 the year is written as the
-/// recording date; the other formats have a plain year/date field.
+/// For ID3v2 the year is written as the recording date (TDRC); `add_tyer` adds the old TYER frame next to it afterwards.
+/// The other formats have a plain year/date field.
 fn set_year(tag: &mut Tag, value: &str) {
     tag.remove_key(&ItemKey::Year);
     tag.remove_key(&ItemKey::RecordingDate);
@@ -173,6 +173,78 @@ fn apply(path: &str, f: &[String], cover_mode: i32, cover: Option<&[u8]>) -> Res
         .map_err(|e| e.to_string())
 }
 
+fn synchsafe(b: &[u8]) -> usize {
+    ((b[0] as usize & 0x7f) << 21) | ((b[1] as usize & 0x7f) << 14) | ((b[2] as usize & 0x7f) << 7) | (b[3] as usize & 0x7f)
+}
+
+fn to_synchsafe(n: usize) -> [u8; 4] {
+    [((n >> 21) & 0x7f) as u8, ((n >> 14) & 0x7f) as u8, ((n >> 7) & 0x7f) as u8, (n & 0x7f) as u8]
+}
+
+/// Android's parser and Samsung Music read the year only from the old TYER frame, while newer players read TDRC.
+/// lofty writes just TDRC into an ID3v2.4 tag, so this puts a TYER frame next to it (best effort: on any doubt the file
+/// is left as lofty wrote it). It uses the padding lofty leaves after the frames, or grows the tag a little.
+fn add_tyer(path: &str, year: &str) {
+    let digits: String = year.chars().filter(|c| c.is_ascii_digit()).take(4).collect();
+    if digits.len() != 4 {
+        return;
+    }
+    let _ = (|| -> std::io::Result<()> {
+        use std::io::{Read, Seek, SeekFrom, Write};
+        const MAX_REWRITE: u64 = 64 * 1024 * 1024;
+        let mut f = fs::OpenOptions::new().read(true).write(true).open(path)?;
+        let mut head = [0u8; 10];
+        f.read_exact(&mut head)?;
+        // Only ID3v2.4 tags without unsynchronisation, an extended header or a footer.
+        if &head[0..3] != b"ID3" || head[3] != 4 || head[5] & 0xD0 != 0 {
+            return Ok(());
+        }
+        let size = synchsafe(&head[6..10]);
+        let mut body = vec![0u8; size];
+        f.read_exact(&mut body)?;
+        let mut pos = 0usize;
+        while pos + 10 <= size && body[pos] != 0 {
+            if &body[pos..pos + 4] == b"TYER" {
+                return Ok(());
+            }
+            let len = synchsafe(&body[pos + 4..pos + 8]);
+            if pos + 10 + len > size {
+                return Ok(());
+            }
+            pos += 10 + len;
+        }
+        if body[pos..].iter().any(|&b| b != 0) {
+            return Ok(());
+        }
+        let mut frame = Vec::with_capacity(15);
+        frame.extend_from_slice(b"TYER");
+        frame.extend_from_slice(&to_synchsafe(5));
+        frame.extend_from_slice(&[0, 0]);
+        frame.push(0); // ISO-8859-1
+        frame.extend_from_slice(digits.as_bytes());
+        if size - pos >= frame.len() {
+            f.seek(SeekFrom::Start(10 + pos as u64))?;
+            f.write_all(&frame)?;
+            return Ok(());
+        }
+        // No room: grow the tag by one frame and move the audio after it.
+        if f.metadata()?.len() > MAX_REWRITE {
+            return Ok(());
+        }
+        let mut rest = Vec::new();
+        f.read_to_end(&mut rest)?;
+        let mut new_head = head;
+        new_head[6..10].copy_from_slice(&to_synchsafe(size + frame.len()));
+        f.seek(SeekFrom::Start(0))?;
+        f.write_all(&new_head)?;
+        f.write_all(&body[..pos])?;
+        f.write_all(&frame)?;
+        f.write_all(&body[pos..])?;
+        f.write_all(&rest)?;
+        Ok(())
+    })();
+}
+
 fn temp_beside(src: &Path) -> PathBuf {
     let stem = src.file_stem().and_then(|s| s.to_str()).unwrap_or("audio");
     let ext = src.extension().and_then(|s| s.to_str()).unwrap_or("bin");
@@ -191,6 +263,7 @@ pub fn write(path: &str, fields: &[String], cover_mode: i32, cover: Option<&[u8]
         let _ = fs::remove_file(&tmp);
         return Err(e);
     }
+    add_tyer(&tmp_str, &fields[4]);
     if fs::rename(&tmp, src).is_err() {
         // Rename can fail across mount quirks; fall back to copying the finished file over the original.
         let r = fs::copy(&tmp, src).map(|_| ()).map_err(|e| e.to_string());
@@ -202,7 +275,14 @@ pub fn write(path: &str, fields: &[String], cover_mode: i32, cover: Option<&[u8]
 
 #[cfg(test)]
 mod tests {
-    use super::parse_pair;
+    use super::{parse_pair, synchsafe, to_synchsafe};
+
+    #[test]
+    fn synchsafe_roundtrip() {
+        for n in [0usize, 1, 127, 128, 1024, 300_000] {
+            assert_eq!(synchsafe(&to_synchsafe(n)), n);
+        }
+    }
 
     #[test]
     fn pairs() {
