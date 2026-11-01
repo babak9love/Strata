@@ -32,6 +32,9 @@ object NativeBridge {
     private external fun writeBytes(path: String, offset: Long, data: ByteArray): Boolean
     private external fun rarList(path: String, password: String?, status: IntArray): Array<String>?
     private external fun rarExtract(path: String, password: String?, sink: RarSink): Int
+    private external fun tagsRead(path: String): Array<String>?
+    private external fun tagsCover(path: String): ByteArray?
+    private external fun tagsWrite(path: String, fields: Array<String>, coverMode: Int, cover: ByteArray?): String?
     private external fun encDeriveKey(password: ByteArray, salt: ByteArray, mCostKib: Int, tCost: Int, pCost: Int): ByteArray?
     private external fun encSeal(key: ByteArray, nonce: ByteArray, aad: ByteArray, data: ByteArray, length: Int): ByteArray?
     private external fun encOpen(key: ByteArray, nonce: ByteArray, aad: ByteArray, data: ByteArray, length: Int): ByteArray?
@@ -99,4 +102,16 @@ object NativeBridge {
 
     fun rarStream(path: String, password: String?, sink: RarSink): Int =
         if (!ensureLoaded()) -1 else rarExtract(path, password, sink)
+
+    /** Tags of an audio file as a fixed list of strings (see `TagEditor`), or null if the file cannot be read. */
+    fun readTags(path: String): Array<String>? =
+        if (!ensureLoaded()) null else runCatching { tagsRead(path) }.getOrNull()
+
+    fun readTagsCover(path: String): ByteArray? =
+        if (!ensureLoaded()) null else runCatching { tagsCover(path) }.getOrNull()
+
+    /** Writes the tags; returns null on success or the error text. [coverMode]: 0 keep, 1 remove, 2 replace with [cover]. */
+    fun writeTags(path: String, fields: Array<String>, coverMode: Int, cover: ByteArray?): String? =
+        if (!ensureLoaded()) tr(R.string.files_native_unavailable)
+        else runCatching { tagsWrite(path, fields, coverMode, cover) }.getOrElse { it.message ?: "error" }
 }

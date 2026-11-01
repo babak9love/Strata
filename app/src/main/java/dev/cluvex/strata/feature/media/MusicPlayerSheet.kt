@@ -25,6 +25,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.Audiotrack
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Headphones
 import android.content.ContextWrapper
@@ -148,6 +149,7 @@ fun MusicPlayerSheet(
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
     var info by remember { mutableStateOf<String?>(null) }
+    var tagEdit by remember { mutableStateOf<String?>(null) }
     var sleepDialog by remember { mutableStateOf(false) }
     var decoderDialog by remember { mutableStateOf(false) }
     val abRepeat = remember { AbRepeatState() }
@@ -377,6 +379,14 @@ fun MusicPlayerSheet(
                                 info = controller?.currentMediaItem?.mediaId ?: path
                             },
                         )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.tag_editor_title)) },
+                            leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
+                            onClick = {
+                                menu = false
+                                tagEdit = controller?.currentMediaItem?.mediaId ?: path
+                            },
+                        )
                         if (controller != null) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.media_decoder_title)) },
@@ -433,6 +443,24 @@ fun MusicPlayerSheet(
     }
     if (sleepDialog) SleepTimerDialog { sleepDialog = false }
     if (decoderDialog) PlaybackService.decoderManager()?.let { DecoderDialog(it, audioOnly = true) { decoderDialog = false } }
+    tagEdit?.let { f ->
+        TagEditorSheet(
+            path = f,
+            // The file was rewritten: load it again so the title, artist and cover shown here and in the notification are the new ones.
+            onSaved = {
+                controller?.let { c ->
+                    val index = (0 until c.mediaItemCount).firstOrNull { c.getMediaItemAt(it).mediaId == f }
+                    if (index != null) {
+                        val wasCurrent = index == c.currentMediaItemIndex
+                        val position = c.currentPosition
+                        c.replaceMediaItem(index, songItem(File(f)))
+                        if (wasCurrent) c.seekTo(index, position)
+                    }
+                }
+            },
+            onDismiss = { tagEdit = null },
+        )
+    }
     info?.let { f -> MediaInfoSheet(item = FileItem.of(File(f)), kind = MediaInfoKind.AUDIO, onDismiss = { info = null }) }
 }
 

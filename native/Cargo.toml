@@ -22,6 +22,7 @@ chacha20poly1305 = { version = "0.11", default-features = false, features = ["al
 zeroize = "1"
 unrar_sys = "=0.5.8"
 libc = "0.2"
+lofty = "0.22"
 
 [profile.release]
 opt-level = "z"

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tag_editor_title">Edit tags</string>
+    <string name="tag_editor_comment">Comment</string>
+    <string name="tag_editor_cover_hint">Cover&#10;tap to change</string>
+    <string name="tag_editor_cover_remove">Remove cover</string>
+    <string name="tag_editor_save_failed">Could not save the tags: %1$s</string>
+    <string name="tag_editor_read_failed">This file&apos;s tags cannot be read.</string>
+</resources>

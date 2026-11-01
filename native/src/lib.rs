@@ -2,8 +2,9 @@ mod crypt;
 mod hexio;
 mod pdfium;
 mod rar;
+mod tags;
 
-use jni::objects::{JByteArray, JIntArray, JMethodID, JObject, JString, JValue};
+use jni::objects::{JByteArray, JIntArray, JMethodID, JObject, JObjectArray, JString, JValue};
 use jni::signature::{Primitive, ReturnType};
 use jni::sys::{jboolean, jbyteArray, jint, jlong, jobjectArray, jstring, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
@@ -472,5 +473,72 @@ mod tests {
         let p = tmp_file(b"x");
         assert!(hash_file(p.to_str().unwrap(), 99).is_err());
         let _ = std::fs::remove_file(p);
+    }
+}
+
+// ---------------------------------------------------------------- audio tags
+
+fn string_array(env: &mut JNIEnv, items: &[String]) -> jobjectArray {
+    let null = std::ptr::null_mut();
+    let Ok(array) = env.new_object_array(items.len() as jint, "java/lang/String", JObject::null()) else { return null };
+    for (i, item) in items.iter().enumerate() {
+        let Ok(js) = env.new_string(item) else { return null };
+        if env.set_object_array_element(&array, i as jint, &js).is_err() {
+            return null;
+        }
+        let _ = env.delete_local_ref(js);
+    }
+    array.into_raw()
+}
+
+#[no_mangle]
+pub extern "system" fn Java_dev_cluvex_strata_core_nativebridge_NativeBridge_tagsRead<'local>(
+    mut env: JNIEnv<'local>,
+    _this: JObject<'local>,
+    path: JString<'local>,
+) -> jobjectArray {
+    let Some(p) = java_string(&mut env, &path) else { return std::ptr::null_mut() };
+    match tags::read(&p) {
+        Ok(fields) => string_array(&mut env, &fields),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_dev_cluvex_strata_core_nativebridge_NativeBridge_tagsCover<'local>(
+    mut env: JNIEnv<'local>,
+    _this: JObject<'local>,
+    path: JString<'local>,
+) -> jbyteArray {
+    let Some(p) = java_string(&mut env, &path) else { return null_bytes() };
+    match tags::read_cover(&p) {
+        Ok(Some(bytes)) => env.byte_array_from_slice(&bytes).map(|a| a.into_raw()).unwrap_or_else(|_| null_bytes()),
+        _ => null_bytes(),
+    }
+}
+
+/// Returns null on success, otherwise the error text.
+#[no_mangle]
+pub extern "system" fn Java_dev_cluvex_strata_core_nativebridge_NativeBridge_tagsWrite<'local>(
+    mut env: JNIEnv<'local>,
+    _this: JObject<'local>,
+    path: JString<'local>,
+    fields: JObjectArray<'local>,
+    cover_mode: jint,
+    cover: JByteArray<'local>,
+) -> jstring {
+    let fail = |env: &mut JNIEnv, msg: &str| env.new_string(msg).map(|s| s.into_raw()).unwrap_or(std::ptr::null_mut());
+    let Some(p) = java_string(&mut env, &path) else { return fail(&mut env, "bad path") };
+    let Ok(len) = env.get_array_length(&fields) else { return fail(&mut env, "bad fields") };
+    let mut list: Vec<String> = Vec::with_capacity(len as usize);
+    for i in 0..len {
+        let Ok(obj) = env.get_object_array_element(&fields, i) else { return fail(&mut env, "bad fields") };
+        let js = JString::from(obj);
+        list.push(java_string(&mut env, &js).unwrap_or_default());
+    }
+    let cover_bytes = if cover.is_null() { None } else { env.convert_byte_array(&cover).ok() };
+    match tags::write(&p, &list, cover_mode, cover_bytes.as_deref()) {
+        Ok(()) => std::ptr::null_mut(),
+        Err(e) => fail(&mut env, &e),
     }
 }
