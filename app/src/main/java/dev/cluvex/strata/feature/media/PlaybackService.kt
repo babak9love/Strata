@@ -72,7 +72,13 @@ class PlaybackService : MediaSessionService() {
         instance = this
         val dm = DecoderManager()
         val player = ExoPlayer.Builder(this)
-            .setRenderersFactory(NextRenderersFactory(this).setDecoderManager(dm))
+            .setRenderersFactory(
+                NextRenderersFactory(this).setDecoderManager(dm).apply {
+                    // Keep 24/32-bit PCM at full resolution: without this the audio sink truncates it to 16-bit.
+                    // 32-bit float holds every 24-bit sample exactly.
+                    setEnableAudioFloatOutput(true)
+                },
+            )
             // Opens 64-bit float WAV files, which the stock WAV extractor rejects.
             .setMediaSourceFactory(DefaultMediaSourceFactory(this, FloatWavExtractorsFactory()))
             .setAudioAttributes(
