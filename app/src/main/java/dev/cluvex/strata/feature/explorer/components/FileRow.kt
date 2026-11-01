@@ -21,7 +21,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -73,6 +72,8 @@ import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.ApkIcon
 import dev.cluvex.strata.core.media.AudioCover
 import dev.cluvex.strata.core.media.FolderBadge
+import dev.cluvex.strata.core.media.VideoDurations
+import dev.cluvex.strata.core.i18n.separator
 import dev.cluvex.strata.core.model.FileItem
 import java.io.File
 import kotlinx.coroutines.withContext
@@ -117,9 +118,12 @@ fun FileRow(
     val density = LocalUiDensity.current
     val settings = LocalSettings.current
     val list = settings.list
-    val smallIconSize = (density.iconDp * ((if (item.isDirectory) list.folderScale else list.itemScale) / 100f)).dp
-    val kind = FileKinds.of(item)
-    val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO || kind == FileKind.AUDIO)
+    val iconSize = (density.iconDp * ((if (item.isDirectory) list.folderScale else list.itemScale) / 100f)).dp
+    val rowKind = FileKinds.of(item)
+    // Video / music length, shown in the info line (the thumbnail only carries a small icon).
+    val length by produceState<Long?>(null, item.path, item.lastModified, showThumbnail) {
+        value = if (showThumbnail && (rowKind == FileKind.VIDEO || rowKind == FileKind.AUDIO)) VideoDurations.of(item.path, item.lastModified) else null
+    }
     val nameScale = list.nameScale / 100f
     val metaScale = list.metaScale / 100f
     val interaction = remember { MutableInteractionSource() }
@@ -140,11 +144,8 @@ fun FileRow(
     val flash = rememberFlash(flashKey, flashPulses)
     val flashColor = colors.primary.copy(alpha = 0.32f)
 
-    // Image / video / music-cover thumbnails are drawn as big as the thumbnails of the grid view; other icons keep the list size.
-    BoxWithConstraints(modifier.fillMaxWidth()) {
-    val iconSize = if (picture) gridThumbnailSize(maxWidth, list) else smallIconSize
     Row(
-        Modifier
+        modifier
             .then(drop.spot)
             .fillMaxWidth()
             .graphicsLayer {
@@ -172,7 +173,8 @@ fun FileRow(
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = (density.nameSp * nameScale).sp),
                 maxLines = if (list.wrapNames) 3 else density.nameMaxLines,
             )
-            val date = if (list.showDate) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
+            val dateOnly = if (list.showDate) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
+            val date = listOfNotNull(dateOnly, length?.let { VideoDurations.format(it) }).joinToString(separator()).ifEmpty { null }
             val info = trailingInfo(item, list)
             if (date != null || info != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -199,19 +201,6 @@ fun FileRow(
             }
         }
     }
-    }
-}
-
-/** Side of a thumbnail in the grid view of a pane [paneWidth] wide: the grid cell minus its 6dp tile padding. */
-private fun gridThumbnailSize(paneWidth: Dp, list: ListPrefs): Dp {
-    val usable = paneWidth.value - 8f // grid content padding, 4dp each side
-    val gap = 4f
-    val columns = if (list.gridColumns == 4) 4 else {
-        val minCell = 92f * (list.itemScale / 100f)
-        kotlin.math.max(1, ((usable + gap) / (minCell + gap)).toInt())
-    }
-    val cell = (usable - gap * (columns - 1)) / columns
-    return (cell - 12f).coerceAtLeast(40f).dp
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -402,14 +391,12 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
     val settings = LocalSettings.current
     val shape = LocalSettings.current.appearance.iconShape.toShape()
     val kind = FileKinds.of(item)
-    val picture = showThumbnail && settings.list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO || kind == FileKind.AUDIO)
     Box(
         Modifier
             .size(iconSize)
             // Folders are not clipped to the rounded tile: their corner badge would get its corner cut off (grid tiles never clip them).
             // Only the generic tile (Custom file icons off) takes the chosen icon shape. Dedicated ic_* icons and extension tiles keep their own geometry.
-            // Thumbnails are clipped like the grid's (see below), so the icon shape does not apply to them.
-            .then(if (item.isDirectory || settings.appearance.customFileIcons || picture) Modifier else Modifier.clip(shape))
+            .then(if (item.isDirectory || settings.appearance.customFileIcons) Modifier else Modifier.clip(shape))
             .then(if (onIconClick != null) Modifier.clickable(onClickLabel = stringResource(R.string.common_select)) { onIconClick() } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
@@ -432,17 +419,18 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
                     Modifier.size(iconSize),
                     contentAlignment = Alignment.Center,
                 ) {
+                    // a music file only gets its icon when a cover really loaded; without one the music icon already says it is sound
                     var covered by remember(item.path, item.lastModified) { mutableStateOf(false) }
-                    KindIcon(item, minOf(48.dp, iconSize), shape)
+                    KindIcon(item, iconSize, shape)
                     AsyncImage(
                         model = thumbnailModel(item),
                         contentDescription = item.name,
                         contentScale = ContentScale.Crop,
                         onSuccess = { covered = true },
-                        modifier = Modifier.size(iconSize).clip(MaterialTheme.shapes.medium),
+                        modifier = Modifier.size(iconSize).clip(shape),
                     )
-                    if (kind == FileKind.VIDEO) VideoBadge(item, Modifier.align(Alignment.BottomStart).padding(4.dp))
-                    if (kind == FileKind.AUDIO && covered) AudioBadge(item, Modifier.align(Alignment.BottomStart).padding(4.dp))
+                    if (kind == FileKind.VIDEO) MediaIconBadge(audio = false, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp))
+                    if (kind == FileKind.AUDIO && covered) MediaIconBadge(audio = true, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp))
                 }
                 showThumbnail && FileKinds.hasApkIcon(item) -> ApkIconOrKind(item, iconSize, shape)
                 showThumbnail && settings.list.folderBadges && item.isDirectory -> FolderIconWithBadge(item, iconSize, shape)

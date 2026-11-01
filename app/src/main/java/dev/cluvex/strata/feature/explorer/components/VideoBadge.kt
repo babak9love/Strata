@@ -1,6 +1,7 @@
 package dev.cluvex.strata.feature.explorer.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -61,6 +62,26 @@ private fun MediaBadge(item: FileItem, icon: ImageVector, modifier: Modifier, co
             color = colors.onSurfaceVariant,
             maxLines = 1,
             softWrap = false,
+        )
+    }
+}
+
+/** Only the icon, in the same small box: for list rows, whose thumbnails are too small for icon and time (the time is in the info line there). */
+@Composable
+fun MediaIconBadge(audio: Boolean, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(colors.surfaceContainerHigh.copy(alpha = 0.88f))
+            .padding(2.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            if (audio) Icons.Rounded.MusicNote else Icons.Rounded.PlayArrow,
+            contentDescription = null,
+            tint = colors.onSurfaceVariant,
+            modifier = Modifier.size(12.dp),
         )
     }
 }
