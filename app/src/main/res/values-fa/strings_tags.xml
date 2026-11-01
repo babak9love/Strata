@@ -2,7 +2,7 @@
 <resources>
     <string name="tag_editor_title">ویرایش تگ‌ها</string>
     <string name="tag_editor_comment">توضیحات</string>
-    <string name="tag_editor_cover_hint">کاور&#10;برای تغییر لمس کنید</string>
+    <string name="tag_editor_cover_hint">کاور\nبرای تغییر لمس کنید</string>
     <string name="tag_editor_cover_remove">حذف کاور</string>
     <string name="tag_editor_save_failed">تگ‌ها ذخیره نشدند: %1$s</string>
     <string name="tag_editor_read_failed">تگ‌های این فایل خوانده نمی‌شوند.</string>

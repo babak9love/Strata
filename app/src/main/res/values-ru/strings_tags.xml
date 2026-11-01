@@ -2,7 +2,7 @@
 <resources>
     <string name="tag_editor_title">Изменить теги</string>
     <string name="tag_editor_comment">Комментарий</string>
-    <string name="tag_editor_cover_hint">Обложка&#10;нажмите, чтобы изменить</string>
+    <string name="tag_editor_cover_hint">Обложка\nнажмите, чтобы изменить</string>
     <string name="tag_editor_cover_remove">Удалить обложку</string>
     <string name="tag_editor_save_failed">Не удалось сохранить теги: %1$s</string>
     <string name="tag_editor_read_failed">Теги этого файла не читаются.</string>

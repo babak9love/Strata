@@ -13,6 +13,7 @@ use std::fs;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
+#[allow(dead_code)]
 pub const COVER_KEEP: i32 = 0;
 pub const COVER_REMOVE: i32 = 1;
 pub const COVER_REPLACE: i32 = 2;
