@@ -173,9 +173,9 @@ fun FileRow(
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = (density.nameSp * nameScale).sp),
                 maxLines = if (list.wrapNames) 3 else density.nameMaxLines,
             )
-            val dateOnly = if (list.showDate) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
-            val date = listOfNotNull(dateOnly, length?.let { VideoDurations.format(it) }).joinToString(separator()).ifEmpty { null }
-            val info = trailingInfo(item, list)
+            val date = if (list.showDate) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
+            // The length of a video / track sits next to the size ("0:57 · 551.59 KiB"), apart from the date.
+            val info = listOfNotNull(length?.let { VideoDurations.format(it) }, trailingInfo(item, list)).joinToString(separator()).ifEmpty { null }
             if (date != null || info != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
