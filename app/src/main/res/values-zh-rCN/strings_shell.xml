@@ -13,4 +13,20 @@
     <string name="shell_timed_out">已超时</string>
     <string name="shell_no_output">（无输出）</string>
     <string name="shell_no_backend">Shizuku 和 root 均不可用。请启动 Shizuku 并授予 Strata 权限。</string>
+    <string name="shell_shortcut">显示在应用图标菜单</string>
+    <string name="shell_in_menu">在应用图标菜单中</string>
+    <string name="shell_running">正在运行 %1$s…</string>
+    <string name="shell_not_found">未找到命令</string>
+    <string name="shell_log_title">运行记录</string>
+    <string name="shell_log_empty">还没有运行记录</string>
+    <string name="shell_log_empty_body">从应用内或快捷方式运行的每条命令都会记录在这里。</string>
+    <string name="shell_log_clear">清空记录</string>
+    <string name="shell_log_clear_confirm">删除所有记录？</string>
+    <string name="shell_log_command">命令</string>
+    <string name="shell_log_output">输出</string>
+    <string name="shell_log_success">成功</string>
+    <string name="shell_log_failed">失败</string>
+    <string name="shell_log_source_app">应用</string>
+    <string name="shell_log_source_shortcut">快捷方式</string>
+    <string name="shell_banner_no_backend">Shizuku/root 不可用</string>
 </resources>

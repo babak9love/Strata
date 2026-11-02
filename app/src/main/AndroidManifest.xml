@@ -121,6 +121,14 @@
             android:taskAffinity=""
             android:theme="@style/Theme.Strata.ShareReceiver" />
 
+        <activity
+            android:name=".feature.shell.ShellShortcutActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Strata.ShareReceiver" />
+
         <activity-alias
             android:name=".ShareCopy"
             android:exported="true"

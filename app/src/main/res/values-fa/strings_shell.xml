@@ -13,4 +13,20 @@
     <string name="shell_timed_out">پایان مهلت</string>
     <string name="shell_no_output">(بدون خروجی)</string>
     <string name="shell_no_backend">نه Shizuku در دسترس است و نه روت. Shizuku را اجرا کنید و به Strata دسترسی بدهید.</string>
+    <string name="shell_shortcut">نمایش در منوی آیکون برنامه</string>
+    <string name="shell_in_menu">در منوی آیکون برنامه</string>
+    <string name="shell_running">در حال اجرای %1$s…</string>
+    <string name="shell_not_found">دستور پیدا نشد</string>
+    <string name="shell_log_title">گزارش اجرا</string>
+    <string name="shell_log_empty">هنوز اجرایی ثبت نشده</string>
+    <string name="shell_log_empty_body">هر دستوری که از داخل برنامه یا از میان‌بر اجرا کنید، اینجا ثبت می‌شود.</string>
+    <string name="shell_log_clear">پاک‌کردن گزارش</string>
+    <string name="shell_log_clear_confirm">همه موارد گزارش حذف شود؟</string>
+    <string name="shell_log_command">دستور</string>
+    <string name="shell_log_output">خروجی</string>
+    <string name="shell_log_success">موفق</string>
+    <string name="shell_log_failed">ناموفق</string>
+    <string name="shell_log_source_app">برنامه</string>
+    <string name="shell_log_source_shortcut">میان‌بر</string>
+    <string name="shell_banner_no_backend">Shizuku/روت در دسترس نیست</string>
 </resources>

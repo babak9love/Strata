@@ -13,4 +13,20 @@
     <string name="shell_timed_out">время вышло</string>
     <string name="shell_no_output">(нет вывода)</string>
     <string name="shell_no_backend">Ни Shizuku, ни root недоступны. Запустите Shizuku и дайте доступ Strata.</string>
+    <string name="shell_shortcut">Показывать в меню значка</string>
+    <string name="shell_in_menu">В меню значка</string>
+    <string name="shell_running">Выполняется %1$s…</string>
+    <string name="shell_not_found">Команда не найдена</string>
+    <string name="shell_log_title">Журнал запусков</string>
+    <string name="shell_log_empty">Запусков пока нет</string>
+    <string name="shell_log_empty_body">Здесь записывается каждая команда, запущенная из приложения или через ярлык.</string>
+    <string name="shell_log_clear">Очистить журнал</string>
+    <string name="shell_log_clear_confirm">Удалить все записи журнала?</string>
+    <string name="shell_log_command">Команда</string>
+    <string name="shell_log_output">Вывод</string>
+    <string name="shell_log_success">Успешно</string>
+    <string name="shell_log_failed">Ошибка</string>
+    <string name="shell_log_source_app">Приложение</string>
+    <string name="shell_log_source_shortcut">Ярлык</string>
+    <string name="shell_banner_no_backend">Shizuku/root недоступны</string>
 </resources>

@@ -5,8 +5,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.cluvex.strata.core.shell.SavedCommand
 import dev.cluvex.strata.core.shell.ShellCommandStore
+import dev.cluvex.strata.core.shell.ShellExecutor
+import dev.cluvex.strata.core.shell.ShellLogSource
 import dev.cluvex.strata.core.shell.ShellResult
-import dev.cluvex.strata.core.shell.ShellRunner
+import dev.cluvex.strata.core.shell.ShellShortcuts
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,16 +39,17 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) { store.load() }
             _state.update { it.copy(commands = list, loading = false) }
+            withContext(Dispatchers.IO) { ShellShortcuts.publish(getApplication<Application>(), list) }
         }
     }
 
-    fun save(id: String?, name: String, command: String) {
+    fun save(id: String?, name: String, command: String, shortcut: Boolean) {
         val cmd = command.trim()
         if (cmd.isEmpty()) return
         val label = name.trim().ifEmpty { cmd.lineSequence().first().take(40) }
         change { list ->
-            if (id == null) list + SavedCommand(UUID.randomUUID().toString(), label, cmd)
-            else list.map { if (it.id == id) it.copy(name = label, command = cmd) else it }
+            if (id == null) list + SavedCommand(UUID.randomUUID().toString(), label, cmd, shortcut)
+            else list.map { if (it.id == id) it.copy(name = label, command = cmd, shortcut = shortcut) else it }
         }
     }
 
@@ -55,7 +58,11 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
     private fun change(edit: (List<SavedCommand>) -> List<SavedCommand>) {
         _state.update { it.copy(commands = edit(it.commands)) }
         viewModelScope.launch(Dispatchers.IO) {
-            saveLock.withLock { store.save(_state.value.commands) }
+            saveLock.withLock {
+                val latest = _state.value.commands
+                store.save(latest)
+                ShellShortcuts.publish(getApplication<Application>(), latest)
+            }
         }
     }
 
@@ -63,7 +70,7 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         if (_state.value.runningId != null) return
         _state.update { it.copy(runningId = command.id) }
         viewModelScope.launch {
-            val result = ShellRunner.run(command.command)
+            val result = ShellExecutor.runLogged(getApplication<Application>(), command, ShellLogSource.APP)
             _state.update { it.copy(runningId = null, run = ShellRun(command, result)) }
         }
     }

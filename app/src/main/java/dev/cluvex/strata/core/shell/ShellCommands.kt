@@ -1,6 +1,12 @@
 package dev.cluvex.strata.core.shell
 
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
+import dev.cluvex.strata.R
+import dev.cluvex.strata.feature.shell.ShellShortcutActivity
 import dev.cluvex.strata.core.root.RootManager
 import dev.cluvex.strata.core.shizuku.ShizukuManager
 import kotlinx.serialization.Serializable
@@ -9,7 +15,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 @Serializable
-data class SavedCommand(val id: String, val name: String, val command: String)
+data class SavedCommand(val id: String, val name: String, val command: String, val shortcut: Boolean = false)
 
 enum class ShellBackend { SHIZUKU, ROOT }
 
@@ -63,5 +69,30 @@ object ShellRunner {
             }
         }
         return ShellResult(null, -1, "")
+    }
+}
+
+/** Publishes the commands marked "show in the app-icon menu" as launcher shortcuts, named after the command. */
+object ShellShortcuts {
+    const val EXTRA_ID = "dev.cluvex.strata.extra.SHELL_COMMAND_ID"
+
+    fun publish(context: Context, commands: List<SavedCommand>) {
+        runCatching {
+            val max = ShortcutManagerCompat.getMaxShortcutCountPerActivity(context)
+            val shortcuts = commands.filter { it.shortcut }.take(max).mapIndexed { index, c ->
+                val intent = Intent(context, ShellShortcutActivity::class.java).apply {
+                    action = Intent.ACTION_VIEW
+                    putExtra(EXTRA_ID, c.id)
+                }
+                ShortcutInfoCompat.Builder(context, "shell_" + c.id)
+                    .setShortLabel(c.name)
+                    .setLongLabel(c.name)
+                    .setIcon(IconCompat.createWithResource(context, R.drawable.ic_shortcut_shell))
+                    .setIntent(intent)
+                    .setRank(index)
+                    .build()
+            }
+            ShortcutManagerCompat.setDynamicShortcuts(context, shortcuts)
+        }
     }
 }
