@@ -127,7 +127,7 @@
             android:excludeFromRecents="true"
             android:noHistory="true"
             android:taskAffinity=""
-            android:theme="@style/Theme.Strata.ShareReceiver" />
+            android:theme="@style/Theme.Strata.ShellBanner" />
 
         <activity-alias
             android:name=".ShareCopy"
