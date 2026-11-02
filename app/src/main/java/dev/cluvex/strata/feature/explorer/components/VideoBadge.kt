@@ -2,6 +2,7 @@ package dev.cluvex.strata.feature.explorer.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -101,8 +102,9 @@ fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier)
     val colors = MaterialTheme.colorScheme
     Row(
         modifier
-            .height(14.dp)
-            .background(colors.surfaceContainerHigh.copy(alpha = 0.92f)),
+            .heightIn(min = 14.dp)
+            .background(colors.surfaceContainerHigh.copy(alpha = 0.92f))
+            .padding(vertical = 1.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -116,8 +118,15 @@ fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier)
         }
         Text(
             VideoDurations.format(length),
-            style = MaterialTheme.typography.labelSmall,
-            fontSize = 9.sp,
+            // labelSmall's 16sp line height is taller than a 9sp text: it pushed the digits down against the bottom edge. Centre the glyphs in a tight line.
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 9.sp,
+                lineHeight = 11.sp,
+                lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+                    alignment = androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
+                    trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
+                ),
+            ),
             fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
             color = colors.onSurfaceVariant,
             maxLines = 1,
