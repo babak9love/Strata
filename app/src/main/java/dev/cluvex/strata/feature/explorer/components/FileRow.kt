@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -71,6 +73,7 @@ import coil3.request.ImageRequest
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.media.ApkIcon
 import dev.cluvex.strata.core.media.AudioCover
+import dev.cluvex.strata.core.media.AudioCovers
 import dev.cluvex.strata.core.media.FolderBadge
 import dev.cluvex.strata.core.media.VideoDurations
 import dev.cluvex.strata.core.model.FileItem
@@ -174,7 +177,8 @@ fun FileRow(
             )
             val date = if (list.showDate) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
             // The length of a video / track sits next to the size, set off by a bar: "0:57 | 551.59 KiB".
-            val info = listOfNotNull(length?.let { VideoDurations.format(it) }, trailingInfo(item, list)).joinToString(" | ").ifEmpty { null }
+            // Two panes: the rows are narrow, so the length is drawn on the thumbnail instead (see Leading).
+            val info = listOfNotNull(length?.takeIf { !settings.dualPanePreferred }?.let { VideoDurations.format(it) }, trailingInfo(item, list)).joinToString(" | ").ifEmpty { null }
             if (date != null || info != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -241,7 +245,11 @@ fun FileTile(
     val flashColor = colors.primary.copy(alpha = 0.32f)
     val shape = LocalSettings.current.appearance.iconShape.toShape()
     val kind = FileKinds.of(item)
-    val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO || kind == FileKind.AUDIO)
+    // A music file without a cover is laid out like any other file (normal icon box), not as a big square thumbnail around a small icon.
+    var noCover by remember(item.path, item.lastModified) {
+        mutableStateOf(kind == FileKind.AUDIO && AudioCovers.knownWithoutCover(item.path, item.lastModified))
+    }
+    val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO || (kind == FileKind.AUDIO && !noCover))
     val apk = showThumbnail && FileKinds.hasApkIcon(item)
     val folderBadge = showThumbnail && list.folderBadges && item.isDirectory
     val compact = !list.tileFrame && !picture
@@ -282,6 +290,7 @@ fun FileTile(
                         contentDescription = item.name,
                         contentScale = ContentScale.Crop,
                         onSuccess = { covered = true },
+                        onError = { if (kind == FileKind.AUDIO) noCover = true },
                         modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.medium),
                     )
                     if (kind == FileKind.VIDEO) VideoBadge(item, Modifier.align(Alignment.BottomStart).padding(if (list.gridColumns == 4) 4.dp else 6.dp), compact = list.gridColumns == 4)
@@ -390,6 +399,12 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
     val settings = LocalSettings.current
     val shape = LocalSettings.current.appearance.iconShape.toShape()
     val kind = FileKinds.of(item)
+    // a music file only gets its icon when a cover really loaded; without one the music icon already says it is sound
+    var covered by remember(item.path, item.lastModified) { mutableStateOf(false) }
+    val isPicture = showThumbnail && settings.list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO || kind == FileKind.AUDIO)
+    // Two panes: the length bar sticks out over the thumbnail's bottom edge, so it is drawn outside the clipped box below.
+    val barOnEdge = settings.dualPanePreferred && isPicture && !selected && (kind == FileKind.VIDEO || (kind == FileKind.AUDIO && covered))
+    Box(Modifier.size(iconSize)) {
     Box(
         Modifier
             .size(iconSize)
@@ -418,8 +433,6 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
                     Modifier.size(iconSize),
                     contentAlignment = Alignment.Center,
                 ) {
-                    // a music file only gets its icon when a cover really loaded; without one the music icon already says it is sound
-                    var covered by remember(item.path, item.lastModified) { mutableStateOf(false) }
                     KindIcon(item, iconSize, shape)
                     AsyncImage(
                         model = thumbnailModel(item),
@@ -428,8 +441,10 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
                         onSuccess = { covered = true },
                         modifier = Modifier.size(iconSize).clip(shape),
                     )
-                    if (kind == FileKind.VIDEO) MediaIconBadge(audio = false, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp))
-                    if (kind == FileKind.AUDIO && covered) MediaIconBadge(audio = true, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp))
+                    if (!settings.dualPanePreferred) {
+                        if (kind == FileKind.VIDEO) MediaIconBadge(audio = false, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp))
+                        if (kind == FileKind.AUDIO && covered) MediaIconBadge(audio = true, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp))
+                    }
                 }
                 showThumbnail && FileKinds.hasApkIcon(item) -> ApkIconOrKind(item, iconSize, shape)
                 showThumbnail && settings.list.folderBadges && item.isDirectory -> FolderIconWithBadge(item, iconSize, shape)
@@ -439,6 +454,14 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
         if (item.isDirectory && dev.cluvex.strata.core.model.ProtectedFolders.shows(settings.protectedFolders, item.path)) {
             LockBadge(Modifier.align(Alignment.BottomEnd))
         }
+    }
+    if (barOnEdge) {
+        MediaBadgeBar(
+            item,
+            audio = kind == FileKind.AUDIO,
+            modifier = Modifier.align(Alignment.BottomCenter).offset(y = 6.dp).requiredWidth(iconSize + 6.dp),
+        )
+    }
     }
 }
 

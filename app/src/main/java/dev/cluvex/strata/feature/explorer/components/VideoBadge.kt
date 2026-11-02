@@ -1,6 +1,9 @@
 package dev.cluvex.strata.feature.explorer.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -82,6 +85,45 @@ fun MediaIconBadge(audio: Boolean, modifier: Modifier = Modifier) {
             contentDescription = null,
             tint = colors.onSurfaceVariant,
             modifier = Modifier.size(12.dp),
+        )
+    }
+}
+
+/**
+ * Two panes, list rows: a bar as wide as the thumbnail (a little wider) that sticks out over its bottom edge, so even a long
+ * length such as 1:02:30 fits. The ring in the background colour separates it from the picture. Place it from outside the thumbnail's clip.
+ */
+@Composable
+fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier) {
+    val ms by produceState<Long?>(null, item.path, item.lastModified) {
+        value = VideoDurations.of(item.path, item.lastModified)
+    }
+    val length = ms ?: return
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(5.dp)
+    Row(
+        modifier
+            .height(14.dp)
+            .clip(shape)
+            .background(colors.surfaceContainerHigh)
+            .border(1.5.dp, colors.surface, shape),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            if (audio) Icons.Rounded.MusicNote else Icons.Rounded.PlayArrow,
+            contentDescription = null,
+            tint = colors.onSurfaceVariant,
+            modifier = Modifier.size(10.dp),
+        )
+        Text(
+            VideoDurations.format(length),
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = 9.sp,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+            color = colors.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }

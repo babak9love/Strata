@@ -29,6 +29,9 @@ object AudioCovers {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Boolean>?): Boolean = size > 3000
     }
 
+    /** True once a load found no cover in this file (cheap, safe on the main thread). Lets a grid tile use the normal icon layout. */
+    fun knownWithoutCover(path: String, modified: Long): Boolean = synchronized(withoutCover) { withoutCover.containsKey("$path|$modified") }
+
     /** Null when the file has no (readable) cover. Blocking: call it off the main thread. */
     fun load(path: String, modified: Long, size: Int = SIZE): Bitmap? {
         val key = "$path|$modified"
