@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shell_title">Команды shell</string>
+    <string name="shell_add">Добавить команду</string>
+    <string name="shell_edit">Изменить команду</string>
+    <string name="shell_command">Команда</string>
+    <string name="shell_run">Запустить</string>
+    <string name="shell_empty">Команд пока нет</string>
+    <string name="shell_empty_body">Сохраняйте команды shell здесь и запускайте одним касанием. Они выполняются через Shizuku, а если он недоступен — через root.</string>
+    <string name="shell_via_shizuku">Shizuku</string>
+    <string name="shell_via_root">Root</string>
+    <string name="shell_exit_code">код выхода %1$d</string>
+    <string name="shell_timed_out">время вышло</string>
+    <string name="shell_no_output">(нет вывода)</string>
+    <string name="shell_no_backend">Ни Shizuku, ни root недоступны. Запустите Shizuku и дайте доступ Strata.</string>
+</resources>
