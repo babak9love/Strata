@@ -29,8 +29,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -401,10 +399,6 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
     val kind = FileKinds.of(item)
     // a music file only gets its icon when a cover really loaded; without one the music icon already says it is sound
     var covered by remember(item.path, item.lastModified) { mutableStateOf(false) }
-    val isPicture = showThumbnail && settings.list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO || kind == FileKind.AUDIO)
-    // Two panes: the length bar sticks out over the thumbnail's bottom edge, so it is drawn outside the clipped box below.
-    val barOnEdge = settings.dualPanePreferred && isPicture && !selected && (kind == FileKind.VIDEO || (kind == FileKind.AUDIO && covered))
-    Box(Modifier.size(iconSize)) {
     Box(
         Modifier
             .size(iconSize)
@@ -441,7 +435,14 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
                         onSuccess = { covered = true },
                         modifier = Modifier.size(iconSize).clip(shape),
                     )
-                    if (!settings.dualPanePreferred) {
+                    if (settings.dualPanePreferred) {
+                        // Two panes: icon and length in a bar flush with the bottom of the thumbnail.
+                        Box(Modifier.size(iconSize).clip(shape)) {
+                            if (kind == FileKind.VIDEO || (kind == FileKind.AUDIO && covered)) {
+                                MediaBadgeBar(item, audio = kind == FileKind.AUDIO, modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth())
+                            }
+                        }
+                    } else {
                         if (kind == FileKind.VIDEO) MediaIconBadge(audio = false, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp))
                         if (kind == FileKind.AUDIO && covered) MediaIconBadge(audio = true, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp))
                     }
@@ -454,14 +455,6 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
         if (item.isDirectory && dev.cluvex.strata.core.model.ProtectedFolders.shows(settings.protectedFolders, item.path)) {
             LockBadge(Modifier.align(Alignment.BottomEnd))
         }
-    }
-    if (barOnEdge) {
-        MediaBadgeBar(
-            item,
-            audio = kind == FileKind.AUDIO,
-            modifier = Modifier.align(Alignment.BottomCenter).offset(y = 6.dp).requiredWidth(iconSize + 6.dp),
-        )
-    }
     }
 }
 

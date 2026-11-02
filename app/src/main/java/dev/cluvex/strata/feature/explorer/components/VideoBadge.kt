@@ -3,7 +3,6 @@ package dev.cluvex.strata.feature.explorer.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -90,8 +89,8 @@ fun MediaIconBadge(audio: Boolean, modifier: Modifier = Modifier) {
 }
 
 /**
- * Two panes, list rows: a bar as wide as the thumbnail (a little wider) that sticks out over its bottom edge, so even a long
- * length such as 1:02:30 fits. The ring in the background colour separates it from the picture. Place it from outside the thumbnail's clip.
+ * Two panes, list rows: a bar across the bottom of the thumbnail, flush with its edges (the caller clips it to the thumbnail's shape).
+ * An hour-long length drops the icon so the time still fits the narrow thumbnail.
  */
 @Composable
 fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier) {
@@ -100,22 +99,21 @@ fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier)
     }
     val length = ms ?: return
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(5.dp)
     Row(
         modifier
             .height(14.dp)
-            .clip(shape)
-            .background(colors.surfaceContainerHigh)
-            .border(1.5.dp, colors.surface, shape),
+            .background(colors.surfaceContainerHigh.copy(alpha = 0.92f)),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            if (audio) Icons.Rounded.MusicNote else Icons.Rounded.PlayArrow,
-            contentDescription = null,
-            tint = colors.onSurfaceVariant,
-            modifier = Modifier.size(10.dp),
-        )
+        if (length < 3_600_000L) {
+            Icon(
+                if (audio) Icons.Rounded.MusicNote else Icons.Rounded.PlayArrow,
+                contentDescription = null,
+                tint = colors.onSurfaceVariant,
+                modifier = Modifier.size(10.dp),
+            )
+        }
         Text(
             VideoDurations.format(length),
             style = MaterialTheme.typography.labelSmall,
