@@ -73,7 +73,6 @@ import dev.cluvex.strata.core.media.ApkIcon
 import dev.cluvex.strata.core.media.AudioCover
 import dev.cluvex.strata.core.media.FolderBadge
 import dev.cluvex.strata.core.media.VideoDurations
-import dev.cluvex.strata.core.i18n.separator
 import dev.cluvex.strata.core.model.FileItem
 import java.io.File
 import kotlinx.coroutines.withContext
@@ -174,8 +173,8 @@ fun FileRow(
                 maxLines = if (list.wrapNames) 3 else density.nameMaxLines,
             )
             val date = if (list.showDate) Formatters.listDate(item.lastModified, list.dateStyle, list.use24Hour) else null
-            // The length of a video / track sits next to the size ("0:57 · 551.59 KiB"), apart from the date.
-            val info = listOfNotNull(length?.let { VideoDurations.format(it) }, trailingInfo(item, list)).joinToString(separator()).ifEmpty { null }
+            // The length of a video / track sits next to the size, set off by a bar: "0:57 | 551.59 KiB".
+            val info = listOfNotNull(length?.let { VideoDurations.format(it) }, trailingInfo(item, list)).joinToString(" | ").ifEmpty { null }
             if (date != null || info != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
