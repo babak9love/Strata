@@ -29,4 +29,10 @@
     <string name="shell_log_source_app">应用</string>
     <string name="shell_log_source_shortcut">快捷方式</string>
     <string name="shell_banner_no_backend">Shizuku/root 不可用</string>
+    <string name="shell_run_with">运行方式</string>
+    <string name="shell_mode_auto">自动</string>
+    <string name="shell_timeout">超时</string>
+    <string name="shell_timeout_seconds">%1$d 秒</string>
+    <string name="shell_timeout_minutes">%1$d 分钟</string>
+    <string name="shell_drag">移动 %1$s</string>
 </resources>

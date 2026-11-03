@@ -96,6 +96,8 @@ import dev.cluvex.strata.core.data.BackupLocations
 import dev.cluvex.strata.core.data.EditorPrefs
 import dev.cluvex.strata.core.data.SettingsBackup
 import dev.cluvex.strata.core.media.FolderBadgeStore
+import dev.cluvex.strata.core.shell.ShellCommandStore
+import dev.cluvex.strata.core.shell.ShellShortcuts
 import dev.cluvex.strata.core.data.StrataSettings
 import dev.cluvex.strata.core.remote.RemoteConnectionRepository
 import dev.cluvex.strata.core.remote.RemoteConnections
@@ -568,6 +570,21 @@ fun BackupPage(act: SettingsActions, activeFolder: String, onBack: () -> Unit) {
                 extras.folderBadges?.let { saved ->
                     runCatching { withContext(Dispatchers.IO) { FolderBadgeStore.restore(saved) } }
                 }
+                // Shell commands are merged by id: the same command is replaced, the others are kept. Never stops the restore.
+                extras.shellCommands?.let { saved ->
+                    runCatching {
+                        withContext(Dispatchers.IO) {
+                            val store = ShellCommandStore(context.applicationContext)
+                            val incoming = saved.filter { it.id.isNotBlank() && it.name.isNotBlank() && it.command.isNotBlank() }
+                            val byId = incoming.associateBy { it.id }
+                            val current = store.load()
+                            val known = current.mapTo(HashSet()) { it.id }
+                            val merged = current.map { byId[it.id] ?: it } + byId.values.filter { it.id !in known }
+                            store.save(merged)
+                            ShellShortcuts.publish(context.applicationContext, merged)
+                        }
+                    }
+                }
                 applied
             }
                 .fold({ n -> trPlural(R.plurals.settings_restored, n, n) }, { e -> e.message ?: tr(R.string.settings_backup_read_failed) })
@@ -595,7 +612,8 @@ fun BackupPage(act: SettingsActions, activeFolder: String, onBack: () -> Unit) {
             link(tr(R.string.settings_export), summary = tr(R.string.settings_export_summary, target.path), icon = Icons.Rounded.Upload, tint = Tint.PRIMARY) {
                 scope.launch {
                     val result = runCatching {
-                        val text = SettingsBackup.attach(act.repo.exportBackup(), bookmarkRepo.bookmarks.first(), remoteRepo.connections.first(), FolderBadgeStore.exportEntries())
+                        val shellCommands = withContext(Dispatchers.IO) { ShellCommandStore(context.applicationContext).load() }
+                        val text = SettingsBackup.attach(act.repo.exportBackup(), bookmarkRepo.bookmarks.first(), remoteRepo.connections.first(), FolderBadgeStore.exportEntries(), shellCommands)
                         withContext(Dispatchers.IO) {
                             target.mkdirs()
                             val file = LocalFileAccess.file(File(target, SettingsBackup.fileName(System.currentTimeMillis())).path)

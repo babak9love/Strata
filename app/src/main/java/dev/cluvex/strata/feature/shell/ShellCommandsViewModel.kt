@@ -7,6 +7,7 @@ import dev.cluvex.strata.core.shell.SavedCommand
 import dev.cluvex.strata.core.shell.ShellCommandStore
 import dev.cluvex.strata.core.shell.ShellExecutor
 import dev.cluvex.strata.core.shell.ShellLogSource
+import dev.cluvex.strata.core.shell.ShellMode
 import dev.cluvex.strata.core.shell.ShellResult
 import dev.cluvex.strata.core.shell.ShellShortcuts
 import kotlinx.coroutines.Dispatchers
@@ -43,17 +44,36 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun save(id: String?, name: String, command: String, shortcut: Boolean) {
+    /** Re-reads the saved commands, e.g. after a settings backup was restored while this screen was not open. */
+    fun reload() {
+        viewModelScope.launch {
+            val list = withContext(Dispatchers.IO) { saveLock.withLock { store.load() } }
+            _state.update { it.copy(commands = list, loading = false) }
+        }
+    }
+
+    fun save(id: String?, name: String, command: String, shortcut: Boolean, mode: ShellMode, timeoutSec: Int) {
         val cmd = command.trim()
         if (cmd.isEmpty()) return
         val label = name.trim().ifEmpty { cmd.lineSequence().first().take(40) }
         change { list ->
-            if (id == null) list + SavedCommand(UUID.randomUUID().toString(), label, cmd, shortcut)
-            else list.map { if (it.id == id) it.copy(name = label, command = cmd, shortcut = shortcut) else it }
+            if (id == null) list + SavedCommand(UUID.randomUUID().toString(), label, cmd, shortcut, mode, timeoutSec)
+            else list.map { if (it.id == id) it.copy(name = label, command = cmd, shortcut = shortcut, mode = mode, timeoutSec = timeoutSec) else it }
         }
     }
 
     fun delete(id: String) = change { list -> list.filterNot { it.id == id } }
+
+    /** Moves a command while it is being dragged; nothing is written until [commitOrder]. */
+    fun move(from: Int, to: Int) {
+        _state.update { st ->
+            if (from !in st.commands.indices || to !in st.commands.indices || from == to) st
+            else st.copy(commands = st.commands.toMutableList().apply { add(to, removeAt(from)) })
+        }
+    }
+
+    /** Saves the current order and refreshes the launcher shortcuts, whose order follows the list. */
+    fun commitOrder() = change { it }
 
     private fun change(edit: (List<SavedCommand>) -> List<SavedCommand>) {
         _state.update { it.copy(commands = edit(it.commands)) }

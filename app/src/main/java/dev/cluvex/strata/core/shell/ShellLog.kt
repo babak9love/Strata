@@ -79,7 +79,7 @@ object ShellExecutor {
     suspend fun runLogged(context: Context, command: SavedCommand, source: String): ShellResult =
         withContext(NonCancellable) {
             val started = SystemClock.elapsedRealtime()
-            val result = ShellRunner.run(command.command)
+            val result = ShellRunner.run(command.command, command.mode, command.timeoutSec)
             val took = SystemClock.elapsedRealtime() - started
             val output = if (result.output.length > ShellLogStore.MAX_OUTPUT) {
                 result.output.take(ShellLogStore.MAX_OUTPUT) + "\n…"

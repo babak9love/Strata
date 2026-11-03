@@ -29,4 +29,10 @@
     <string name="shell_log_source_app">Приложение</string>
     <string name="shell_log_source_shortcut">Ярлык</string>
     <string name="shell_banner_no_backend">Shizuku/root недоступны</string>
+    <string name="shell_run_with">Запускать через</string>
+    <string name="shell_mode_auto">Авто</string>
+    <string name="shell_timeout">Тайм-аут</string>
+    <string name="shell_timeout_seconds">%1$d с</string>
+    <string name="shell_timeout_minutes">%1$d мин</string>
+    <string name="shell_drag">Переместить %1$s</string>
 </resources>

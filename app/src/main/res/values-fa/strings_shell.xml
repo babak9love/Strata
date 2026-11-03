@@ -29,4 +29,10 @@
     <string name="shell_log_source_app">برنامه</string>
     <string name="shell_log_source_shortcut">میان‌بر</string>
     <string name="shell_banner_no_backend">Shizuku/روت در دسترس نیست</string>
+    <string name="shell_run_with">اجرا با</string>
+    <string name="shell_mode_auto">خودکار</string>
+    <string name="shell_timeout">مهلت اجرا</string>
+    <string name="shell_timeout_seconds">%1$d ثانیه</string>
+    <string name="shell_timeout_minutes">%1$d دقیقه</string>
+    <string name="shell_drag">جابه‌جایی %1$s</string>
 </resources>
