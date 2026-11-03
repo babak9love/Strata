@@ -247,7 +247,10 @@ fun FileTile(
     var noCover by remember(item.path, item.lastModified) {
         mutableStateOf(kind == FileKind.AUDIO && AudioCovers.knownWithoutCover(item.path, item.lastModified))
     }
-    val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO || (kind == FileKind.AUDIO && !noCover))
+    // Images / videos get the big square thumbnail. Music always keeps the normal icon-sized box, with or without a cover,
+    // so the tile height never depends on how the cover load ends (that made the whole grid jump while scrolling).
+    val picture = showThumbnail && list.thumbnails && (kind == FileKind.IMAGE || kind == FileKind.VIDEO)
+    val audioCover = showThumbnail && list.thumbnails && kind == FileKind.AUDIO
     val apk = showThumbnail && FileKinds.hasApkIcon(item)
     val folderBadge = showThumbnail && list.folderBadges && item.isDirectory
     val compact = !list.tileFrame && !picture
@@ -280,19 +283,32 @@ fun FileTile(
         ) {
             when {
                 picture -> {
-                    // a music file only gets its badge when a cover really loaded; without one the music icon already says it is sound
-                    var covered by remember(item.path, item.lastModified) { mutableStateOf(false) }
                     KindIcon(item, 48.dp, shape)
                     AsyncImage(
                         model = thumbnailModel(item),
                         contentDescription = item.name,
                         contentScale = ContentScale.Crop,
-                        onSuccess = { covered = true },
-                        onError = { if (kind == FileKind.AUDIO) noCover = true },
                         modifier = Modifier.fillMaxSize().clip(MaterialTheme.shapes.medium),
                     )
                     if (kind == FileKind.VIDEO) VideoBadge(item, Modifier.align(Alignment.BottomStart).padding(if (list.gridColumns == 4) 4.dp else 6.dp), compact = list.gridColumns == 4)
-                    if (kind == FileKind.AUDIO && covered) AudioBadge(item, Modifier.align(Alignment.BottomStart).padding(if (list.gridColumns == 4) 4.dp else 6.dp), compact = list.gridColumns == 4)
+                }
+                audioCover -> {
+                    // cover drawn at exactly the icon size (same as the two-pane list); no cover = the plain music icon
+                    var covered by remember(item.path, item.lastModified) { mutableStateOf(false) }
+                    Box(Modifier.size(iconSize)) {
+                        KindIcon(item, iconSize, shape)
+                        if (!noCover) {
+                            AsyncImage(
+                                model = thumbnailModel(item),
+                                contentDescription = item.name,
+                                contentScale = ContentScale.Crop,
+                                onSuccess = { covered = true },
+                                onError = { noCover = true },
+                                modifier = Modifier.size(iconSize).clip(shape),
+                            )
+                            if (covered) AudioBadge(item, Modifier.align(Alignment.BottomStart).padding(2.dp), compact = true)
+                        }
+                    }
                 }
                 apk -> ApkIconOrKind(item, iconSize, shape)
                 folderBadge -> FolderIconWithBadge(item, iconSize, shape)
