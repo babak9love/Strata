@@ -74,22 +74,22 @@ private fun MediaBadge(item: FileItem, icon: ImageVector, modifier: Modifier, co
     }
 }
 
-/** Only the icon, in the same small box: for list rows, whose thumbnails are too small for icon and time (the time is in the info line there). */
+/** Only the icon, in the same small box, scaled with the thumbnail by [scale]: for list rows, whose thumbnails are too small for icon and time (the time is in the info line there). */
 @Composable
-fun MediaIconBadge(audio: Boolean, modifier: Modifier = Modifier) {
+fun MediaIconBadge(audio: Boolean, modifier: Modifier = Modifier, scale: Float = 1f) {
     val colors = MaterialTheme.colorScheme
     Box(
         modifier
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(6.dp * scale))
             .background(colors.surfaceContainerHigh.copy(alpha = 0.88f))
-            .padding(2.dp),
+            .padding(2.dp * scale),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             if (audio) Icons.Rounded.MusicNote else Icons.Rounded.PlayArrow,
             contentDescription = null,
             tint = colors.onSurfaceVariant,
-            modifier = Modifier.size(12.dp),
+            modifier = Modifier.size(12.dp * scale),
         )
     }
 }
