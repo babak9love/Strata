@@ -96,10 +96,10 @@ fun MediaIconBadge(audio: Boolean, modifier: Modifier = Modifier) {
 
 /**
  * Two panes, list rows: a bar across the bottom of the thumbnail, flush with its edges (the caller clips it to the thumbnail's shape).
- * An hour-long length drops the icon so the time still fits the narrow thumbnail.
+ * An hour-long length drops the icon so the time still fits the narrow thumbnail, unless [dropIconWhenLong] is false (the icon always stays).
  */
 @Composable
-fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier) {
+fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier, dropIconWhenLong: Boolean = true) {
     val ms by produceState<Long?>(null, item.path, item.lastModified) {
         value = VideoDurations.of(item.path, item.lastModified)
     }
@@ -113,7 +113,7 @@ fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier)
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (length < 3_600_000L) {
+        if (!dropIconWhenLong || length < 3_600_000L) {
             Icon(
                 if (audio) Icons.Rounded.MusicNote else Icons.Rounded.PlayArrow,
                 contentDescription = null,

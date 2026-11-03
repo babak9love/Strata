@@ -306,7 +306,17 @@ fun FileTile(
                                 onError = { noCover = true },
                                 modifier = Modifier.size(iconSize).clip(shape),
                             )
-                            if (covered) AudioBadge(item, Modifier.align(Alignment.BottomStart).padding(2.dp), compact = true)
+                            if (covered) {
+                                // Grid: icon and length in a bar flush with the bottom of the cover, like the two-pane list.
+                                // 4 columns: an hour-long length drops the icon; auto grid: the icon always stays.
+                                Box(Modifier.size(iconSize).clip(shape)) {
+                                    MediaBadgeBar(
+                                        item, audio = true,
+                                        modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                                        dropIconWhenLong = list.gridColumns == 4,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
