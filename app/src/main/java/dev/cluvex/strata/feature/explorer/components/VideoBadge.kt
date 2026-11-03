@@ -29,19 +29,23 @@ import dev.cluvex.strata.core.model.FileItem
 
 /** Small play icon and the video's length in a rounded box, like the Samsung gallery's badge. Draws nothing until the length is known (or if it cannot be read). */
 @Composable
-fun VideoBadge(item: FileItem, modifier: Modifier = Modifier, compact: Boolean = false) = MediaBadge(item, Icons.Rounded.PlayArrow, modifier, compact)
+fun VideoBadge(item: FileItem, modifier: Modifier = Modifier, compact: Boolean = false) = MediaBadge(item, Icons.Rounded.PlayArrow, modifier, compact, dropIconWhenLong = false)
 
-/** The same badge on a music cover: a music note and the track's length, so a picture is read as sound. */
+/**
+ * The same badge on a music cover: a music note and the track's length, so a picture is read as sound.
+ * An hour-long length drops the note and shows only the time, like the two-pane list's bar, so it still fits the cover.
+ */
 @Composable
-fun AudioBadge(item: FileItem, modifier: Modifier = Modifier, compact: Boolean = false) = MediaBadge(item, Icons.Rounded.MusicNote, modifier, compact)
+fun AudioBadge(item: FileItem, modifier: Modifier = Modifier, compact: Boolean = false) = MediaBadge(item, Icons.Rounded.MusicNote, modifier, compact, dropIconWhenLong = true)
 
-/** [compact]: the smaller badge for the 4-column grid, whose thumbnails are small. */
+/** [compact]: the smaller badge for the 4-column grid, whose thumbnails are small. [dropIconWhenLong]: no icon when the length is an hour or more. */
 @Composable
-private fun MediaBadge(item: FileItem, icon: ImageVector, modifier: Modifier, compact: Boolean) {
+private fun MediaBadge(item: FileItem, icon: ImageVector, modifier: Modifier, compact: Boolean, dropIconWhenLong: Boolean) {
     val ms by produceState<Long?>(null, item.path, item.lastModified) {
         value = VideoDurations.of(item.path, item.lastModified)
     }
     val length = ms ?: return
+    val showIcon = !(dropIconWhenLong && length >= 3_600_000L)
     // A small rounded box, coloured like the path box above the list and the bookmark "box" style (not a capsule).
     val colors = MaterialTheme.colorScheme
     Row(
@@ -49,14 +53,15 @@ private fun MediaBadge(item: FileItem, icon: ImageVector, modifier: Modifier, co
             .clip(RoundedCornerShape(if (compact) 6.dp else 8.dp))
             .background(colors.surfaceContainerHigh.copy(alpha = 0.88f))
             .padding(
-                start = if (compact) 2.dp else 4.dp,
+                // Without the icon the time alone gets even padding on both sides.
+                start = if (!showIcon) (if (compact) 4.dp else 6.dp) else if (compact) 2.dp else 4.dp,
                 end = if (compact) 4.dp else 6.dp,
                 top = if (compact) 1.dp else 3.dp,
                 bottom = if (compact) 1.dp else 3.dp,
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(if (compact) 10.dp else 14.dp))
+        if (showIcon) Icon(icon, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(if (compact) 10.dp else 14.dp))
         Text(
             VideoDurations.format(length),
             style = MaterialTheme.typography.labelSmall,
