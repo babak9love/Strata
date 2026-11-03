@@ -111,7 +111,6 @@ import dev.cluvex.strata.feature.hex.HexEditorScreen
 import dev.cluvex.strata.feature.keys.ImportKeyDialog
 import dev.cluvex.strata.feature.keys.SigningKeysScreen
 import dev.cluvex.strata.feature.plugin.PluginsScreen
-import dev.cluvex.strata.feature.shell.ShellCommandsScreen
 import dev.cluvex.strata.feature.markdown.MarkdownScreen
 import dev.cluvex.strata.feature.media.FontViewerScreen
 import dev.cluvex.strata.feature.pdf.PdfReaderScreen
@@ -164,7 +163,6 @@ sealed interface Route {
     data object ColorPicker : Route
     data object SigningKeys : Route
     data object Plugins : Route
-    data object ShellCommands : Route
     data object Share : Route
     data class Dex(val path: String) : Route
     data class Compare(val left: String, val right: String) : Route
@@ -407,7 +405,6 @@ fun AppShell(
                         onColorPicker = { push(Route.ColorPicker) },
                         onSigningKeys = { push(Route.SigningKeys) },
                         onPlugins = { push(Route.Plugins) },
-                        onShellCommands = { push(Route.ShellCommands) },
                         onVault = {
                             vm.openVault()
                             scope.launch { drawerState.close() }
@@ -644,7 +641,6 @@ private fun Screen(
         is Route.Image -> ImageViewerScreen(
             path = r.path,
             showHidden = settings.showHidden,
-            sortOrder = settings.sortFor(java.io.File(r.path).parent ?: "/"),
             onBack = actions.pop,
             onOpenWith = actions.openWith,
         )
@@ -719,7 +715,6 @@ private fun Screen(
             onLocate = actions.locate,
         )
         Route.Plugins -> PluginsScreen(onBack = actions.pop)
-        Route.ShellCommands -> ShellCommandsScreen(onBack = actions.pop)
         Route.Remote -> RemoteScreen(
             onBack = actions.pop,
             onOpenLocalFile = { actions.openFile(FileItem.of(File(it))) },

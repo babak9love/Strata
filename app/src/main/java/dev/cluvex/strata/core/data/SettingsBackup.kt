@@ -7,7 +7,6 @@ import dev.cluvex.strata.core.bookmarks.Bookmark
 import dev.cluvex.strata.core.i18n.tr
 import dev.cluvex.strata.core.media.FolderBadgeEntry
 import dev.cluvex.strata.core.remote.RemoteConnection
-import dev.cluvex.strata.core.shell.SavedCommand
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -56,21 +55,14 @@ object SettingsBackup {
     const val BOOKMARKS_KEY = "bookmarks"
     const val CONNECTIONS_KEY = "connections"
     const val FOLDER_BADGES_KEY = "folderBadges"
-    const val SHELL_COMMANDS_KEY = "shellCommands"
 
-    class Extras(
-        val bookmarks: List<Bookmark>?,
-        val connections: List<RemoteConnection>?,
-        val folderBadges: List<FolderBadgeEntry>? = null,
-        val shellCommands: List<SavedCommand>? = null,
-    )
+    class Extras(val bookmarks: List<Bookmark>?, val connections: List<RemoteConnection>?, val folderBadges: List<FolderBadgeEntry>? = null)
 
     fun attach(
         text: String,
         bookmarks: List<Bookmark>,
         connections: List<RemoteConnection>,
         folderBadges: List<FolderBadgeEntry> = emptyList(),
-        shellCommands: List<SavedCommand> = emptyList(),
     ): String {
         val root = Json.parseToJsonElement(text).jsonObject
         val extended = JsonObject(
@@ -78,7 +70,6 @@ object SettingsBackup {
                 BOOKMARKS_KEY to lenient.encodeToJsonElement(bookmarks),
                 CONNECTIONS_KEY to lenient.encodeToJsonElement(connections),
                 FOLDER_BADGES_KEY to lenient.encodeToJsonElement(folderBadges),
-                SHELL_COMMANDS_KEY to lenient.encodeToJsonElement(shellCommands),
             ),
         )
         return pretty.encodeToString(JsonObject.serializer(), extended)
@@ -90,7 +81,6 @@ object SettingsBackup {
             bookmarks = root.list<Bookmark>(BOOKMARKS_KEY),
             connections = root.list<RemoteConnection>(CONNECTIONS_KEY),
             folderBadges = root.tolerantList<FolderBadgeEntry>(FOLDER_BADGES_KEY),
-            shellCommands = root.tolerantList<SavedCommand>(SHELL_COMMANDS_KEY),
         )
     }
 

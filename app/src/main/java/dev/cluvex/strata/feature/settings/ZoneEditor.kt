@@ -522,10 +522,10 @@ private fun ZoneRow(
                     .size(40.dp)
                     .graphicsLayer { rotationZ = spin }
                     .clip(MorphShape(morph, morphProgress.value))
-                    .background(lerp(container, colors.primary, lift)),
+                    .background(container),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = lerp(content, colors.onPrimary, lift), modifier = Modifier.size(22.dp).graphicsLayer { rotationZ = -spin })
+                Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(22.dp).graphicsLayer { rotationZ = -spin })
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {

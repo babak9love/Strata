@@ -88,10 +88,10 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ImageViewerScreen(path: String, showHidden: Boolean, sortOrder: dev.cluvex.strata.core.model.SortOrder? = null, onBack: () -> Unit, onOpenWith: (FileItem) -> Unit) {
+fun ImageViewerScreen(path: String, showHidden: Boolean, onBack: () -> Unit, onOpenWith: (FileItem) -> Unit) {
     val context = LocalContext.current
     val list by produceState<MediaList?>(null, path) {
-        value = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.IMAGE, showHidden, sortOrder) }
+        value = withContext(Dispatchers.IO) { MediaSiblings.of(File(path), FileKind.IMAGE, showHidden) }
     }
     var chrome by remember { mutableStateOf(true) }
     var info by remember { mutableStateOf<File?>(null) }

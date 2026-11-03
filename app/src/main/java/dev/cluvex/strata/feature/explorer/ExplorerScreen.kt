@@ -71,6 +71,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.cluvex.strata.feature.plugin.PluginRunner
+import dev.cluvex.strata.feature.plugin.PluginRunViewModel
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.i18n.tr
 import dev.cluvex.strata.core.fs.Mounts
@@ -193,6 +195,7 @@ fun ExplorerScreen(
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var dialog by remember { mutableStateOf<Dialog>(Dialog.None) }
+    val plugins: PluginRunViewModel = viewModel()
     /** Runs one queued copy/cut (or shared-file action) in the active pane's folder. */
     fun runClip(clip: ClipboardState) {
         when (clip.shareMode) {
@@ -827,6 +830,7 @@ fun ExplorerScreen(
                 onProperties = { localOnly(d.item) { dialog = Dialog.Properties(listOf(d.item)) } },
                 onAudioInfo = { localOnly(d.item) { dialog = Dialog.MediaInfo(d.item, MediaInfoKind.AUDIO) } },
                 onVideoInfo = { localOnly(d.item) { dialog = Dialog.MediaInfo(d.item, MediaInfoKind.VIDEO) } },
+                onPlugin = { localOnly(d.item) { dialog = Dialog.None; plugins.begin(d.item) { vm.openInput(d.item) } } },
                 onDelete = {
                     vm.setActive(d.pane)
                     vm.clearSelection(d.pane)
@@ -860,6 +864,12 @@ fun ExplorerScreen(
             onDismiss = { dialog = Dialog.None },
         )
         is Dialog.RunProject -> ProjectRunSheet(d.project, onDismiss = { dialog = Dialog.None }, session = termux)
+    }
+
+    // "Run with plugin": choose, trust, run, and save the result next to the original or over it.
+    PluginRunner(plugins) { ready, replace ->
+        val source = plugins.item
+        if (source == null) plugins.discard(ready.file) else vm.savePluginResult(source, ready.file, ready.name, replace) { plugins.discard(ready.file) }
     }
 
     if (ui.remoteEdits.isNotEmpty() && dialog == Dialog.None) {
