@@ -7,15 +7,19 @@ import android.content.pm.PackageManager
 import android.os.IBinder
 import com.topjohnwu.superuser.nio.FileSystemManager
 import dev.cluvex.strata.core.root.RootFileAccess
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import rikka.shizuku.Shizuku
 import kotlin.coroutines.resume
+
+data class ShizukuExecResult(val exitCode: Int, val output: String)
 
 object ShizukuManager {
 
@@ -27,12 +31,14 @@ object ShizukuManager {
 
     @Volatile private var appContext: Context? = null
     @Volatile private var remoteFs: FileSystemManager? = null
+    @Volatile private var remoteService: IShizukuFileService? = null
     private val bindMutex = Mutex()
     private const val PERMISSION_CODE = 4211
 
     private val onBinderReceived = Shizuku.OnBinderReceivedListener { refresh() }
     private val onBinderDead = Shizuku.OnBinderDeadListener {
         remoteFs = null
+        remoteService = null
         _state.value = Status.NOT_RUNNING
     }
 
@@ -51,7 +57,10 @@ object ShizukuManager {
             permittedSafe() -> Status.READY
             else -> Status.NEEDS_PERMISSION
         }
-        if (next != Status.READY) remoteFs = null
+        if (next != Status.READY) {
+            remoteFs = null
+            remoteService = null
+        }
         _state.value = next
     }
 
@@ -93,6 +102,20 @@ object ShizukuManager {
 
     suspend fun access(): RootFileAccess? = fileSystem()?.let { RootFileAccess(it) }
 
+    /** Runs a shell command through the Shizuku user service. Null when Shizuku is unavailable or the call failed. */
+    suspend fun exec(command: String, timeoutMs: Long): ShizukuExecResult? {
+        if (fileSystem() == null) return null
+        val service = remoteService ?: return null
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val raw = service.exec(command, timeoutMs)
+                val nl = raw.indexOf('\n')
+                if (nl < 0) ShizukuExecResult(raw.trim().toIntOrNull() ?: -2, "")
+                else ShizukuExecResult(raw.substring(0, nl).trim().toIntOrNull() ?: -2, raw.substring(nl + 1))
+            }.getOrNull()
+        }
+    }
+
     private suspend fun fileSystem(): FileSystemManager? {
         remoteFs?.let { return it }
         if (!ensurePermission()) return null
@@ -105,21 +128,20 @@ object ShizukuManager {
             .daemon(false)
             .processNameSuffix("fs")
             .debuggable(false)
-            .version(1)
+            .version(2)
         return withTimeoutOrNull(20_000) {
             suspendCancellableCoroutine { cont ->
                 val connection = object : ServiceConnection {
                     override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-                        val fs = binder?.takeIf { it.pingBinder() }?.let {
-                            runCatching {
-                                FileSystemManager.getRemote(IShizukuFileService.Stub.asInterface(it).fileSystemService)
-                            }.getOrNull()
-                        }
+                        val service = binder?.takeIf { it.pingBinder() }?.let { IShizukuFileService.Stub.asInterface(it) }
+                        val fs = service?.let { runCatching { FileSystemManager.getRemote(it.fileSystemService) }.getOrNull() }
+                        if (fs != null) remoteService = service
                         if (cont.isActive) cont.resume(fs)
                     }
 
                     override fun onServiceDisconnected(name: ComponentName?) {
                         remoteFs = null
+                        remoteService = null
                         _state.value = Status.NOT_RUNNING
                     }
                 }

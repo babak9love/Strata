@@ -88,7 +88,6 @@ enum class SheetAction(@StringRes val label: Int, val group: SheetGroup) {
     PROPERTIES(R.string.model_selection_properties, SheetGroup.ORGANIZE),
     AUDIO_INFO(R.string.model_sheet_audio_info, SheetGroup.OPEN),
     VIDEO_INFO(R.string.model_sheet_video_info, SheetGroup.OPEN),
-    PLUGIN(R.string.model_sheet_plugins, SheetGroup.TOOLS),
 }
 
 data class BrowseContext(val clipboard: Boolean, val termux: Boolean, val project: Boolean, val undo: Boolean = true, val dual: Boolean = true)
@@ -158,7 +157,7 @@ val SheetAction.hint: Int?
         SheetAction.SIGN_APK -> R.string.model_hint_local_apks
         SheetAction.SMALI_TO_DEX -> R.string.model_hint_local_smali
         SheetAction.JAR_TO_DEX -> R.string.model_hint_local_jars
-        SheetAction.SPLIT, SheetAction.CIPHER, SheetAction.PLUGIN -> R.string.model_hint_local_files
+        SheetAction.SPLIT, SheetAction.CIPHER -> R.string.model_hint_local_files
         SheetAction.VAULT -> R.string.model_hint_local_not_links
         SheetAction.PROTECT -> R.string.model_hint_local_folders
         SheetAction.RESTORE -> R.string.model_hint_in_vault
@@ -209,7 +208,6 @@ fun SheetAction.available(c: SheetContext): Boolean = when (this) {
     SheetAction.SMALI_TO_DEX -> c.local && !c.file && c.smaliFolder
     SheetAction.JAR_TO_DEX -> c.local && c.file && c.jar
     SheetAction.SPLIT, SheetAction.CIPHER -> c.local && c.file && !c.symlink
-    SheetAction.PLUGIN -> c.local && c.file
     SheetAction.VAULT -> c.local && !c.symlink
     SheetAction.PROTECT -> c.local && !c.file
     SheetAction.RESTORE -> c.vault
@@ -328,7 +326,7 @@ data class ActionLayout(
         val DEFAULT_SHEET = Zoned(
             listOf(
                 listOf(SheetAction.OPEN_WITH, SheetAction.OPEN_AS_TEXT, SheetAction.RENAME, SheetAction.SHARE),
-                listOf(SheetAction.AUDIO_INFO, SheetAction.VIDEO_INFO, SheetAction.APK_INFO, SheetAction.COMPRESS, SheetAction.EXTRACT, SheetAction.HEX, SheetAction.VIEW, SheetAction.SIGN_APK, SheetAction.SMALI_TO_DEX, SheetAction.JAR_TO_DEX, SheetAction.CHECKSUM, SheetAction.PLUGIN, SheetAction.BOOKMARK, SheetAction.PROTECT, SheetAction.PROPERTIES),
+                listOf(SheetAction.AUDIO_INFO, SheetAction.VIDEO_INFO, SheetAction.APK_INFO, SheetAction.COMPRESS, SheetAction.EXTRACT, SheetAction.HEX, SheetAction.VIEW, SheetAction.SIGN_APK, SheetAction.SMALI_TO_DEX, SheetAction.JAR_TO_DEX, SheetAction.CHECKSUM, SheetAction.BOOKMARK, SheetAction.PROTECT, SheetAction.PROPERTIES),
                 listOf(SheetAction.OPEN, SheetAction.RESTORE, SheetAction.LINK, SheetAction.CIPHER, SheetAction.VAULT, SheetAction.SPLIT, SheetAction.SELECT),
             ),
         )
@@ -360,15 +358,10 @@ data class ActionLayout(
             if (parts["s"]?.contains("BOOKMARKS") != true) {
                 selection = selection.placedBefore(SelectionAction.BOOKMARKS, SelectionAction.BOOKMARK, SELECTION_CAPS)
             }
-            // Run with plugin is new: a saved item menu gets it right after Checksum.
-            var sheet = Zoned.decode(parts["q"], SheetAction.entries, DEFAULT_SHEET, SHEET_CAPS)
-            if (parts["q"]?.contains("PLUGIN") != true) {
-                sheet = sheet.placedAfter(SheetAction.PLUGIN, SheetAction.CHECKSUM, SHEET_CAPS)
-            }
             return ActionLayout(
                 browse = browse,
                 selection = selection,
-                sheet = sheet,
+                sheet = Zoned.decode(parts["q"], SheetAction.entries, DEFAULT_SHEET, SHEET_CAPS),
             )
         }
 

@@ -102,7 +102,6 @@ class ItemActions(
     val onRestore: () -> Unit = {},
     val onAudioInfo: () -> Unit = {},
     val onVideoInfo: () -> Unit = {},
-    val onPlugin: () -> Unit = {},
 )
 
 private class SheetEntry(val icon: ImageVector, @StringRes val label: Int, val onClick: () -> Unit)
@@ -166,7 +165,6 @@ fun ItemActionSheet(
         SheetAction.PROPERTIES -> SheetEntry(a.icon, a.label, actions.onProperties)
         SheetAction.AUDIO_INFO -> SheetEntry(a.icon, a.label, actions.onAudioInfo)
         SheetAction.VIDEO_INFO -> SheetEntry(a.icon, a.label, actions.onVideoInfo)
-        SheetAction.PLUGIN -> SheetEntry(a.icon, a.label, actions.onPlugin)
     }
     val primary = layout.zones[0].filter { it.available(context) }.map(::entry)
     val groups = SheetGroup.entries.map { g -> g to layout.zones[1].filter { it.group == g && it.available(context) }.map(::entry) }
