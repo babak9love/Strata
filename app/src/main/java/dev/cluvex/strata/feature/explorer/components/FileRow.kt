@@ -307,13 +307,14 @@ fun FileTile(
                                 modifier = Modifier.size(iconSize).clip(shape),
                             )
                             if (covered) {
-                                // Grid: icon and length in a bar flush with the bottom of the cover, like the two-pane list.
+                                // Grid: icon and length in a bar flush with the bottom of the cover, scaled with the cover.
                                 // 4 columns: an hour-long length drops the icon; auto grid: the icon always stays.
                                 Box(Modifier.size(iconSize).clip(shape)) {
                                     MediaBadgeBar(
                                         item, audio = true,
                                         modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
                                         dropIconWhenLong = list.gridColumns == 4,
+                                        scale = list.itemScale / 100f,
                                     )
                                 }
                             }
@@ -465,7 +466,7 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
                         // Two panes: icon and length in a bar flush with the bottom of the thumbnail.
                         Box(Modifier.size(iconSize).clip(shape)) {
                             if (kind == FileKind.VIDEO || (kind == FileKind.AUDIO && covered)) {
-                                MediaBadgeBar(item, audio = kind == FileKind.AUDIO, modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth())
+                                MediaBadgeBar(item, audio = kind == FileKind.AUDIO, modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(), scale = settings.list.itemScale / 100f)
                             }
                         }
                     } else {

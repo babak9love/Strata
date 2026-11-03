@@ -97,9 +97,10 @@ fun MediaIconBadge(audio: Boolean, modifier: Modifier = Modifier) {
 /**
  * Two panes, list rows: a bar across the bottom of the thumbnail, flush with its edges (the caller clips it to the thumbnail's shape).
  * An hour-long length drops the icon so the time still fits the narrow thumbnail, unless [dropIconWhenLong] is false (the icon always stays).
+ * [scale]: icon, time and bar height grow / shrink with the thumbnail (the file icon size setting / 100).
  */
 @Composable
-fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier, dropIconWhenLong: Boolean = true) {
+fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier, dropIconWhenLong: Boolean = true, scale: Float = 1f) {
     val ms by produceState<Long?>(null, item.path, item.lastModified) {
         value = VideoDurations.of(item.path, item.lastModified)
     }
@@ -107,9 +108,9 @@ fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier,
     val colors = MaterialTheme.colorScheme
     Row(
         modifier
-            .heightIn(min = 14.dp)
+            .heightIn(min = 14.dp * scale)
             .background(colors.surfaceContainerHigh.copy(alpha = 0.92f))
-            .padding(vertical = 1.dp),
+            .padding(vertical = 1.dp * scale),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -118,15 +119,15 @@ fun MediaBadgeBar(item: FileItem, audio: Boolean, modifier: Modifier = Modifier,
                 if (audio) Icons.Rounded.MusicNote else Icons.Rounded.PlayArrow,
                 contentDescription = null,
                 tint = colors.onSurfaceVariant,
-                modifier = Modifier.size(10.dp),
+                modifier = Modifier.size(10.dp * scale),
             )
         }
         Text(
             VideoDurations.format(length),
             // labelSmall's 16sp line height is taller than a 9sp text: it pushed the digits down against the bottom edge. Centre the glyphs in a tight line.
             style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 9.sp,
-                lineHeight = 11.sp,
+                fontSize = 9.sp * scale,
+                lineHeight = 11.sp * scale,
                 lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
                     alignment = androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center,
                     trim = androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
