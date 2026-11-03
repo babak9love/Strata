@@ -644,6 +644,7 @@ private fun Screen(
         is Route.Image -> ImageViewerScreen(
             path = r.path,
             showHidden = settings.showHidden,
+            sortOrder = settings.sortFor(java.io.File(r.path).parent ?: "/"),
             onBack = actions.pop,
             onOpenWith = actions.openWith,
         )

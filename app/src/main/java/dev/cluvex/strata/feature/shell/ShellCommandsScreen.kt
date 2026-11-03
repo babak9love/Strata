@@ -11,6 +11,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -227,6 +228,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                         CommandCard(
                             command = c,
                             running = ui.runningId == c.id,
+                            blocked = ui.runningId != null && ui.runningId != c.id,
                             lifted = lifted,
                             dragOffset = { dragOffset },
                             onRun = { if (ui.runningId == null) vm.run(c) },
@@ -242,7 +244,18 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                                     onDragCancel = { endDrag() },
                                 )
                             },
-                            modifier = if (lifted) Modifier else Modifier.animateItem(),
+                            modifier = (if (lifted) Modifier else Modifier.animateItem())
+                                .pointerInput(c.id) {
+                                    detectDragGesturesAfterLongPress(
+                                        onDragStart = { startDrag(c.id) },
+                                        onDrag = { change, amount ->
+                                            change.consume()
+                                            dragBy(amount.y)
+                                        },
+                                        onDragEnd = { endDrag() },
+                                        onDragCancel = { endDrag() },
+                                    )
+                                },
                         )
                     }
                 }
@@ -267,6 +280,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
 private fun CommandCard(
     command: SavedCommand,
     running: Boolean,
+    blocked: Boolean,
     lifted: Boolean,
     dragOffset: () -> Float,
     onRun: () -> Unit,
@@ -281,7 +295,7 @@ private fun CommandCard(
         animationSpec = if (reduced) snap() else spring(dampingRatio = 0.55f, stiffness = 420f),
         label = "lift",
     )
-    val morph = rememberPolygonMorph(MaterialShapes.Cookie9Sided, MaterialShapes.Clover4Leaf)
+    val morph = rememberPolygonMorph(MaterialShapes.Cookie9Sided, MaterialShapes.Cookie9Sided)
     val morphProgress by animateFloatAsState(
         targetValue = if (lifted) 1f else 0f,
         animationSpec = if (reduced) snap() else spring(dampingRatio = 0.6f, stiffness = 260f),
@@ -321,13 +335,13 @@ private fun CommandCard(
                         .size(40.dp)
                         .graphicsLayer { rotationZ = spin }
                         .clip(MorphShape(morph, morphProgress))
-                        .background(colors.primaryContainer),
+                        .background(lerp(colors.primaryContainer, colors.primary, lift)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.Rounded.Terminal,
                         contentDescription = null,
-                        tint = colors.onPrimaryContainer,
+                        tint = lerp(colors.onPrimaryContainer, colors.onPrimary, lift),
                         modifier = Modifier.size(22.dp).graphicsLayer { rotationZ = -spin },
                     )
                 }
@@ -348,7 +362,7 @@ private fun CommandCard(
                         )
                     }
                 }
-                IconButton(onClick = onRun, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onRun, enabled = !blocked, modifier = Modifier.size(48.dp)) {
                     if (running) {
                         CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 3.dp)
                     } else {
