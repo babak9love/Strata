@@ -255,6 +255,8 @@ fun FileTile(
     val folderBadge = showThumbnail && list.folderBadges && item.isDirectory
     val compact = !list.tileFrame && !picture
     val iconSize = (if (list.gridColumns == 4) 56.dp else 66.dp) * ((if (item.isDirectory) list.folderScale else list.itemScale) / 100f)
+    // 4 columns: the music cover keeps a fixed size (like the picture / video thumbnails); the auto grid adjusts itself, so there it follows the icon size.
+    val coverSize = if (list.gridColumns == 4) 56.dp else iconSize
     val nameScale = list.nameScale / 100f
     val metaScale = list.metaScale / 100f
     Column(
@@ -278,7 +280,7 @@ fun FileTile(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.fillMaxWidth().then(if (compact) Modifier.height(iconSize + 8.dp) else Modifier.aspectRatio(1f)).then(drop.anchor).dropHaloBehind(look, reach = 0.72f),
+            Modifier.fillMaxWidth().then(if (compact) Modifier.height((if (audioCover) maxOf(iconSize, coverSize) else iconSize) + 8.dp) else Modifier.aspectRatio(1f)).then(drop.anchor).dropHaloBehind(look, reach = 0.72f),
             contentAlignment = Alignment.Center,
         ) {
             when {
@@ -293,28 +295,30 @@ fun FileTile(
                     if (kind == FileKind.VIDEO) VideoBadge(item, Modifier.align(Alignment.BottomStart).padding(if (list.gridColumns == 4) 4.dp else 6.dp), compact = list.gridColumns == 4)
                 }
                 audioCover -> {
-                    // cover drawn at exactly the icon size (same as the two-pane list); no cover = the plain music icon
+                    // cover: fixed size in the 4-column grid, the icon size in the auto grid; no cover = the plain music icon at the icon size
                     var covered by remember(item.path, item.lastModified) { mutableStateOf(false) }
-                    Box(Modifier.size(iconSize)) {
+                    if (noCover) {
                         KindIcon(item, iconSize, shape)
-                        if (!noCover) {
+                    } else {
+                        Box(Modifier.size(coverSize)) {
+                            KindIcon(item, coverSize, shape)
                             AsyncImage(
                                 model = thumbnailModel(item),
                                 contentDescription = item.name,
                                 contentScale = ContentScale.Crop,
                                 onSuccess = { covered = true },
                                 onError = { noCover = true },
-                                modifier = Modifier.size(iconSize).clip(shape),
+                                modifier = Modifier.size(coverSize).clip(shape),
                             )
                             if (covered) {
-                                // Grid: icon and length in a bar flush with the bottom of the cover, scaled with the cover.
+                                // Icon and length in a bar flush with the bottom of the cover, scaled with the cover.
                                 // 4 columns: an hour-long length drops the icon; auto grid: the icon always stays.
-                                Box(Modifier.size(iconSize).clip(shape)) {
+                                Box(Modifier.size(coverSize).clip(shape)) {
                                     MediaBadgeBar(
                                         item, audio = true,
                                         modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
                                         dropIconWhenLong = list.gridColumns == 4,
-                                        scale = list.itemScale / 100f,
+                                        scale = if (list.gridColumns == 4) 1f else list.itemScale / 100f,
                                     )
                                 }
                             }
@@ -470,8 +474,8 @@ private fun Leading(item: FileItem, selected: Boolean, showThumbnail: Boolean, i
                             }
                         }
                     } else {
-                        if (kind == FileKind.VIDEO) MediaIconBadge(audio = false, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp))
-                        if (kind == FileKind.AUDIO && covered) MediaIconBadge(audio = true, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp))
+                        if (kind == FileKind.VIDEO) MediaIconBadge(audio = false, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp * (settings.list.itemScale / 100f)), scale = settings.list.itemScale / 100f)
+                        if (kind == FileKind.AUDIO && covered) MediaIconBadge(audio = true, modifier = Modifier.align(Alignment.BottomStart).padding(2.dp * (settings.list.itemScale / 100f)), scale = settings.list.itemScale / 100f)
                     }
                 }
                 showThumbnail && FileKinds.hasApkIcon(item) -> ApkIconOrKind(item, iconSize, shape)
