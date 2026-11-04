@@ -107,6 +107,7 @@ import dev.cluvex.strata.feature.dex.DexScreen
 import dev.cluvex.strata.feature.editor.TextEditorScreen
 import dev.cluvex.strata.feature.explorer.ExplorerScreen
 import dev.cluvex.strata.feature.explorer.ExplorerViewModel
+import dev.cluvex.strata.feature.explorer.Pane
 import dev.cluvex.strata.feature.hex.HexEditorScreen
 import dev.cluvex.strata.feature.keys.ImportKeyDialog
 import dev.cluvex.strata.feature.keys.SigningKeysScreen
@@ -232,6 +233,10 @@ fun AppShell(
     val saveable = rememberSaveableStateHolder()
     val motion = MaterialTheme.motionScheme
     val side = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1 else 1
+    // Two panes: while the pane away from the menu is active, the swipe belongs to the panes (it moves focus to the
+    // pane next to the menu, see swipeToMenuSidePane); the menu opens by swipe only once that pane is active.
+    val activePane by remember(vm) { vm.state.map { it.active }.distinctUntilChanged() }.collectAsStateWithLifecycle(Pane.LEFT)
+    val swipeBelongsToPanes = settings.dualPanePreferred && activePane == Pane.RIGHT
 
     val root = remember { Environment.getExternalStorageDirectory()?.absolutePath ?: "/storage/emulated/0" }
     val sidebarBookmarks by remember(vm) {
@@ -367,7 +372,7 @@ fun AppShell(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = route == Route.Files && (settings.behavior.swipeOpensDrawer || drawerState.isOpen),
+        gesturesEnabled = route == Route.Files && ((settings.behavior.swipeOpensDrawer && !swipeBelongsToPanes) || drawerState.isOpen),
         drawerContent = {
             ModalDrawerSheet(
                 drawerShape = RoundedCornerShape(topEnd = 40.dp, bottomEnd = 40.dp),

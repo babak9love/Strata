@@ -80,8 +80,8 @@ data class ThemeSeed(@StringRes val name: Int, val argb: Int)
 object ThemeSeeds {
     const val STRATA = 0xFF2D6A4F.toInt()
 
-    /** Seed colour a fresh install starts with (0xFF890000). */
-    const val DEFAULT = 0xFF890000.toInt()
+    /** Seed colour a fresh install starts with (0xFF6750A4). */
+    const val DEFAULT = 0xFF6750A4.toInt()
 
     val presets = listOf(
         ThemeSeed(R.string.model_seed_strata, STRATA),
@@ -102,7 +102,7 @@ object ThemeSeeds {
 }
 
 data class AppearancePrefs(
-    val themeMode: ThemeMode = ThemeMode.DARK,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val wallpaperColors: Boolean = true,
     val seed: Int = ThemeSeeds.DEFAULT,
     val style: ThemeStyle = ThemeStyle.TONAL_SPOT,
@@ -110,15 +110,15 @@ data class AppearancePrefs(
     val pureBlack: Boolean = false,
     val textScale: Float = 1f,
     val corners: CornerStyle = CornerStyle.ROUND,
-    val iconShape: IconShape = IconShape.SUNNY,
+    val iconShape: IconShape = IconShape.ROUNDED,
     /** On: files use the dedicated (branded / extension) icons. Off: the classic tile of the chosen shape with a simple symbol. */
-    val customFileIcons: Boolean = true,
+    val customFileIcons: Boolean = false,
     /** On: folders use a real folder shape (with its corner badges). Off: the classic folder tile of the chosen shape. */
-    val folderShaped: Boolean = true,
+    val folderShaped: Boolean = false,
     /** Folder-shaped icons only: on keeps the artwork's own colours, off tints the folder with the theme colour. */
-    val folderFixedColor: Boolean = true,
+    val folderFixedColor: Boolean = false,
     /** Which folder artwork is used while folder-shaped icons are on. */
-    val folderStyle: FolderStyle = FolderStyle.NEBULA,
+    val folderStyle: FolderStyle = FolderStyle.ROSE,
     val colorfulIcons: Boolean = true,
     val motion: MotionStyle = MotionStyle.EXPRESSIVE,
     val haptics: Boolean = false,

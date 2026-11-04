@@ -101,6 +101,7 @@ import dev.cluvex.strata.feature.explorer.components.UndoListDialog
 import dev.cluvex.strata.feature.explorer.components.BookmarkActions
 import dev.cluvex.strata.feature.explorer.components.BookmarkChipsBar
 import dev.cluvex.strata.feature.explorer.components.bookmarkSwipe
+import dev.cluvex.strata.feature.explorer.components.swipeToMenuSidePane
 import dev.cluvex.strata.feature.explorer.components.currentBookmarkIndex
 import dev.cluvex.strata.feature.explorer.components.isStorageRoot
 import dev.cluvex.strata.feature.explorer.components.BookmarkEditDialog
@@ -570,7 +571,10 @@ fun ExplorerScreen(
                     onRefresh = { vm.setActive(pane); vm.refresh(pane) },
                     modifier = Modifier.weight(1f).fillMaxSize().then(
                         if (dual) {
-                            Modifier
+                            Modifier.swipeToMenuSidePane(
+                                enabled = ui.settings.behavior.swipeOpensDrawer && pane == Pane.RIGHT && ui.active == Pane.RIGHT,
+                                onSwipe = { vm.setActive(Pane.LEFT) },
+                            )
                         } else {
                             Modifier.bookmarkSwipe(
                                 enabled = ui.settings.behavior.showBookmarkBar && ui.settings.behavior.bookmarkSwipe && bookmarkIndex >= 0 && state.selected.isEmpty(),

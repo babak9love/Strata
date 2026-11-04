@@ -21,12 +21,12 @@ enum class SizeUnits {
 }
 
 data class ListPrefs(
-    val viewMode: ViewMode = ViewMode.GRID,
+    val viewMode: ViewMode = ViewMode.LIST,
     val thumbnails: Boolean = true,
     val folderBadges: Boolean = true,
     val showDate: Boolean = true,
     val showSize: Boolean = true,
-    val dateStyle: DateStyle = DateStyle.COMPACT,
+    val dateStyle: DateStyle = DateStyle.RELATIVE,
     val use24Hour: Boolean = true,
     val sizeUnits: SizeUnits = SizeUnits.BINARY,
     val wrapNames: Boolean = false,
@@ -47,7 +47,7 @@ data class ListPrefs(
 
 /** Default icon size, in percent. */
 const val DEFAULT_ITEM_SCALE = 100
-const val DEFAULT_FOLDER_SCALE = 111
+const val DEFAULT_FOLDER_SCALE = 100
 
 object ItemScale {
     const val MIN = 70
@@ -85,11 +85,11 @@ data class BehaviorPrefs(
     /** Swiping right from the left edge opens the side menu (drawer). Off by default so it does not clash with the bookmark swipe. */
     val swipeOpensDrawer: Boolean = false,
     /** Shows the bookmark chips under the title on the main screen. Has nothing to do with the side menu. */
-    val showBookmarkBar: Boolean = true,
+    val showBookmarkBar: Boolean = false,
     /** Puts the bookmark chips under the bottom toolbar instead of under the title. */
     val bookmarkBarAtBottom: Boolean = false,
     /** Look of the bookmark chips. Null follows the folder icon style: outlined with folder-shaped icons, classic without. */
-    val bookmarkStyle: BookmarkStyle? = null,
+    val bookmarkStyle: BookmarkStyle? = BookmarkStyle.PATH_CARD,
     /** Swiping left or right on the file list switches between bookmarks. */
     val bookmarkSwipe: Boolean = true,
     /** The bookmark swipe wraps around: the last bookmark is followed by the first, and the first is preceded by the last. */
@@ -97,15 +97,15 @@ data class BehaviorPrefs(
     /** The bookmark swipe drags the page with the finger and slides it out and in. Off: the bookmark just opens, like a tap on its chip. */
     val bookmarkSwipeSlide: Boolean = true,
     val keepScreenOnTasks: Boolean = false,
-    val videoAutoHide: Boolean = true,
+    val videoAutoHide: Boolean = false,
     val resumeAudio: Boolean = true,
     val resumeVideo: Boolean = true,
     val backToListAudio: Boolean = true,
     val backToListVideo: Boolean = true,
-    val backgroundAudio: Boolean = true,
-    val backgroundVideo: Boolean = true,
+    val backgroundAudio: Boolean = false,
+    val backgroundVideo: Boolean = false,
     val seekBackSeconds: Int = 5,
-    val seekForwardSeconds: Int = 15,
+    val seekForwardSeconds: Int = 5,
     /** "Save" tick of the speed dialog: when on, the chosen playback speed is kept for next time. */
     val saveSpeedVideo: Boolean = false,
     val speedVideo: Float = 1f,
@@ -124,9 +124,9 @@ data class BehaviorPrefs(
     /** Shuffle state of the music player, remembered between sessions. */
     val shuffleAudio: Boolean = false,
     /** "Play alone" of the video player: stop other players while it plays, and pause when another app plays or a call comes in. */
-    val playAloneVideo: Boolean = true,
+    val playAloneVideo: Boolean = false,
     /** "Play alone" of the music player (same meaning). */
-    val playAloneAudio: Boolean = true,
+    val playAloneAudio: Boolean = false,
     /** Ids of the side menu items and sections the user hid with the pencil. Empty shows everything. */
     val drawerHidden: Set<String> = emptySet(),
 )
