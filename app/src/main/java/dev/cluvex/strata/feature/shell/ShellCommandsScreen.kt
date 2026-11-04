@@ -1,5 +1,13 @@
 package dev.cluvex.strata.feature.shell
 
+import dev.cluvex.strata.feature.settings.ConnectedChoice
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -136,6 +144,12 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     }
     LaunchedEffect(Unit) { vm.reload() }
     val listState = rememberLazyListState()
+    // How the command list is shown: 0 = list, 1 = grid with automatic columns, 2 = grid with 4 columns.
+    val uiPrefs = remember { context.getSharedPreferences("shell_ui", android.content.Context.MODE_PRIVATE) }
+    var layout by remember { mutableIntStateOf(uiPrefs.getInt("layout", 0).coerceIn(0, 2)) }
+    val listLabel = stringResource(R.string.model_view_list)
+    val gridLabel = stringResource(R.string.model_view_grid)
+    val autoLabel = stringResource(R.string.settings_grid_columns_auto)
     var dragId by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     var pendingIndex by remember { mutableStateOf<Int?>(null) }
@@ -244,7 +258,20 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
             )
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            if (!ui.loading && ui.commands.isNotEmpty()) {
+                ConnectedChoice(
+                    options = listOf(0, 1, 2),
+                    selected = layout,
+                    label = { when (it) { 0 -> listLabel; 1 -> "$gridLabel · $autoLabel"; else -> "$gridLabel · 4" } },
+                    onSelect = { v ->
+                        layout = v
+                        uiPrefs.edit().putInt("layout", v).apply()
+                    },
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                )
+            }
+            Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
                 ui.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { LoadingIndicator() }
                 ui.commands.isEmpty() -> ExpressiveEmptyState(
@@ -253,6 +280,24 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                     icon = Icons.Rounded.Terminal,
                     modifier = Modifier.fillMaxSize().padding(24.dp),
                 )
+                layout != 0 -> LazyVerticalGrid(
+                    columns = if (layout == 1) GridCells.Adaptive(150.dp) else GridCells.Fixed(4),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    gridItems(ui.commands, key = { it.id }) { c ->
+                        CommandTile(
+                            command = c,
+                            running = ui.runningId == c.id,
+                            blocked = ui.runningId != null && ui.runningId != c.id,
+                            onRun = { if (ui.runningId == null) { if (c.confirm) confirming = c else vm.run(c) } },
+                            onEdit = { editing = EditTarget(c) },
+                            modifier = Modifier.animateItem(),
+                        )
+                    }
+                }
                 else -> LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
@@ -295,6 +340,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                         )
                     }
                 }
+            }
             }
         }
     }
@@ -593,6 +639,58 @@ private fun EditCommandDialog(
     }
 }
 
+/** Compact card used in the grid layouts: icon, name, and run / edit buttons. Reordering is done in the list layout. */
+@Composable
+private fun CommandTile(
+    command: SavedCommand,
+    running: Boolean,
+    blocked: Boolean,
+    onRun: () -> Unit,
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = colors.surfaceBright,
+        contentColor = colors.onSurface,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            Modifier.padding(horizontal = 6.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Box(
+                Modifier.size(36.dp).clip(CircleShape).background(colors.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Rounded.Terminal, contentDescription = null, tint = colors.onPrimaryContainer, modifier = Modifier.size(20.dp))
+            }
+            Text(
+                command.name,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 2,
+                minLines = 2,
+                textAlign = TextAlign.Center,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onRun, enabled = !blocked, modifier = Modifier.size(34.dp)) {
+                    if (running) {
+                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.5.dp)
+                    } else {
+                        Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.shell_run), modifier = Modifier.size(24.dp))
+                    }
+                }
+                IconButton(onClick = onEdit, modifier = Modifier.size(34.dp)) {
+                    Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.common_edit), modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
     val clipboard = rememberTextClipboard()
@@ -605,14 +703,38 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
             "$who · $code"
         }
     }
-    val body = result.output.ifEmpty { if (result.backend == null) "" else stringResource(R.string.shell_no_output) }
+    // A command run in the background only prints a "started" message; show its log file instead.
+    val detachedLog = if (run.command.detached && result.backend != null) ShellRunner.detachedLogPath(run.command.id) else null
+    val readMode = if (result.backend == ShellBackend.ROOT) ShellMode.ROOT else ShellMode.SHIZUKU
+    var reload by remember { mutableIntStateOf(0) }
+    var fileText by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    if (detachedLog != null) {
+        LaunchedEffect(reload) {
+            loading = true
+            if (reload == 0) delay(700)
+            fileText = ShellRunner.readFile(detachedLog, readMode)
+            loading = false
+        }
+    }
+    val body = if (detachedLog != null) {
+        when {
+            loading && fileText == null -> "…"
+            fileText == null -> stringResource(R.string.shell_log_file_missing)
+            fileText!!.isEmpty() -> stringResource(R.string.shell_no_output)
+            else -> fileText!!
+        }
+    } else {
+        result.output.ifEmpty { if (result.backend == null) "" else stringResource(R.string.shell_no_output) }
+    }
+    val copyText = if (detachedLog != null) fileText.orEmpty() else result.output
     ExpressiveDialog(
         onDismissRequest = onDismiss,
         title = run.command.name,
         icon = Icons.Rounded.Terminal,
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) } },
-        dismissButton = if (result.output.isNotEmpty()) {
-            { TextButton(onClick = { clipboard.setText(result.output) }) { Text(stringResource(R.string.common_copy)) } }
+        dismissButton = if (copyText.isNotEmpty()) {
+            { TextButton(onClick = { clipboard.setText(copyText) }) { Text(stringResource(R.string.common_copy)) } }
         } else null,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -629,6 +751,9 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
                         )
                     }
                 }
+            }
+            if (detachedLog != null) {
+                TextButton(onClick = { reload++ }, enabled = !loading) { Text(stringResource(R.string.shell_log_refresh)) }
             }
         }
     }

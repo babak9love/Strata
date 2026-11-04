@@ -39,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,6 +60,7 @@ import dev.cluvex.strata.core.shell.ShellRunner
 import dev.cluvex.strata.ui.expressive.ExpressiveDialog
 import dev.cluvex.strata.ui.expressive.ExpressiveEmptyState
 import dev.cluvex.strata.ui.rememberTextClipboard
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
 
@@ -135,10 +137,7 @@ fun ShellLogScreen(onBack: () -> Unit, vm: ShellLogViewModel = viewModel()) {
     }
 }
 
-private fun logText(e: LogEntry): String = buildString {
-    append(e.name).append('\n').append(e.command)
-    if (e.output.isNotEmpty()) append("\n\n").append(e.output)
-}
+private fun logText(e: LogEntry): String = e.output
 
 @Composable
 private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onToggle: () -> Unit, onCopy: () -> Unit) {
@@ -162,15 +161,19 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
     var fileText by remember { mutableStateOf<String?>(null) }
     var fileLoading by remember { mutableStateOf(false) }
     val logFile = entry.logFile
+    val scope = rememberCoroutineScope()
+    var running by remember { mutableStateOf<Boolean?>(null) }
+    var stopping by remember { mutableStateOf(false) }
+    val readMode = when (entry.backend) {
+        "SHIZUKU" -> ShellMode.SHIZUKU
+        "ROOT" -> ShellMode.ROOT
+        else -> ShellMode.AUTO
+    }
     if (expanded && logFile != null) {
         LaunchedEffect(entry.id, reload) {
             fileLoading = true
-            val mode = when (entry.backend) {
-                "SHIZUKU" -> ShellMode.SHIZUKU
-                "ROOT" -> ShellMode.ROOT
-                else -> ShellMode.AUTO
-            }
-            fileText = ShellRunner.readFile(logFile, mode)
+            fileText = ShellRunner.readFile(logFile, readMode)
+            running = ShellRunner.isDetachedRunning(entry.commandId, readMode)
             fileLoading = false
         }
     }
@@ -197,8 +200,6 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
                 Modifier.fillMaxWidth().padding(start = 72.dp, end = 16.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text(stringResource(R.string.shell_log_command), style = MaterialTheme.typography.labelMedium)
-                SelectionContainer { Text(entry.command, style = mono) }
                 Text(stringResource(R.string.shell_log_output), style = MaterialTheme.typography.labelMedium)
                 Box(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
                     SelectionContainer {
@@ -208,6 +209,13 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
                 if (logFile != null) {
                     Text(stringResource(R.string.shell_log_file), style = MaterialTheme.typography.labelMedium)
                     Text(logFile, style = mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    running?.let {
+                        Text(
+                            stringResource(if (it) R.string.shell_log_running else R.string.shell_log_not_running),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (it) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Box(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
                         SelectionContainer {
                             Text(
@@ -223,12 +231,25 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = { reload++ }, enabled = !fileLoading) { Text(stringResource(R.string.shell_log_refresh)) }
+                        TextButton(
+                            onClick = {
+                                scope.launch {
+                                    stopping = true
+                                    ShellRunner.stopDetached(entry.commandId, readMode)
+                                    stopping = false
+                                    reload++
+                                }
+                            },
+                            enabled = running == true && !stopping,
+                        ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
                         TextButton(onClick = { clipboard.setText(fileText.orEmpty()) }, enabled = !fileText.isNullOrEmpty()) {
                             Text(stringResource(R.string.common_copy))
                         }
                     }
                 }
-                TextButton(onClick = onCopy) { Text(stringResource(R.string.common_copy)) }
+                if (logFile == null) {
+                    TextButton(onClick = onCopy) { Text(stringResource(R.string.common_copy)) }
+                }
             }
         }
     }

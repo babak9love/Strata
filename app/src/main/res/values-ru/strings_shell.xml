@@ -39,11 +39,14 @@
     <string name="shell_detached_hint">Продолжает работать, даже если Strata или Shizuku закрыты. Вывод пишется в лог в /data/local/tmp.</string>
     <string name="shell_confirm_switch">Спрашивать перед запуском</string>
     <string name="shell_show_status">Показывать сообщение о статусе</string>
-    <string name="shell_pin_home">Закрепить на главном экране</string>
-    <string name="shell_pin_failed">Не удалось закрепить на главном экране</string>
+    <string name="shell_pin_home">Добавить на главный экран</string>
+    <string name="shell_pin_failed">Не удалось добавить на главный экран</string>
     <string name="shell_log_file">Файл журнала фоновой задачи</string>
     <string name="shell_log_refresh">Обновить</string>
     <string name="shell_log_file_missing">Файл журнала не найден (возможно, он удалён)</string>
+    <string name="shell_log_stop">Остановить</string>
+    <string name="shell_log_running">Выполняется</string>
+    <string name="shell_log_not_running">Не выполняется</string>
     <string name="shell_confirm_title">Запустить «%1$s»?</string>
     <string name="shell_duplicate">Дублировать</string>
     <string name="shell_copy_name">%1$s (копия)</string>

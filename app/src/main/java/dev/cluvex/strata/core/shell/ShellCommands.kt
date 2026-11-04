@@ -104,6 +104,27 @@ object ShellRunner {
     /** Path of the log file that [detach] writes this command's output to. */
     fun detachedLogPath(id: String): String = "/data/local/tmp/strata_${detachedKey(id)}.log"
 
+    fun detachedPidPath(id: String): String = "/data/local/tmp/strata_${detachedKey(id)}.pid"
+
+    /** True while the background process started by [detach] for this command is still alive. */
+    suspend fun isDetachedRunning(id: String, mode: ShellMode): Boolean {
+        val pid = detachedPidPath(id)
+        val r = run("p=\$(cat '$pid' 2>/dev/null); if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then echo 1; else echo 0; fi", mode, 10)
+        return r.backend != null && r.output.trim() == "1"
+    }
+
+    /** Stops the background process (and its children): TERM first, then KILL if it is still alive. */
+    suspend fun stopDetached(id: String, mode: ShellMode): Boolean {
+        val pid = detachedPidPath(id)
+        val cmd = "p=\$(cat '$pid' 2>/dev/null); " +
+            "if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then " +
+            "kill -s TERM -- -\$p 2>/dev/null || kill -s TERM \$p; sleep 1; " +
+            "if kill -0 \$p 2>/dev/null; then kill -s KILL -- -\$p 2>/dev/null || kill -s KILL \$p; fi; " +
+            "echo stopped; else echo idle; fi"
+        val r = run(cmd, mode, 15)
+        return r.backend != null && r.output.trim().endsWith("stopped")
+    }
+
     /** Reads the tail of a background log file with the same backend that started it; null if it can't be read. */
     suspend fun readFile(path: String, mode: ShellMode, maxBytes: Int = 20_000): String? {
         val r = run("tail -c $maxBytes '$path'", mode, 10)
@@ -113,17 +134,20 @@ object ShellRunner {
     /** Removes the script and log that [detach] left in /data/local/tmp for this command. */
     fun detachedCleanup(id: String): String {
         val key = detachedKey(id)
-        return "rm -f /data/local/tmp/strata_$key.sh /data/local/tmp/strata_$key.log"
+        return "rm -f /data/local/tmp/strata_$key.sh /data/local/tmp/strata_$key.log /data/local/tmp/strata_$key.pid"
     }
 
     fun detach(id: String, command: String): String {
         val key = detachedKey(id)
         val script = "/data/local/tmp/strata_$key.sh"
         val log = "/data/local/tmp/strata_$key.log"
+        val pid = "/data/local/tmp/strata_$key.pid"
         var delim = "STRATA_EOF"
         while (command.contains(delim)) delim += "_"
         return buildString {
             append("cat > ").append(script).append(" <<'").append(delim).append("'\n")
+            // The script records its own PID (it leads its own session), so the app can stop it later.
+            append("echo \$\$ > ").append(pid).append('\n')
             append(command.trimEnd('\n', '\r')).append('\n')
             append(delim).append('\n')
             append("setsid nohup sh ").append(script).append(" > ").append(log).append(" 2>&1 &\n")

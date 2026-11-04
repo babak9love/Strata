@@ -39,11 +39,14 @@
     <string name="shell_detached_hint">Keeps running if Strata or Shizuku is closed. Output goes to a log file in /data/local/tmp.</string>
     <string name="shell_confirm_switch">Ask before running</string>
     <string name="shell_show_status">Show status message</string>
-    <string name="shell_pin_home">Pin to home screen</string>
-    <string name="shell_pin_failed">Couldn\'t pin to the home screen</string>
+    <string name="shell_pin_home">Add to Home screen</string>
+    <string name="shell_pin_failed">Couldn\'t add to the Home screen</string>
     <string name="shell_log_file">Background log file</string>
     <string name="shell_log_refresh">Refresh</string>
     <string name="shell_log_file_missing">Log file not found (it may have been deleted)</string>
+    <string name="shell_log_stop">Stop</string>
+    <string name="shell_log_running">Running</string>
+    <string name="shell_log_not_running">Not running</string>
     <string name="shell_confirm_title">Run %1$s?</string>
     <string name="shell_duplicate">Duplicate</string>
     <string name="shell_copy_name">%1$s (copy)</string>

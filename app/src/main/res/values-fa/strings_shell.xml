@@ -39,11 +39,14 @@
     <string name="shell_detached_hint">با بسته‌شدن Strata یا Shizuku هم ادامه می‌دهد. خروجی در یک فایل لاگ در /data/local/tmp ذخیره می‌شود.</string>
     <string name="shell_confirm_switch">پرسیدن قبل از اجرا</string>
     <string name="shell_show_status">نمایش پیام وضعیت</string>
-    <string name="shell_pin_home">پین کردن روی صفحه اصلی</string>
-    <string name="shell_pin_failed">پین کردن روی صفحه اصلی ممکن نشد</string>
+    <string name="shell_pin_home">افزودن به صفحه اصلی</string>
+    <string name="shell_pin_failed">افزودن به صفحه اصلی ممکن نشد</string>
     <string name="shell_log_file">فایل لاگ پس‌زمینه</string>
     <string name="shell_log_refresh">بازخوانی</string>
     <string name="shell_log_file_missing">فایل لاگ پیدا نشد (ممکن است حذف شده باشد)</string>
+    <string name="shell_log_stop">توقف</string>
+    <string name="shell_log_running">در حال اجرا</string>
+    <string name="shell_log_not_running">در حال اجرا نیست</string>
     <string name="shell_confirm_title">%1$s اجرا شود؟</string>
     <string name="shell_duplicate">تکثیر</string>
     <string name="shell_copy_name">%1$s (کپی)</string>
