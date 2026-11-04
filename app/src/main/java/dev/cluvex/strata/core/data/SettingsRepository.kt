@@ -551,7 +551,7 @@ class SettingsRepository(private val context: Context) {
             iconShape = enumOf(p[Keys.ICON_SHAPE], IconShape.ROUNDED),
             customFileIcons = p[Keys.CUSTOM_FILE_ICONS] ?: false,
             folderShaped = p[Keys.FOLDER_SHAPED] ?: false,
-            folderFixedColor = p[Keys.FOLDER_FIXED_COLOR] ?: false,
+            folderFixedColor = p[Keys.FOLDER_FIXED_COLOR] ?: true,
             folderStyle = enumOf(p[Keys.FOLDER_STYLE], FolderStyle.ROSE),
             colorfulIcons = p[Keys.COLORFUL_ICONS] ?: true,
             motion = enumOf(p[Keys.MOTION], MotionStyle.EXPRESSIVE),

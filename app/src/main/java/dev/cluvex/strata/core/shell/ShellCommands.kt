@@ -16,6 +16,8 @@ import dev.cluvex.strata.core.shizuku.ShizukuManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import java.io.File
 
 @Serializable
@@ -49,15 +51,28 @@ data class ShellResult(
 class ShellCommandStore(context: Context) {
     private val file = File(context.applicationContext.filesDir, "shell_commands.json")
     private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
+    // Only the export file is indented, like the settings backup; the private store file stays compact.
+    private val pretty = Json { prettyPrint = true }
     private val serializer = ListSerializer(SavedCommand.serializer())
 
     fun load(): List<SavedCommand> = runCatching {
         if (!file.exists()) emptyList() else json.decodeFromString(serializer, file.readText())
     }.getOrDefault(emptyList())
 
-    fun encode(commands: List<SavedCommand>): String = json.encodeToString(serializer, commands)
+    /** The export file: an indented JSON object holding the commands under "shellCommands", as in the settings backup. */
+    fun encode(commands: List<SavedCommand>): String =
+        pretty.encodeToString(JsonObject.serializer(), JsonObject(mapOf("shellCommands" to json.encodeToJsonElement(serializer, commands))))
 
-    fun decode(text: String): List<SavedCommand>? = runCatching { json.decodeFromString(serializer, text) }.getOrNull()
+    /** Reads an export file: a bare list, or an object with a "shellCommands" list (this export, or a full settings backup). */
+    fun decode(text: String): List<SavedCommand>? = runCatching {
+        val root = json.parseToJsonElement(text)
+        val list = when (root) {
+            is JsonArray -> root
+            is JsonObject -> root["shellCommands"] as? JsonArray
+            else -> null
+        } ?: return@runCatching null
+        json.decodeFromJsonElement(serializer, list)
+    }.getOrNull()
 
     fun save(commands: List<SavedCommand>) {
         runCatching {

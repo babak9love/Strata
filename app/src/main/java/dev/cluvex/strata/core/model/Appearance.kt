@@ -116,7 +116,7 @@ data class AppearancePrefs(
     /** On: folders use a real folder shape (with its corner badges). Off: the classic folder tile of the chosen shape. */
     val folderShaped: Boolean = false,
     /** Folder-shaped icons only: on keeps the artwork's own colours, off tints the folder with the theme colour. */
-    val folderFixedColor: Boolean = false,
+    val folderFixedColor: Boolean = true,
     /** Which folder artwork is used while folder-shaped icons are on. */
     val folderStyle: FolderStyle = FolderStyle.ROSE,
     val colorfulIcons: Boolean = true,
