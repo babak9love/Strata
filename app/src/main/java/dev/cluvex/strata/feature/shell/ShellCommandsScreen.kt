@@ -1,11 +1,15 @@
 package dev.cluvex.strata.feature.shell
 
-import dev.cluvex.strata.feature.settings.ConnectedChoice
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.lazy.grid.items as gridItems
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.CreateNewFolder
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.activity.compose.BackHandler
@@ -125,6 +129,8 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     var showLog by remember { mutableStateOf(false) }
     var confirming by remember { mutableStateOf<SavedCommand?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
+    var newGroupDialog by remember { mutableStateOf(false) }
+    var groupMenu by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
@@ -144,12 +150,20 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     }
     LaunchedEffect(Unit) { vm.reload() }
     val listState = rememberLazyListState()
-    // How the command list is shown: 0 = list, 1 = grid with automatic columns, 2 = grid with 4 columns.
-    val uiPrefs = remember { context.getSharedPreferences("shell_ui", android.content.Context.MODE_PRIVATE) }
-    var layout by remember { mutableIntStateOf(uiPrefs.getInt("layout", 0).coerceIn(0, 2)) }
-    val listLabel = stringResource(R.string.model_view_list)
-    val gridLabel = stringResource(R.string.model_view_grid)
-    val autoLabel = stringResource(R.string.settings_grid_columns_auto)
+    // Display rows: each group (header + its commands unless folded), then the commands that are in no group.
+    val rows = remember(ui.commands, ui.groups, ui.collapsed) {
+        buildList<ShellRow> {
+            for (g in ui.groups) {
+                val items = ui.commands.filter { it.group == g }
+                val folded = g in ui.collapsed
+                add(ShellRow.Group(g, items.size, folded))
+                if (!folded) items.forEach { add(ShellRow.Cmd(it, nested = true)) }
+            }
+            val loose = ui.commands.filter { it.group.isEmpty() }
+            if (ui.groups.isNotEmpty() && loose.isNotEmpty()) add(ShellRow.Label)
+            loose.forEach { add(ShellRow.Cmd(it, nested = false)) }
+        }
+    }
     var dragId by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     var pendingIndex by remember { mutableStateOf<Int?>(null) }
@@ -204,8 +218,10 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
             }
         }
         val center = cur.offset + dragOffset + cur.size / 2f
-        val next = visible.firstOrNull { it.index == cur.index + 1 }
-        val prev = visible.firstOrNull { it.index == cur.index - 1 }
+        val dragged = ui.commands.firstOrNull { it.id == id } ?: return
+        fun sameGroup(key: Any?) = ui.commands.firstOrNull { it.id == key }?.group == dragged.group
+        val next = visible.firstOrNull { it.index == cur.index + 1 && sameGroup(it.key) }
+        val prev = visible.firstOrNull { it.index == cur.index - 1 && sameGroup(it.key) }
         val target = when {
             next != null && center > next.offset + next.size / 2f -> next
             prev != null && center < prev.offset + prev.size / 2f -> prev
@@ -214,7 +230,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         val newOffset = if (target.index > cur.index) target.offset + target.size - cur.size else target.offset
         dragOffset += cur.offset - newOffset
         pendingIndex = target.index
-        vm.move(cur.index, target.index)
+        vm.swapCommands(id, target.key as String)
     }
 
     Scaffold(
@@ -228,6 +244,9 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                     }
                 },
                 actions = {
+                    IconButton(onClick = { newGroupDialog = true }) {
+                        Icon(Icons.Rounded.CreateNewFolder, contentDescription = stringResource(R.string.shell_group_new))
+                    }
                     IconButton(onClick = { showLog = true }) {
                         Icon(Icons.Rounded.History, contentDescription = stringResource(R.string.shell_log_title))
                     }
@@ -258,89 +277,77 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
             )
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            if (!ui.loading && ui.commands.isNotEmpty()) {
-                ConnectedChoice(
-                    options = listOf(0, 1, 2),
-                    selected = layout,
-                    label = { when (it) { 0 -> listLabel; 1 -> "$gridLabel · $autoLabel"; else -> "$gridLabel · 4" } },
-                    onSelect = { v ->
-                        layout = v
-                        uiPrefs.edit().putInt("layout", v).apply()
-                    },
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
-                )
-            }
-            Box(Modifier.weight(1f).fillMaxWidth()) {
+        Box(Modifier.fillMaxSize().padding(padding)) {
             when {
                 ui.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { LoadingIndicator() }
-                ui.commands.isEmpty() -> ExpressiveEmptyState(
+                ui.commands.isEmpty() && ui.groups.isEmpty() -> ExpressiveEmptyState(
                     title = stringResource(R.string.shell_empty),
                     body = stringResource(R.string.shell_empty_body),
                     icon = Icons.Rounded.Terminal,
                     modifier = Modifier.fillMaxSize().padding(24.dp),
                 )
-                layout != 0 -> LazyVerticalGrid(
-                    columns = if (layout == 1) GridCells.Adaptive(150.dp) else GridCells.Fixed(4),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    gridItems(ui.commands, key = { it.id }) { c ->
-                        CommandTile(
-                            command = c,
-                            running = ui.runningId == c.id,
-                            blocked = ui.runningId != null && ui.runningId != c.id,
-                            onRun = { if (ui.runningId == null) { if (c.confirm) confirming = c else vm.run(c) } },
-                            onEdit = { editing = EditTarget(c) },
-                            modifier = Modifier.animateItem(),
-                        )
-                    }
-                }
                 else -> LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    items(ui.commands, key = { it.id }) { c ->
-                        val lifted = dragId == c.id
-                        CommandCard(
-                            command = c,
-                            running = ui.runningId == c.id,
-                            blocked = ui.runningId != null && ui.runningId != c.id,
-                            lifted = lifted,
-                            dragOffset = { dragOffset },
-                            onRun = { if (ui.runningId == null) { if (c.confirm) confirming = c else vm.run(c) } },
-                            onEdit = { editing = EditTarget(c) },
-                            handle = Modifier.pointerInput(c.id) {
-                                detectDragGestures(
-                                    onDragStart = { startDrag(c.id) },
-                                    onDrag = { change, amount ->
-                                        change.consume()
-                                        dragBy(amount.y)
+                    items(rows, key = { it.key }) { row ->
+                        when (row) {
+                            is ShellRow.Group -> GroupHeader(
+                                name = row.name,
+                                count = row.count,
+                                collapsed = row.collapsed,
+                                onToggle = { vm.toggleCollapsed(row.name) },
+                                onMenu = { groupMenu = row.name },
+                                modifier = Modifier.animateItem(),
+                            )
+                            is ShellRow.Label -> Text(
+                                stringResource(R.string.shell_group_ungrouped),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 6.dp, top = 8.dp).animateItem(),
+                            )
+                            is ShellRow.Cmd -> {
+                                val c = row.command
+                                val lifted = dragId == c.id
+                                CommandCard(
+                                    command = c,
+                                    running = ui.runningId == c.id,
+                                    blocked = ui.runningId != null && ui.runningId != c.id,
+                                    lifted = lifted,
+                                    indent = row.nested,
+                                    dragOffset = { dragOffset },
+                                    onRun = { if (ui.runningId == null) { if (c.confirm) confirming = c else vm.run(c) } },
+                                    onEdit = { editing = EditTarget(c) },
+                                    handle = Modifier.pointerInput(c.id) {
+                                        detectDragGestures(
+                                            onDragStart = { startDrag(c.id) },
+                                            onDrag = { change, amount ->
+                                                change.consume()
+                                                dragBy(amount.y)
+                                            },
+                                            onDragEnd = { endDrag() },
+                                            onDragCancel = { endDrag() },
+                                        )
                                     },
-                                    onDragEnd = { endDrag() },
-                                    onDragCancel = { endDrag() },
-                                )
-                            },
-                            modifier = (if (lifted) Modifier else Modifier.animateItem())
-                                .pointerInput(c.id) {
-                                    detectDragGesturesAfterLongPress(
-                                        onDragStart = { startDrag(c.id) },
-                                        onDrag = { change, amount ->
-                                            change.consume()
-                                            dragBy(amount.y)
+                                    modifier = (if (lifted) Modifier else Modifier.animateItem())
+                                        .pointerInput(c.id) {
+                                            detectDragGesturesAfterLongPress(
+                                                onDragStart = { startDrag(c.id) },
+                                                onDrag = { change, amount ->
+                                                    change.consume()
+                                                    dragBy(amount.y)
+                                                },
+                                                onDragEnd = { endDrag() },
+                                                onDragCancel = { endDrag() },
+                                            )
                                         },
-                                        onDragEnd = { endDrag() },
-                                        onDragCancel = { endDrag() },
-                                    )
-                                },
-                        )
+                                )
+                            }
+                        }
                     }
                 }
-            }
             }
         }
     }
@@ -348,8 +355,10 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     editing?.let { target ->
         EditCommandDialog(
             existing = target.command,
-            onSave = { name, command, shortcut, mode, timeoutSec, detached, confirm, showStatus ->
-                vm.save(target.command?.id, name, command, shortcut, mode, timeoutSec, detached, confirm, showStatus)
+            groups = ui.groups,
+            onNewGroup = vm::addGroup,
+            onSave = { name, command, shortcut, mode, timeoutSec, detached, confirm, showStatus, group ->
+                vm.save(target.command?.id, name, command, shortcut, mode, timeoutSec, detached, confirm, showStatus, group)
                 editing = null
             },
             onDelete = target.command?.let { c -> { vm.delete(c.id); editing = null } },
@@ -386,6 +395,26 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         }
     }
 
+    if (newGroupDialog) {
+        GroupNameDialog(
+            title = stringResource(R.string.shell_group_new),
+            initial = "",
+            confirmText = stringResource(R.string.common_create),
+            onDismiss = { newGroupDialog = false },
+            onConfirm = { vm.addGroup(it); newGroupDialog = false },
+        )
+    }
+    groupMenu?.let { g ->
+        GroupNameDialog(
+            title = stringResource(R.string.shell_group_edit),
+            initial = g,
+            confirmText = stringResource(R.string.common_save),
+            onDismiss = { groupMenu = null },
+            onConfirm = { vm.renameGroup(g, it); groupMenu = null },
+            onDelete = { vm.deleteGroup(g); groupMenu = null },
+        )
+    }
+
     ui.run?.let { run -> RunResultDialog(run, onDismiss = vm::dismissRun) }
 }
 
@@ -401,6 +430,7 @@ private fun CommandCard(
     onEdit: () -> Unit,
     handle: Modifier,
     modifier: Modifier = Modifier,
+    indent: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     val reduced = LocalAppearance.current.motion == MotionStyle.REDUCED
@@ -432,6 +462,7 @@ private fun CommandCard(
         contentColor = colors.onSurface,
         shadowElevation = (10 * lift).dp,
         modifier = modifier
+            .padding(start = if (indent) 14.dp else 0.dp)
             .fillMaxWidth()
             .zIndex(if (lifted) 1f else 0f)
             .graphicsLayer {
@@ -513,10 +544,13 @@ private fun CommandCard(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EditCommandDialog(
     existing: SavedCommand?,
-    onSave: (name: String, command: String, shortcut: Boolean, mode: ShellMode, timeoutSec: Int, detached: Boolean, confirm: Boolean, showStatus: Boolean) -> Unit,
+    groups: List<String>,
+    onNewGroup: (String) -> Unit,
+    onSave: (name: String, command: String, shortcut: Boolean, mode: ShellMode, timeoutSec: Int, detached: Boolean, confirm: Boolean, showStatus: Boolean, group: String) -> Unit,
     onDelete: (() -> Unit)?,
     onDuplicate: (() -> Unit)?,
     onPin: (() -> Unit)?,
@@ -530,12 +564,23 @@ private fun EditCommandDialog(
     var detached by remember { mutableStateOf(existing?.detached ?: false) }
     var confirm by remember { mutableStateOf(existing?.confirm ?: false) }
     var showStatus by remember { mutableStateOf(existing?.showStatus ?: true) }
+    var group by remember { mutableStateOf(existing?.group.orEmpty()) }
+    var newGroupDialog by remember { mutableStateOf(false) }
+    if (newGroupDialog) {
+        GroupNameDialog(
+            title = stringResource(R.string.shell_group_new),
+            initial = "",
+            confirmText = stringResource(R.string.common_create),
+            onDismiss = { newGroupDialog = false },
+            onConfirm = { onNewGroup(it); group = it.trim(); newGroupDialog = false },
+        )
+    }
     ExpressiveDialog(
         onDismissRequest = onDismiss,
         title = stringResource(if (existing == null) R.string.shell_add else R.string.shell_edit),
         icon = Icons.Rounded.Terminal,
         confirmButton = {
-            TextButton(onClick = { onSave(name, command, shortcut, mode, timeoutSec, detached, confirm, showStatus) }, enabled = command.isNotBlank()) {
+            TextButton(onClick = { onSave(name, command, shortcut, mode, timeoutSec, detached, confirm, showStatus, group) }, enabled = command.isNotBlank()) {
                 Text(stringResource(R.string.common_save))
             }
         },
@@ -570,6 +615,14 @@ private fun EditCommandDialog(
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false),
                 modifier = Modifier.fillMaxWidth(),
             )
+            Text(stringResource(R.string.shell_group_title), style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FilterChip(selected = group.isEmpty(), onClick = { group = "" }, label = { Text(stringResource(R.string.shell_group_none)) })
+                groups.forEach { g ->
+                    FilterChip(selected = group == g, onClick = { group = g }, label = { Text(g) })
+                }
+                AssistChip(onClick = { newGroupDialog = true }, label = { Text("+ " + stringResource(R.string.shell_group_new)) })
+            }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.shell_shortcut), modifier = Modifier.weight(1f))
                 Switch(checked = shortcut, onCheckedChange = { shortcut = it })
@@ -639,55 +692,84 @@ private fun EditCommandDialog(
     }
 }
 
-/** Compact card used in the grid layouts: icon, name, and run / edit buttons. Reordering is done in the list layout. */
+private sealed interface ShellRow {
+    val key: String
+
+    data class Group(val name: String, val count: Int, val collapsed: Boolean) : ShellRow {
+        override val key: String get() = "g:$name"
+    }
+
+    object Label : ShellRow {
+        override val key: String = "ungrouped"
+    }
+
+    data class Cmd(val command: SavedCommand, val nested: Boolean) : ShellRow {
+        override val key: String get() = command.id
+    }
+}
+
+/** Header of a group: tap to fold or unfold it, long-press to rename or delete it. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CommandTile(
-    command: SavedCommand,
-    running: Boolean,
-    blocked: Boolean,
-    onRun: () -> Unit,
-    onEdit: () -> Unit,
+private fun GroupHeader(
+    name: String,
+    count: Int,
+    collapsed: Boolean,
+    onToggle: () -> Unit,
+    onMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
     Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = colors.surfaceBright,
+        shape = RoundedCornerShape(16.dp),
+        color = colors.surfaceContainerHigh,
         contentColor = colors.onSurface,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).combinedClickable(onClick = onToggle, onLongClick = onMenu),
     ) {
-        Column(
-            Modifier.padding(horizontal = 6.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+        Row(
+            Modifier.heightIn(min = 52.dp).padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Box(
-                Modifier.size(36.dp).clip(CircleShape).background(colors.primaryContainer),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Rounded.Terminal, contentDescription = null, tint = colors.onPrimaryContainer, modifier = Modifier.size(20.dp))
+            Text(name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Surface(shape = RoundedCornerShape(10.dp), color = colors.primaryContainer, contentColor = colors.onPrimaryContainer) {
+                Text(count.toString(), style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 9.dp, vertical = 2.dp))
             }
-            Text(
-                command.name,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 2,
-                minLines = 2,
-                textAlign = TextAlign.Center,
-                overflow = TextOverflow.Ellipsis,
+            Icon(
+                if (collapsed) Icons.Rounded.ExpandMore else Icons.Rounded.ExpandLess,
+                contentDescription = stringResource(if (collapsed) R.string.shell_group_expand else R.string.shell_group_collapse),
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onRun, enabled = !blocked, modifier = Modifier.size(34.dp)) {
-                    if (running) {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.5.dp)
-                    } else {
-                        Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.shell_run), modifier = Modifier.size(24.dp))
-                    }
-                }
-                IconButton(onClick = onEdit, modifier = Modifier.size(34.dp)) {
-                    Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.common_edit), modifier = Modifier.size(18.dp))
-                }
-            }
         }
+    }
+}
+
+@Composable
+private fun GroupNameDialog(
+    title: String,
+    initial: String,
+    confirmText: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+    onDelete: (() -> Unit)? = null,
+) {
+    var text by remember { mutableStateOf(initial) }
+    ExpressiveDialog(
+        onDismissRequest = onDismiss,
+        title = title,
+        icon = Icons.Rounded.CreateNewFolder,
+        confirmButton = { TextButton(onClick = { onConfirm(text) }, enabled = text.isNotBlank()) { Text(confirmText) } },
+        dismissButton = {
+            if (onDelete != null) TextButton(onClick = onDelete) { Text(stringResource(R.string.shell_group_delete)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    ) {
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            label = { Text(stringResource(R.string.shell_group_name)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -709,11 +791,15 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
     var reload by remember { mutableIntStateOf(0) }
     var fileText by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
+    var stillRunning by remember { mutableStateOf(false) }
+    var stopping by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     if (detachedLog != null) {
         LaunchedEffect(reload) {
             loading = true
             if (reload == 0) delay(700)
             fileText = ShellRunner.readFile(detachedLog, readMode)
+            stillRunning = ShellRunner.isDetachedRunning(run.command.id, readMode)
             loading = false
         }
     }
@@ -752,8 +838,21 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
                     }
                 }
             }
-            if (detachedLog != null) {
-                TextButton(onClick = { reload++ }, enabled = !loading) { Text(stringResource(R.string.shell_log_refresh)) }
+            if (detachedLog != null && stillRunning) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { reload++ }, enabled = !loading) { Text(stringResource(R.string.shell_log_refresh)) }
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                stopping = true
+                                ShellRunner.stopDetached(run.command.id, readMode)
+                                stopping = false
+                                reload++
+                            }
+                        },
+                        enabled = !stopping,
+                    ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
+                }
             }
         }
     }

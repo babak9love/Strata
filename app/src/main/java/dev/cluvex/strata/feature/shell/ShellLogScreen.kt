@@ -200,10 +200,12 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
                 Modifier.fillMaxWidth().padding(start = 72.dp, end = 16.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text(stringResource(R.string.shell_log_output), style = MaterialTheme.typography.labelMedium)
-                Box(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
-                    SelectionContainer {
-                        Text(entry.output.ifEmpty { stringResource(R.string.shell_no_output) }, style = mono)
+                if (logFile == null) {
+                    Text(stringResource(R.string.shell_log_output), style = MaterialTheme.typography.labelMedium)
+                    Box(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+                        SelectionContainer {
+                            Text(entry.output.ifEmpty { stringResource(R.string.shell_no_output) }, style = mono)
+                        }
                     }
                 }
                 if (logFile != null) {
@@ -230,18 +232,21 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { reload++ }, enabled = !fileLoading) { Text(stringResource(R.string.shell_log_refresh)) }
-                        TextButton(
-                            onClick = {
-                                scope.launch {
-                                    stopping = true
-                                    ShellRunner.stopDetached(entry.commandId, readMode)
-                                    stopping = false
-                                    reload++
-                                }
-                            },
-                            enabled = running == true && !stopping,
-                        ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
+                        // Refresh and Stop only make sense while the background process is alive.
+                        if (running == true) {
+                            TextButton(onClick = { reload++ }, enabled = !fileLoading) { Text(stringResource(R.string.shell_log_refresh)) }
+                            TextButton(
+                                onClick = {
+                                    scope.launch {
+                                        stopping = true
+                                        ShellRunner.stopDetached(entry.commandId, readMode)
+                                        stopping = false
+                                        reload++
+                                    }
+                                },
+                                enabled = !stopping,
+                            ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
+                        }
                         TextButton(onClick = { clipboard.setText(fileText.orEmpty()) }, enabled = !fileText.isNullOrEmpty()) {
                             Text(stringResource(R.string.common_copy))
                         }

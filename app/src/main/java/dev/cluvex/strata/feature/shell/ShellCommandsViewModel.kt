@@ -23,6 +23,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 import java.util.UUID
 
 data class ShellRun(val command: SavedCommand, val result: ShellResult)
@@ -32,18 +35,42 @@ data class ShellUiState(
     val loading: Boolean = true,
     val runningId: String? = null,
     val run: ShellRun? = null,
+    /** Group names in display order (includes groups that have no commands yet). */
+    val groups: List<String> = emptyList(),
+    /** Names of the groups that are currently folded. */
+    val collapsed: Set<String> = emptySet(),
 )
 
 class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
     private val store = ShellCommandStore(app)
     private val saveLock = Mutex()
+    private val prefs = app.getSharedPreferences("shell_ui", android.content.Context.MODE_PRIVATE)
+    private val names = ListSerializer(String.serializer())
+
+    private fun loadNames(key: String): List<String> =
+        runCatching { Json.decodeFromString(names, prefs.getString(key, "[]") ?: "[]") }.getOrDefault(emptyList())
+
+    private fun persistGroups() {
+        val st = _state.value
+        prefs.edit()
+            .putString("groups", Json.encodeToString(names, st.groups))
+            .putString("collapsed", Json.encodeToString(names, st.collapsed.toList()))
+            .apply()
+    }
+
+    /** Stored group order, plus any group named by a command (e.g. after an import) that is not stored yet. */
+    private fun mergeGroups(stored: List<String>, commands: List<SavedCommand>): List<String> {
+        val result = stored.toMutableList()
+        for (c in commands) if (c.group.isNotEmpty() && c.group !in result) result += c.group
+        return result
+    }
     private val _state = MutableStateFlow(ShellUiState())
     val state: StateFlow<ShellUiState> = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) { store.load() }
-            _state.update { it.copy(commands = list, loading = false) }
+            _state.update { it.copy(commands = list, groups = mergeGroups(loadNames("groups"), list), collapsed = loadNames("collapsed").toSet(), loading = false) }
             withContext(Dispatchers.IO) { ShellShortcuts.publish(getApplication<Application>(), list) }
         }
     }
@@ -52,7 +79,7 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
     fun reload() {
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) { saveLock.withLock { store.load() } }
-            _state.update { it.copy(commands = list, loading = false) }
+            _state.update { it.copy(commands = list, groups = mergeGroups(loadNames("groups"), list), loading = false) }
         }
     }
 
@@ -66,14 +93,15 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         detached: Boolean = false,
         confirm: Boolean = false,
         showStatus: Boolean = true,
+        group: String = "",
     ) {
         val cmd = command.trim()
         if (cmd.isEmpty()) return
         val label = name.trim().ifEmpty { cmd.lineSequence().first().take(40) }
         _state.value.commands.firstOrNull { it.id == id }?.let { old -> if (old.detached && !detached) cleanupFiles(old) }
         change { list ->
-            if (id == null) list + SavedCommand(UUID.randomUUID().toString(), label, cmd, shortcut, mode, timeoutSec, detached, confirm, showStatus)
-            else list.map { if (it.id == id) it.copy(name = label, command = cmd, shortcut = shortcut, mode = mode, timeoutSec = timeoutSec, detached = detached, confirm = confirm, showStatus = showStatus) else it }
+            if (id == null) list + SavedCommand(UUID.randomUUID().toString(), label, cmd, shortcut, mode, timeoutSec, detached, confirm, showStatus, group.trim())
+            else list.map { if (it.id == id) it.copy(name = label, command = cmd, shortcut = shortcut, mode = mode, timeoutSec = timeoutSec, detached = detached, confirm = confirm, showStatus = showStatus, group = group.trim()) else it }
         }
     }
 
@@ -156,8 +184,49 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
     /** Saves the current order and refreshes the launcher shortcuts, whose order follows the list. */
     fun commitOrder() = change { it }
 
+    fun addGroup(name: String) {
+        val n = name.trim()
+        if (n.isEmpty() || n in _state.value.groups) return
+        _state.update { it.copy(groups = it.groups + n) }
+        persistGroups()
+    }
+
+    fun renameGroup(old: String, new: String) {
+        val n = new.trim()
+        if (n.isEmpty() || n == old || n in _state.value.groups) return
+        _state.update { st ->
+            st.copy(
+                groups = st.groups.map { if (it == old) n else it },
+                collapsed = if (old in st.collapsed) st.collapsed - old + n else st.collapsed,
+            )
+        }
+        change { list -> list.map { if (it.group == old) it.copy(group = n) else it } }
+    }
+
+    /** Deletes only the group: its commands stay and become ungrouped. */
+    fun deleteGroup(name: String) {
+        _state.update { st -> st.copy(groups = st.groups - name, collapsed = st.collapsed - name) }
+        change { list -> list.map { if (it.group == name) it.copy(group = "") else it } }
+    }
+
+    fun toggleCollapsed(name: String) {
+        _state.update { st -> st.copy(collapsed = if (name in st.collapsed) st.collapsed - name else st.collapsed + name) }
+        persistGroups()
+    }
+
+    /** Swaps two commands while one is being dragged; nothing is written until [commitOrder]. */
+    fun swapCommands(a: String, b: String) {
+        _state.update { st ->
+            val ia = st.commands.indexOfFirst { it.id == a }
+            val ib = st.commands.indexOfFirst { it.id == b }
+            if (ia < 0 || ib < 0 || ia == ib) st
+            else st.copy(commands = st.commands.toMutableList().apply { val t = this[ia]; this[ia] = this[ib]; this[ib] = t })
+        }
+    }
+
     private fun change(edit: (List<SavedCommand>) -> List<SavedCommand>) {
-        _state.update { it.copy(commands = edit(it.commands)) }
+        _state.update { st -> val cmds = edit(st.commands); st.copy(commands = cmds, groups = mergeGroups(st.groups, cmds)) }
+        persistGroups()
         viewModelScope.launch(Dispatchers.IO) {
             saveLock.withLock {
                 val latest = _state.value.commands

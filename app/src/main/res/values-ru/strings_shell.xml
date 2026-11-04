@@ -47,6 +47,15 @@
     <string name="shell_log_stop">Остановить</string>
     <string name="shell_log_running">Выполняется</string>
     <string name="shell_log_not_running">Не выполняется</string>
+    <string name="shell_group_title">Группа</string>
+    <string name="shell_group_none">Без группы</string>
+    <string name="shell_group_new">Новая группа</string>
+    <string name="shell_group_name">Название группы</string>
+    <string name="shell_group_ungrouped">Вне групп</string>
+    <string name="shell_group_edit">Изменить группу</string>
+    <string name="shell_group_delete">Удалить группу</string>
+    <string name="shell_group_expand">Развернуть</string>
+    <string name="shell_group_collapse">Свернуть</string>
     <string name="shell_confirm_title">Запустить «%1$s»?</string>
     <string name="shell_duplicate">Дублировать</string>
     <string name="shell_copy_name">%1$s (копия)</string>

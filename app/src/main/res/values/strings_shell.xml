@@ -47,6 +47,15 @@
     <string name="shell_log_stop">Stop</string>
     <string name="shell_log_running">Running</string>
     <string name="shell_log_not_running">Not running</string>
+    <string name="shell_group_title">Group</string>
+    <string name="shell_group_none">No group</string>
+    <string name="shell_group_new">New group</string>
+    <string name="shell_group_name">Group name</string>
+    <string name="shell_group_ungrouped">Ungrouped</string>
+    <string name="shell_group_edit">Edit group</string>
+    <string name="shell_group_delete">Delete group</string>
+    <string name="shell_group_expand">Expand</string>
+    <string name="shell_group_collapse">Collapse</string>
     <string name="shell_confirm_title">Run %1$s?</string>
     <string name="shell_duplicate">Duplicate</string>
     <string name="shell_copy_name">%1$s (copy)</string>

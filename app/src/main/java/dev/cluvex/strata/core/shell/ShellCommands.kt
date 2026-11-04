@@ -34,6 +34,8 @@ data class SavedCommand(
     val confirm: Boolean = false,
     /** Shows the status banner at the top of the screen while a shortcut runs this command. */
     val showStatus: Boolean = true,
+    /** Name of the group this command is listed under; empty = not in a group. */
+    val group: String = "",
 )
 
 enum class ShellBackend { SHIZUKU, ROOT }
