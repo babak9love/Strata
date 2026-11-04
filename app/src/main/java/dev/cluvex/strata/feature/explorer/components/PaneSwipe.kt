@@ -20,15 +20,17 @@ import androidx.compose.ui.unit.dp
 fun Modifier.swipeToMenuSidePane(enabled: Boolean, onSwipe: () -> Unit): Modifier {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val threshold = with(LocalDensity.current) { 56.dp.toPx() }
-    val isEnabled by rememberUpdatedState(enabled)
     val action by rememberUpdatedState(onSwipe)
-    return pointerInput(rtl, threshold) {
+    // Keyed on enabled: while it is off the block installs no detector at all, so horizontal drags are not consumed here
+    // and reach the side menu's own swipe.
+    return pointerInput(rtl, threshold, enabled) {
+        if (!enabled) return@pointerInput
         var total = 0f
         var fired = false
         detectHorizontalDragGestures(
             onDragStart = { total = 0f; fired = false },
             onHorizontalDrag = { _, dx ->
-                if (isEnabled && !fired) {
+                if (!fired) {
                     total += if (rtl) -dx else dx
                     if (total > threshold) {
                         fired = true
