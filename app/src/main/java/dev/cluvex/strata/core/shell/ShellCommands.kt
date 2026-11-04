@@ -32,6 +32,8 @@ data class SavedCommand(
     val detached: Boolean = false,
     /** Asks for confirmation before running. */
     val confirm: Boolean = false,
+    /** Shows the status banner at the top of the screen while a shortcut runs this command. */
+    val showStatus: Boolean = true,
 )
 
 enum class ShellBackend { SHIZUKU, ROOT }
@@ -99,6 +101,15 @@ object ShellRunner {
      */
     private fun detachedKey(id: String): String = id.filter { it.isLetterOrDigit() }.take(8).ifEmpty { "cmd" }
 
+    /** Path of the log file that [detach] writes this command's output to. */
+    fun detachedLogPath(id: String): String = "/data/local/tmp/strata_${detachedKey(id)}.log"
+
+    /** Reads the tail of a background log file with the same backend that started it; null if it can't be read. */
+    suspend fun readFile(path: String, mode: ShellMode, maxBytes: Int = 20_000): String? {
+        val r = run("tail -c $maxBytes '$path'", mode, 10)
+        return if (r.backend != null && !r.timedOut && r.exitCode == 0) r.output else null
+    }
+
     /** Removes the script and log that [detach] left in /data/local/tmp for this command. */
     fun detachedCleanup(id: String): String {
         val key = detachedKey(id)
@@ -147,6 +158,22 @@ object ShellRunner {
 /** Publishes the commands marked "show in the app-icon menu" as launcher shortcuts, named after the command. */
 object ShellShortcuts {
     const val EXTRA_ID = "dev.cluvex.strata.extra.SHELL_COMMAND_ID"
+
+    /** Asks the launcher to pin a shortcut for [command] on the home screen; false if the launcher can't do it. */
+    fun pin(context: Context, command: SavedCommand): Boolean = runCatching {
+        if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) return@runCatching false
+        val intent = Intent(context, ShellShortcutActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            putExtra(EXTRA_ID, command.id)
+        }
+        val info = ShortcutInfoCompat.Builder(context, "shell_pin_" + command.id)
+            .setShortLabel(command.name)
+            .setLongLabel(command.name)
+            .setIcon(IconCompat.createWithResource(context, R.drawable.ic_shortcut_shell))
+            .setIntent(intent)
+            .build()
+        ShortcutManagerCompat.requestPinShortcut(context, info, null)
+    }.getOrDefault(false)
 
     fun publish(context: Context, commands: List<SavedCommand>) {
         runCatching {

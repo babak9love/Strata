@@ -118,8 +118,12 @@ class ShellShortcutActivity : ComponentActivity() {
                 }
                 window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
             }
-            banner.value = Banner.Running(command.name)
+            if (command.showStatus) banner.value = Banner.Running(command.name)
             val result = ShellExecutor.runLogged(applicationContext, command, ShellLogSource.SHORTCUT)
+            if (!command.showStatus) {
+                finish()
+                return@launch
+            }
             banner.value = done(command.name, result)
             delay(if (result.backend != null && !result.timedOut && result.exitCode == 0) 1_800 else 3_000)
             finish()

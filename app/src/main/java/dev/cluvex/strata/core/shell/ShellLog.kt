@@ -30,6 +30,8 @@ data class LogEntry(
     val durationMs: Long,
     val output: String,
     val source: String = ShellLogSource.APP,
+    /** Background log file the command writes to (only for commands run in the background). */
+    val logFile: String? = null,
 ) {
     val ok: Boolean get() = backend != null && !timedOut && exitCode == 0
 }
@@ -104,6 +106,7 @@ object ShellExecutor {
                         durationMs = took,
                         output = output,
                         source = source,
+                        logFile = if (command.detached) ShellRunner.detachedLogPath(command.id) else null,
                     ),
                 )
             }

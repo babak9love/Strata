@@ -65,14 +65,15 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         timeoutSec: Int,
         detached: Boolean = false,
         confirm: Boolean = false,
+        showStatus: Boolean = true,
     ) {
         val cmd = command.trim()
         if (cmd.isEmpty()) return
         val label = name.trim().ifEmpty { cmd.lineSequence().first().take(40) }
         _state.value.commands.firstOrNull { it.id == id }?.let { old -> if (old.detached && !detached) cleanupFiles(old) }
         change { list ->
-            if (id == null) list + SavedCommand(UUID.randomUUID().toString(), label, cmd, shortcut, mode, timeoutSec, detached, confirm)
-            else list.map { if (it.id == id) it.copy(name = label, command = cmd, shortcut = shortcut, mode = mode, timeoutSec = timeoutSec, detached = detached, confirm = confirm) else it }
+            if (id == null) list + SavedCommand(UUID.randomUUID().toString(), label, cmd, shortcut, mode, timeoutSec, detached, confirm, showStatus)
+            else list.map { if (it.id == id) it.copy(name = label, command = cmd, shortcut = shortcut, mode = mode, timeoutSec = timeoutSec, detached = detached, confirm = confirm, showStatus = showStatus) else it }
         }
     }
 

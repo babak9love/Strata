@@ -302,13 +302,19 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     editing?.let { target ->
         EditCommandDialog(
             existing = target.command,
-            onSave = { name, command, shortcut, mode, timeoutSec, detached, confirm ->
-                vm.save(target.command?.id, name, command, shortcut, mode, timeoutSec, detached, confirm)
+            onSave = { name, command, shortcut, mode, timeoutSec, detached, confirm, showStatus ->
+                vm.save(target.command?.id, name, command, shortcut, mode, timeoutSec, detached, confirm, showStatus)
                 editing = null
             },
             onDelete = target.command?.let { c -> { vm.delete(c.id); editing = null } },
             onDuplicate = target.command?.let { c ->
                 { vm.duplicate(c.id) { name -> context.getString(R.string.shell_copy_name, name) }; editing = null }
+            },
+            onPin = target.command?.let { c ->
+                {
+                    val ok = dev.cluvex.strata.core.shell.ShellShortcuts.pin(context, c)
+                    if (!ok) android.widget.Toast.makeText(context, R.string.shell_pin_failed, android.widget.Toast.LENGTH_SHORT).show()
+                }
             },
             onDismiss = { editing = null },
         )
@@ -464,9 +470,10 @@ private fun CommandCard(
 @Composable
 private fun EditCommandDialog(
     existing: SavedCommand?,
-    onSave: (name: String, command: String, shortcut: Boolean, mode: ShellMode, timeoutSec: Int, detached: Boolean, confirm: Boolean) -> Unit,
+    onSave: (name: String, command: String, shortcut: Boolean, mode: ShellMode, timeoutSec: Int, detached: Boolean, confirm: Boolean, showStatus: Boolean) -> Unit,
     onDelete: (() -> Unit)?,
     onDuplicate: (() -> Unit)?,
+    onPin: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
     var name by remember { mutableStateOf(existing?.name.orEmpty()) }
@@ -476,12 +483,13 @@ private fun EditCommandDialog(
     var timeoutSec by remember { mutableStateOf(existing?.timeoutSec ?: ShellRunner.DEFAULT_TIMEOUT_SEC) }
     var detached by remember { mutableStateOf(existing?.detached ?: false) }
     var confirm by remember { mutableStateOf(existing?.confirm ?: false) }
+    var showStatus by remember { mutableStateOf(existing?.showStatus ?: true) }
     ExpressiveDialog(
         onDismissRequest = onDismiss,
         title = stringResource(if (existing == null) R.string.shell_add else R.string.shell_edit),
         icon = Icons.Rounded.Terminal,
         confirmButton = {
-            TextButton(onClick = { onSave(name, command, shortcut, mode, timeoutSec, detached, confirm) }, enabled = command.isNotBlank()) {
+            TextButton(onClick = { onSave(name, command, shortcut, mode, timeoutSec, detached, confirm, showStatus) }, enabled = command.isNotBlank()) {
                 Text(stringResource(R.string.common_save))
             }
         },
@@ -523,6 +531,10 @@ private fun EditCommandDialog(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.shell_confirm_switch), modifier = Modifier.weight(1f))
                 Switch(checked = confirm, onCheckedChange = { confirm = it })
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.shell_show_status), modifier = Modifier.weight(1f))
+                Switch(checked = showStatus, onCheckedChange = { showStatus = it })
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f)) {
@@ -570,6 +582,9 @@ private fun EditCommandDialog(
                         )
                     }
                 }
+            }
+            if (onPin != null) {
+                OutlinedButton(onClick = onPin) { Text(stringResource(R.string.shell_pin_home)) }
             }
             if (onDuplicate != null) {
                 OutlinedButton(onClick = onDuplicate) { Text(stringResource(R.string.shell_duplicate)) }

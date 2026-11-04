@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -37,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,6 +54,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.shell.LogEntry
 import dev.cluvex.strata.core.shell.ShellLogSource
+import dev.cluvex.strata.core.shell.ShellMode
+import dev.cluvex.strata.core.shell.ShellRunner
 import dev.cluvex.strata.ui.expressive.ExpressiveDialog
 import dev.cluvex.strata.ui.expressive.ExpressiveEmptyState
 import dev.cluvex.strata.ui.rememberTextClipboard
@@ -153,6 +157,23 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
     val source = stringResource(if (entry.source == ShellLogSource.SHORTCUT) R.string.shell_log_source_shortcut else R.string.shell_log_source_app)
     val meta = listOfNotNull(status, who, code, duration(entry.durationMs), source).joinToString(sep)
     val mono = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, textDirection = TextDirection.Ltr)
+    val clipboard = rememberTextClipboard()
+    var reload by remember { mutableIntStateOf(0) }
+    var fileText by remember { mutableStateOf<String?>(null) }
+    var fileLoading by remember { mutableStateOf(false) }
+    val logFile = entry.logFile
+    if (expanded && logFile != null) {
+        LaunchedEffect(entry.id, reload) {
+            fileLoading = true
+            val mode = when (entry.backend) {
+                "SHIZUKU" -> ShellMode.SHIZUKU
+                "ROOT" -> ShellMode.ROOT
+                else -> ShellMode.AUTO
+            }
+            fileText = ShellRunner.readFile(logFile, mode)
+            fileLoading = false
+        }
+    }
 
     Column(Modifier.fillMaxWidth()) {
         ListItem(
@@ -182,6 +203,29 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
                 Box(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
                     SelectionContainer {
                         Text(entry.output.ifEmpty { stringResource(R.string.shell_no_output) }, style = mono)
+                    }
+                }
+                if (logFile != null) {
+                    Text(stringResource(R.string.shell_log_file), style = MaterialTheme.typography.labelMedium)
+                    Text(logFile, style = mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Box(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+                        SelectionContainer {
+                            Text(
+                                when {
+                                    fileLoading && fileText == null -> "…"
+                                    fileText == null -> stringResource(R.string.shell_log_file_missing)
+                                    fileText!!.isEmpty() -> stringResource(R.string.shell_no_output)
+                                    else -> fileText!!
+                                },
+                                style = mono,
+                            )
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { reload++ }, enabled = !fileLoading) { Text(stringResource(R.string.shell_log_refresh)) }
+                        TextButton(onClick = { clipboard.setText(fileText.orEmpty()) }, enabled = !fileText.isNullOrEmpty()) {
+                            Text(stringResource(R.string.common_copy))
+                        }
                     }
                 }
                 TextButton(onClick = onCopy) { Text(stringResource(R.string.common_copy)) }
