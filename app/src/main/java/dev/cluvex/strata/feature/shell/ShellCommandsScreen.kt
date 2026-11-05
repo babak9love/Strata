@@ -582,7 +582,7 @@ private fun CommandCard(
                         )
                     }
                 }
-                if (!lifted) IconButton(onClick = onRun, enabled = !blocked, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onRun, enabled = !blocked && !lifted, modifier = Modifier.size(48.dp)) {
                     if (running) {
                         CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 3.dp)
                     } else {
@@ -593,7 +593,7 @@ private fun CommandCard(
                         )
                     }
                 }
-                if (!lifted) IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
                     Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.common_edit))
                 }
                 Box(handle.size(36.dp), contentAlignment = Alignment.Center) {
