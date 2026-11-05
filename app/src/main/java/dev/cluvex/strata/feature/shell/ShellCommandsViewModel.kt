@@ -214,6 +214,24 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         persistGroups()
     }
 
+    /**
+     * Moves a command into [group] ("" = ungrouped) while it is being dragged: to the end of that group's commands,
+     * or to the start of them. Nothing is written until [commitOrder].
+     */
+    fun moveToGroup(id: String, group: String, atEnd: Boolean) {
+        _state.update { st ->
+            val cmd = st.commands.firstOrNull { it.id == id } ?: return@update st
+            if (cmd.group == group) return@update st
+            val rest = st.commands.filterNot { it.id == id }
+            val pos = if (atEnd) rest.indexOfLast { it.group == group }.let { if (it < 0) rest.size else it + 1 }
+            else rest.indexOfFirst { it.group == group }.let { if (it < 0) rest.size else it }
+            st.copy(
+                commands = rest.toMutableList().apply { add(pos, cmd.copy(group = group)) },
+                groups = if (group.isNotEmpty() && group !in st.groups) st.groups + group else st.groups,
+            )
+        }
+    }
+
     /** Swaps two commands while one is being dragged; nothing is written until [commitOrder]. */
     fun swapCommands(a: String, b: String) {
         _state.update { st ->

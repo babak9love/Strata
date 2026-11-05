@@ -139,6 +139,20 @@ object ShellRunner {
         return "rm -f /data/local/tmp/strata_$key.sh /data/local/tmp/strata_$key.log /data/local/tmp/strata_$key.pid"
     }
 
+    /**
+     * Removes the script, log and pid files of the given background commands, except those whose
+     * process is still running (their files are needed to read the output or stop them). Best effort.
+     */
+    suspend fun cleanupIdleDetached(ids: Collection<String>, mode: ShellMode = ShellMode.AUTO) {
+        val keys = ids.map { detachedKey(it) }.distinct()
+        if (keys.isEmpty()) return
+        val cmd = "for k in ${keys.joinToString(" ")}; do " +
+            "f=/data/local/tmp/strata_\$k; p=\$(cat \$f.pid 2>/dev/null); " +
+            "if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then continue; fi; " +
+            "rm -f \$f.sh \$f.log \$f.pid; done"
+        runCatching { run(cmd, mode, 15) }
+    }
+
     fun detach(id: String, command: String): String {
         val key = detachedKey(id)
         val script = "/data/local/tmp/strata_$key.sh"

@@ -160,7 +160,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                 if (!folded) items.forEach { add(ShellRow.Cmd(it, nested = true)) }
             }
             val loose = ui.commands.filter { it.group.isEmpty() }
-            if (ui.groups.isNotEmpty() && loose.isNotEmpty()) add(ShellRow.Label)
+            if (ui.groups.isNotEmpty()) add(ShellRow.Label)
             loose.forEach { add(ShellRow.Cmd(it, nested = false)) }
         }
     }
@@ -219,18 +219,49 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         }
         val center = cur.offset + dragOffset + cur.size / 2f
         val dragged = ui.commands.firstOrNull { it.id == id } ?: return
-        fun sameGroup(key: Any?) = ui.commands.firstOrNull { it.id == key }?.group == dragged.group
-        val next = visible.firstOrNull { it.index == cur.index + 1 && sameGroup(it.key) }
-        val prev = visible.firstOrNull { it.index == cur.index - 1 && sameGroup(it.key) }
+        // A neighbour can be passed if it is a command of the same group, or a boundary that moves the card into
+        // the next / previous section (a group header or the "Ungrouped" label).
+        fun reachable(index: Int, down: Boolean): Boolean = when (val r = rows.getOrNull(index)) {
+            is ShellRow.Cmd -> r.command.group == dragged.group
+            is ShellRow.Group -> down || ui.groups.indexOf(r.name) > 0
+            is ShellRow.Label -> down || ui.groups.isNotEmpty()
+            null -> false
+        }
+        val next = visible.firstOrNull { it.index == cur.index + 1 && reachable(it.index, true) }
+        val prev = visible.firstOrNull { it.index == cur.index - 1 && reachable(it.index, false) }
         val target = when {
             next != null && center > next.offset + next.size / 2f -> next
             prev != null && center < prev.offset + prev.size / 2f -> prev
             else -> null
         } ?: return
-        val newOffset = if (target.index > cur.index) target.offset + target.size - cur.size else target.offset
+        val down = target.index > cur.index
+        // True when the card lands in a folded group, where it is no longer visible.
+        val vanishes = when (val r = rows[target.index]) {
+            is ShellRow.Cmd -> { vm.swapCommands(id, r.command.id); false }
+            is ShellRow.Group -> if (down) {
+                vm.moveToGroup(id, r.name, atEnd = r.collapsed)
+                r.collapsed
+            } else {
+                val previous = ui.groups[ui.groups.indexOf(r.name) - 1]
+                vm.moveToGroup(id, previous, atEnd = true)
+                previous in ui.collapsed
+            }
+            is ShellRow.Label -> if (down) {
+                vm.moveToGroup(id, "", atEnd = false)
+                false
+            } else {
+                val last = ui.groups.last()
+                vm.moveToGroup(id, last, atEnd = true)
+                last in ui.collapsed
+            }
+        }
+        if (vanishes) {
+            endDrag()
+            return
+        }
+        val newOffset = if (down) target.offset + target.size - cur.size else target.offset
         dragOffset += cur.offset - newOffset
         pendingIndex = target.index
-        vm.swapCommands(id, target.key as String)
     }
 
     Scaffold(
@@ -316,7 +347,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                                     running = ui.runningId == c.id,
                                     blocked = ui.runningId != null && ui.runningId != c.id,
                                     lifted = lifted,
-                                    indent = row.nested,
+                                    grouped = row.nested,
                                     dragOffset = { dragOffset },
                                     onRun = { if (ui.runningId == null) { if (c.confirm) confirming = c else vm.run(c) } },
                                     onEdit = { editing = EditTarget(c) },
@@ -430,7 +461,8 @@ private fun CommandCard(
     onEdit: () -> Unit,
     handle: Modifier,
     modifier: Modifier = Modifier,
-    indent: Boolean = false,
+    /** Commands inside a group get a slightly purple card so they stand apart from ungrouped ones. */
+    grouped: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     val reduced = LocalAppearance.current.motion == MotionStyle.REDUCED
@@ -458,11 +490,10 @@ private fun CommandCard(
     }
     Surface(
         shape = RoundedCornerShape((14 + 18 * lift).dp),
-        color = lerp(colors.surfaceBright, colors.primaryContainer, lift * 0.85f),
+        color = lerp(if (grouped) lerp(colors.surfaceBright, colors.primaryContainer, 0.3f) else colors.surfaceBright, colors.primaryContainer, lift * 0.85f),
         contentColor = colors.onSurface,
         shadowElevation = (10 * lift).dp,
         modifier = modifier
-            .padding(start = if (indent) 14.dp else 0.dp)
             .fillMaxWidth()
             .zIndex(if (lifted) 1f else 0f)
             .graphicsLayer {

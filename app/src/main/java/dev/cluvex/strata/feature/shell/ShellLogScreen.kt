@@ -1,5 +1,13 @@
 package dev.cluvex.strata.feature.shell
 
+import androidx.compose.material.icons.rounded.Shortcut
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.foundation.text.InlineTextContent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -154,7 +162,21 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
         else -> stringResource(R.string.shell_exit_code, entry.exitCode)
     }
     val source = stringResource(if (entry.source == ShellLogSource.SHORTCUT) R.string.shell_log_source_shortcut else R.string.shell_log_source_app)
-    val meta = listOfNotNull(status, who, code, duration(entry.durationMs), source).joinToString(sep)
+    val fromShortcut = entry.source == ShellLogSource.SHORTCUT
+    val metaBase = listOfNotNull(status, who, code, duration(entry.durationMs)).joinToString(sep)
+    // The run source is shown as a small icon plus a short word: play = started in the app, arrow = started from a shortcut.
+    val meta = buildAnnotatedString {
+        append(metaBase)
+        append(sep)
+        appendInlineContent("source", "*")
+        append(" ")
+        append(source)
+    }
+    val sourceInline = mapOf(
+        "source" to InlineTextContent(Placeholder(14.sp, 14.sp, PlaceholderVerticalAlign.TextCenter)) {
+            Icon(if (fromShortcut) Icons.Rounded.Shortcut else Icons.Rounded.PlayArrow, contentDescription = null, modifier = Modifier.size(14.dp))
+        },
+    )
     val mono = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, textDirection = TextDirection.Ltr)
     val clipboard = rememberTextClipboard()
     var reload by remember { mutableIntStateOf(0) }
@@ -190,7 +212,7 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
             },
             overlineContent = { Text(dateText) },
             headlineContent = { Text(entry.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-            supportingContent = { Text(meta) },
+            supportingContent = { Text(meta, inlineContent = sourceInline) },
             trailingContent = {
                 Icon(if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, contentDescription = null)
             },
