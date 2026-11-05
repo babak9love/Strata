@@ -209,6 +209,13 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         change { list -> list.map { if (it.group == name) it.copy(group = "") else it } }
     }
 
+    /** Unfolds a group, e.g. after a command was dropped into it while it was folded. */
+    fun expandGroup(name: String) {
+        if (name !in _state.value.collapsed) return
+        _state.update { st -> st.copy(collapsed = st.collapsed - name) }
+        persistGroups()
+    }
+
     fun toggleCollapsed(name: String) {
         _state.update { st -> st.copy(collapsed = if (name in st.collapsed) st.collapsed - name else st.collapsed + name) }
         persistGroups()
@@ -229,6 +236,17 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
                 commands = rest.toMutableList().apply { add(pos, cmd.copy(group = group)) },
                 groups = if (group.isNotEmpty() && group !in st.groups) st.groups + group else st.groups,
             )
+        }
+    }
+
+    /** Drops a command next to [anchorId], joining that command's group (or none). Nothing is written until [commitOrder]. */
+    fun moveNextTo(id: String, anchorId: String, after: Boolean) {
+        _state.update { st ->
+            val cmd = st.commands.firstOrNull { it.id == id } ?: return@update st
+            val anchor = st.commands.firstOrNull { it.id == anchorId } ?: return@update st
+            val rest = st.commands.filterNot { it.id == id }
+            val at = rest.indexOfFirst { it.id == anchorId }.let { if (after) it + 1 else it }
+            st.copy(commands = rest.toMutableList().apply { add(at, cmd.copy(group = anchor.group)) })
         }
     }
 

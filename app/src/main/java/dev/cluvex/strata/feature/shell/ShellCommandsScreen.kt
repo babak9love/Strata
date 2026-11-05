@@ -166,6 +166,8 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     }
     var dragId by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
+    // The group the dragged card is currently over ("" = ungrouped); the card only joins it when it is dropped.
+    var hoverGroup by remember { mutableStateOf<String?>(null) }
     var pendingIndex by remember { mutableStateOf<Int?>(null) }
     if (showLog) {
         ShellLogScreen(onBack = { showLog = false })
@@ -178,10 +180,33 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         dragId = id
         dragOffset = 0f
         pendingIndex = null
+        hoverGroup = null
+    }
+
+    // Called when the finger is released: if the card sits over another group, it moves there now.
+    fun dropInto(id: String) {
+        val info = listState.layoutInfo
+        val cur = info.visibleItemsInfo.firstOrNull { it.key == id } ?: return
+        val dragged = ui.commands.firstOrNull { it.id == id } ?: return
+        val center = cur.offset + dragOffset + cur.size / 2f
+        val hit = info.visibleItemsInfo.firstOrNull { it.key != id && center >= it.offset && center <= it.offset + it.size } ?: return
+        when (val r = rows.getOrNull(hit.index)) {
+            is ShellRow.Group -> if (r.name != dragged.group) {
+                vm.moveToGroup(id, r.name, atEnd = false)
+                // A folded group opens so the dropped command stays visible.
+                if (r.collapsed) vm.expandGroup(r.name)
+            }
+            is ShellRow.Label -> if (dragged.group.isNotEmpty()) vm.moveToGroup(id, "", atEnd = false)
+            is ShellRow.Cmd -> if (r.command.group != dragged.group) vm.moveNextTo(id, r.command.id, after = center > hit.offset + hit.size / 2f)
+            null -> Unit
+        }
     }
 
     fun endDrag() {
-        if (dragId != null) {
+        val dropped = dragId
+        if (dropped != null) {
+            dropInto(dropped)
+            hoverGroup = null
             dragId = null
             dragOffset = 0f
             pendingIndex = null
@@ -219,46 +244,24 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         }
         val center = cur.offset + dragOffset + cur.size / 2f
         val dragged = ui.commands.firstOrNull { it.id == id } ?: return
-        // A neighbour can be passed if it is a command of the same group, or a boundary that moves the card into
-        // the next / previous section (a group header or the "Ungrouped" label).
-        fun reachable(index: Int, down: Boolean): Boolean = when (val r = rows.getOrNull(index)) {
-            is ShellRow.Cmd -> r.command.group == dragged.group
-            is ShellRow.Group -> down || ui.groups.indexOf(r.name) > 0
-            is ShellRow.Label -> down || ui.groups.isNotEmpty()
-            null -> false
-        }
-        val next = visible.firstOrNull { it.index == cur.index + 1 && reachable(it.index, true) }
-        val prev = visible.firstOrNull { it.index == cur.index - 1 && reachable(it.index, false) }
+        // Live reordering only happens inside the card's own group; joining another group is decided on release.
+        fun sameGroupCmd(index: Int) = (rows.getOrNull(index) as? ShellRow.Cmd)?.command?.group == dragged.group
+        val hit = visible.firstOrNull { it.key != id && center >= it.offset && center <= it.offset + it.size }
+        hoverGroup = when (val r = hit?.let { rows.getOrNull(it.index) }) {
+            is ShellRow.Group -> r.name
+            is ShellRow.Cmd -> r.command.group
+            is ShellRow.Label -> ""
+            null -> null
+        }?.takeIf { it != dragged.group }
+        val next = visible.firstOrNull { it.index == cur.index + 1 && sameGroupCmd(it.index) }
+        val prev = visible.firstOrNull { it.index == cur.index - 1 && sameGroupCmd(it.index) }
         val target = when {
             next != null && center > next.offset + next.size / 2f -> next
             prev != null && center < prev.offset + prev.size / 2f -> prev
             else -> null
         } ?: return
         val down = target.index > cur.index
-        // True when the card lands in a folded group, where it is no longer visible.
-        val vanishes = when (val r = rows[target.index]) {
-            is ShellRow.Cmd -> { vm.swapCommands(id, r.command.id); false }
-            is ShellRow.Group -> if (down) {
-                vm.moveToGroup(id, r.name, atEnd = r.collapsed)
-                r.collapsed
-            } else {
-                val previous = ui.groups[ui.groups.indexOf(r.name) - 1]
-                vm.moveToGroup(id, previous, atEnd = true)
-                previous in ui.collapsed
-            }
-            is ShellRow.Label -> if (down) {
-                vm.moveToGroup(id, "", atEnd = false)
-                false
-            } else {
-                val last = ui.groups.last()
-                vm.moveToGroup(id, last, atEnd = true)
-                last in ui.collapsed
-            }
-        }
-        if (vanishes) {
-            endDrag()
-            return
-        }
+        vm.swapCommands(id, (rows[target.index] as ShellRow.Cmd).command.id)
         val newOffset = if (down) target.offset + target.size - cur.size else target.offset
         dragOffset += cur.offset - newOffset
         pendingIndex = target.index
@@ -329,6 +332,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                                 name = row.name,
                                 count = row.count,
                                 collapsed = row.collapsed,
+                                highlight = hoverGroup == row.name,
                                 onToggle = { vm.toggleCollapsed(row.name) },
                                 onMenu = { groupMenu = row.name },
                                 modifier = Modifier.animateItem(),
@@ -336,7 +340,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                             is ShellRow.Label -> Text(
                                 stringResource(R.string.shell_group_ungrouped),
                                 style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (hoverGroup == "") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(start = 6.dp, top = 8.dp).animateItem(),
                             )
                             is ShellRow.Cmd -> {
@@ -749,12 +753,13 @@ private fun GroupHeader(
     onToggle: () -> Unit,
     onMenu: () -> Unit,
     modifier: Modifier = Modifier,
+    highlight: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = colors.surfaceContainerHigh,
-        contentColor = colors.onSurface,
+        color = if (highlight) colors.primaryContainer else colors.surfaceContainerHigh,
+        contentColor = if (highlight) colors.onPrimaryContainer else colors.onSurface,
         modifier = modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).combinedClickable(onClick = onToggle, onLongClick = onMenu),
     ) {
         Row(
