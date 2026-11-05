@@ -1,5 +1,6 @@
 package dev.cluvex.strata.feature.shell
 
+import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.AssistChip
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -182,22 +183,42 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         hoverGroup = null
     }
 
+    // What the dragged card is over. A group header (or the "Ungrouped" label) is small next to a card, so overlapping
+    // it clearly is enough to target it; otherwise the row under the card's center is the target.
+    fun findTarget(cur: LazyListItemInfo, dragged: SavedCommand): Pair<LazyListItemInfo, ShellRow>? {
+        val items = listState.layoutInfo.visibleItemsInfo
+        val top = cur.offset + dragOffset
+        val bottom = top + cur.size
+        val byOverlap = items.mapNotNull { info ->
+            if (info.key == dragged.id) return@mapNotNull null
+            val row = rows.getOrNull(info.index) ?: return@mapNotNull null
+            val targetable = (row is ShellRow.Group && row.name != dragged.group) || (row is ShellRow.Label && dragged.group.isNotEmpty())
+            if (!targetable) return@mapNotNull null
+            val overlap = minOf(bottom, (info.offset + info.size).toFloat()) - maxOf(top, info.offset.toFloat())
+            if (overlap >= info.size * 0.3f) Triple(info, row, overlap) else null
+        }.maxByOrNull { it.third }
+        if (byOverlap != null) return byOverlap.first to byOverlap.second
+        val center = top + cur.size / 2f
+        val hit = items.firstOrNull { it.key != dragged.id && center >= it.offset && center <= it.offset + it.size } ?: return null
+        return rows.getOrNull(hit.index)?.let { hit to it }
+    }
+
     // Called when the finger is released: if the card sits over another group, it moves there now.
     fun dropInto(id: String) {
-        val info = listState.layoutInfo
-        val cur = info.visibleItemsInfo.firstOrNull { it.key == id } ?: return
+        val cur = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == id } ?: return
         val dragged = ui.commands.firstOrNull { it.id == id } ?: return
-        val center = cur.offset + dragOffset + cur.size / 2f
-        val hit = info.visibleItemsInfo.firstOrNull { it.key != id && center >= it.offset && center <= it.offset + it.size } ?: return
-        when (val r = rows.getOrNull(hit.index)) {
-            is ShellRow.Group -> if (r.name != dragged.group) {
-                vm.moveToGroup(id, r.name, atEnd = false)
+        val (hit, row) = findTarget(cur, dragged) ?: return
+        when (row) {
+            is ShellRow.Group -> if (row.name != dragged.group) {
+                vm.moveToGroup(id, row.name, atEnd = false)
                 // A folded group opens so the dropped command stays visible.
-                if (r.collapsed) vm.expandGroup(r.name)
+                if (row.collapsed) vm.expandGroup(row.name)
             }
             is ShellRow.Label -> if (dragged.group.isNotEmpty()) vm.moveToGroup(id, "", atEnd = false)
-            is ShellRow.Cmd -> if (r.command.group != dragged.group) vm.moveNextTo(id, r.command.id, after = center > hit.offset + hit.size / 2f)
-            null -> Unit
+            is ShellRow.Cmd -> if (row.command.group != dragged.group) {
+                val center = cur.offset + dragOffset + cur.size / 2f
+                vm.moveNextTo(id, row.command.id, after = center > hit.offset + hit.size / 2f)
+            }
         }
     }
 
@@ -245,8 +266,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         val dragged = ui.commands.firstOrNull { it.id == id } ?: return
         // Live reordering only happens inside the card's own group; joining another group is decided on release.
         fun sameGroupCmd(index: Int) = (rows.getOrNull(index) as? ShellRow.Cmd)?.command?.group == dragged.group
-        val hit = visible.firstOrNull { it.key != id && center >= it.offset && center <= it.offset + it.size }
-        hoverGroup = when (val r = hit?.let { rows.getOrNull(it.index) }) {
+        hoverGroup = when (val r = findTarget(cur, dragged)?.second) {
             is ShellRow.Group -> r.name
             is ShellRow.Cmd -> r.command.group
             is ShellRow.Label -> ""
