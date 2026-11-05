@@ -42,7 +42,6 @@
     <string name="shell_pin_home">添加到主屏幕</string>
     <string name="shell_pin_failed">无法添加到主屏幕</string>
     <string name="shell_log_file">后台日志文件</string>
-    <string name="shell_log_refresh">刷新</string>
     <string name="shell_log_file_missing">未找到日志文件（可能已被删除）</string>
     <string name="shell_log_stop">停止</string>
     <string name="shell_log_running">运行中</string>
@@ -54,6 +53,8 @@
     <string name="shell_group_ungrouped">未分组</string>
     <string name="shell_group_edit">编辑分组</string>
     <string name="shell_group_delete">删除分组</string>
+    <string name="shell_group_move_up">上移</string>
+    <string name="shell_group_move_down">下移</string>
     <string name="shell_group_expand">展开</string>
     <string name="shell_group_collapse">收起</string>
     <string name="shell_confirm_title">运行 %1$s？</string>

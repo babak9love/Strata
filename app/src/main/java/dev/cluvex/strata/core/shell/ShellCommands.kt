@@ -10,6 +10,8 @@ import dev.cluvex.strata.feature.shell.ShellShortcutActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import dev.cluvex.strata.core.root.RootManager
 import dev.cluvex.strata.core.shizuku.ShizukuManager
@@ -17,7 +19,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.io.File
 
 @Serializable
@@ -51,36 +55,68 @@ data class ShellResult(
     val timedOut: Boolean = false,
 )
 
+/** Commands plus the group names in display order (including groups that hold no commands). */
+data class ShellBundle(val commands: List<SavedCommand>, val groups: List<String>)
+
 /** Saved commands live in a small JSON file in the app's private storage. */
 class ShellCommandStore(context: Context) {
     private val file = File(context.applicationContext.filesDir, "shell_commands.json")
+    /** Last readable, non-empty version of [file]; used when the file itself can't be read. */
+    private val backup = File(file.parentFile, file.name + ".bak")
+    /** A copy of an unreadable [file], kept so its text can still be recovered by hand. */
+    private val corrupt = File(file.parentFile, file.name + ".corrupt")
     private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
     // Only the export file is indented, like the settings backup; the private store file stays compact.
     private val pretty = Json { prettyPrint = true }
     private val serializer = ListSerializer(SavedCommand.serializer())
 
-    fun load(): List<SavedCommand> = runCatching {
-        if (!file.exists()) emptyList() else json.decodeFromString(serializer, file.readText())
-    }.getOrDefault(emptyList())
+    private fun parse(f: File): List<SavedCommand>? = runCatching {
+        if (!f.exists()) null else json.decodeFromString(serializer, f.readText())
+    }.getOrNull()
 
-    /** The export file: an indented JSON object holding the commands under "shellCommands", as in the settings backup. */
-    fun encode(commands: List<SavedCommand>): String =
-        pretty.encodeToString(JsonObject.serializer(), JsonObject(mapOf("shellCommands" to json.encodeToJsonElement(serializer, commands))))
+    /**
+     * An unreadable file must never end up as an empty list that the next save writes back over it: its text is
+     * copied aside and the last good backup is used instead.
+     */
+    fun load(): List<SavedCommand> {
+        if (!file.exists()) return emptyList()
+        parse(file)?.let { return it }
+        runCatching { file.copyTo(corrupt, overwrite = true) }
+        return parse(backup) ?: emptyList()
+    }
 
-    /** Reads an export file: a bare list, or an object with a "shellCommands" list (this export, or a full settings backup). */
-    fun decode(text: String): List<SavedCommand>? = runCatching {
+    /** The export file: an indented JSON object with the commands under "shellCommands" and the group order under "shellGroups". */
+    fun encode(commands: List<SavedCommand>, groups: List<String> = emptyList()): String {
+        val root = mutableMapOf<String, JsonElement>("shellCommands" to json.encodeToJsonElement(serializer, commands))
+        if (groups.isNotEmpty()) root["shellGroups"] = JsonArray(groups.map { JsonPrimitive(it) })
+        return pretty.encodeToString(JsonObject.serializer(), JsonObject(root))
+    }
+
+    /**
+     * Reads an export file: a bare list, or an object with a "shellCommands" list (this export, or a full settings
+     * backup) and, optionally, a "shellGroups" list. Files without groups give an empty group list.
+     */
+    fun decodeBundle(text: String): ShellBundle? = runCatching {
         val root = json.parseToJsonElement(text)
         val list = when (root) {
             is JsonArray -> root
             is JsonObject -> root["shellCommands"] as? JsonArray
             else -> null
         } ?: return@runCatching null
-        json.decodeFromJsonElement(serializer, list)
+        val groups = ((root as? JsonObject)?.get("shellGroups") as? JsonArray).orEmpty().mapNotNull { e ->
+            val p = e as? JsonPrimitive
+            if (p != null && p.isString) p.content.trim().ifEmpty { null } else null
+        }.distinct()
+        ShellBundle(json.decodeFromJsonElement(serializer, list), groups)
     }.getOrNull()
+
+    fun decode(text: String): List<SavedCommand>? = decodeBundle(text)?.commands
 
     fun save(commands: List<SavedCommand>) {
         runCatching {
             val text = json.encodeToString(serializer, commands)
+            // Keep the last readable, non-empty version, so a bad write or an accidental clear never costs the whole list.
+            if (parse(file)?.isNotEmpty() == true) runCatching { file.copyTo(backup, overwrite = true) }
             val tmp = File(file.parentFile, file.name + ".tmp")
             tmp.writeText(text)
             if (!tmp.renameTo(file)) {
@@ -171,27 +207,57 @@ object ShellRunner {
         }
     }
 
-    /** Output has stderr merged in. With [ShellMode.AUTO] Shizuku (shell user) is tried first, then root. */
-    suspend fun run(command: String, mode: ShellMode = ShellMode.AUTO, timeoutSec: Int = DEFAULT_TIMEOUT_SEC): ShellResult {
+    /** libsu has one shared root shell that runs one job at a time; waiting for it must not eat into a command's timeout. */
+    private val rootLock = Mutex()
+
+    /**
+     * Output has stderr merged in. With [ShellMode.AUTO] Shizuku (shell user) is tried first, then root.
+     * [onOutput], when given, also receives the output in pieces while the command is still running.
+     */
+    suspend fun run(
+        command: String,
+        mode: ShellMode = ShellMode.AUTO,
+        timeoutSec: Int = DEFAULT_TIMEOUT_SEC,
+        onOutput: ((String) -> Unit)? = null,
+    ): ShellResult {
         val timeoutMs = timeoutSec.coerceIn(MIN_TIMEOUT_SEC, MAX_TIMEOUT_SEC) * 1000L
         if (mode != ShellMode.ROOT) {
             ShizukuManager.refresh()
             if (ShizukuManager.state.value != ShizukuManager.Status.NOT_RUNNING) {
-                ShizukuManager.exec(command, timeoutMs)?.let {
+                val r = if (onOutput != null) ShizukuManager.execStreaming(command, timeoutMs, onOutput) else ShizukuManager.exec(command, timeoutMs)
+                r?.let {
                     return ShellResult(ShellBackend.SHIZUKU, it.exitCode, it.output.trimEnd(), timedOut = it.exitCode == TIMEOUT_CODE)
                 }
             }
         }
         if (mode != ShellMode.SHIZUKU && (RootManager.isGranted || RootManager.request())) {
-            // libsu's exec blocks and can't be interrupted, so on a timeout the command is left running and only reported.
-            val job = CoroutineScope(Dispatchers.IO).async { runCatching { RootManager.exec(command) }.getOrNull() }
-            val finished = withTimeoutOrNull(timeoutMs) { job.await() to true } ?: (null to false)
-            if (!finished.second) return ShellResult(ShellBackend.ROOT, TIMEOUT_CODE, "", timedOut = true)
-            finished.first?.let { r ->
-                return ShellResult(ShellBackend.ROOT, r.code, (r.out + r.err).joinToString("\n").trimEnd())
-            }
+            rootLock.withLock { runAsRoot(command, timeoutMs, onOutput) }?.let { return it }
         }
         return ShellResult(null, -1, "")
+    }
+
+    /** Null when the root shell could not run the command at all. */
+    private suspend fun runAsRoot(command: String, timeoutMs: Long, onOutput: ((String) -> Unit)?): ShellResult? {
+        // With live output the text is collected here, because the shell hands the lines over instead of keeping them.
+        val live = if (onOutput != null) StringBuilder() else null
+        // libsu's exec blocks and can't be interrupted, so on a timeout the command is left running and only reported.
+        val job = CoroutineScope(Dispatchers.IO).async {
+            runCatching {
+                if (onOutput == null) {
+                    RootManager.exec(command)
+                } else {
+                    RootManager.execStreaming(command) { line ->
+                        synchronized(live!!) { live.append(line).append('\n') }
+                        onOutput(line + "\n")
+                    }
+                }
+            }.getOrNull()
+        }
+        val finished = withTimeoutOrNull(timeoutMs) { job.await() to true } ?: (null to false)
+        if (!finished.second) return ShellResult(ShellBackend.ROOT, TIMEOUT_CODE, "", timedOut = true)
+        val r = finished.first ?: return null
+        val text = if (live != null) synchronized(live) { live.toString() } else (r.out + r.err).joinToString("\n")
+        return ShellResult(ShellBackend.ROOT, r.code, text.trimEnd())
     }
 }
 

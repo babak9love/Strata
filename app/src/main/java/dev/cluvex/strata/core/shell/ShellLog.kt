@@ -78,13 +78,20 @@ object ShellExecutor {
      * Runs a saved command and records it in the log. The run and the log write are not cancellable, so a
      * command started from a shortcut is still logged if its screen is gone before it finishes.
      */
-    suspend fun runLogged(context: Context, command: SavedCommand, source: String): ShellResult =
+    suspend fun runLogged(
+        context: Context,
+        command: SavedCommand,
+        source: String,
+        /** Gets the output while the command runs; not used for background commands, which only print a short message. */
+        onOutput: ((String) -> Unit)? = null,
+    ): ShellResult =
         withContext(NonCancellable) {
             val started = SystemClock.elapsedRealtime()
             val result = ShellRunner.run(
                 if (command.detached) ShellRunner.detach(command.id, command.command) else command.command,
                 command.mode,
                 command.timeoutSec,
+                if (command.detached) null else onOutput,
             )
             val took = SystemClock.elapsedRealtime() - started
             val output = if (result.output.length > ShellLogStore.MAX_OUTPUT) {

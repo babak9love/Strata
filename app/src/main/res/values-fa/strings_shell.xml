@@ -42,7 +42,6 @@
     <string name="shell_pin_home">افزودن به صفحه اصلی</string>
     <string name="shell_pin_failed">افزودن به صفحه اصلی ممکن نشد</string>
     <string name="shell_log_file">فایل لاگ پس‌زمینه</string>
-    <string name="shell_log_refresh">بازخوانی</string>
     <string name="shell_log_file_missing">فایل لاگ پیدا نشد (ممکن است حذف شده باشد)</string>
     <string name="shell_log_stop">توقف</string>
     <string name="shell_log_running">در حال اجرا</string>
@@ -54,6 +53,8 @@
     <string name="shell_group_ungrouped">دسته‌بندی‌نشده</string>
     <string name="shell_group_edit">ویرایش گروه</string>
     <string name="shell_group_delete">حذف گروه</string>
+    <string name="shell_group_move_up">بالاتر</string>
+    <string name="shell_group_move_down">پایین‌تر</string>
     <string name="shell_group_expand">باز کردن</string>
     <string name="shell_group_collapse">بستن</string>
     <string name="shell_confirm_title">%1$s اجرا شود؟</string>

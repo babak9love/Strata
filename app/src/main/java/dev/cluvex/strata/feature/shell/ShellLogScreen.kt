@@ -69,6 +69,7 @@ import dev.cluvex.strata.core.shell.ShellRunner
 import dev.cluvex.strata.ui.expressive.ExpressiveDialog
 import dev.cluvex.strata.ui.expressive.ExpressiveEmptyState
 import dev.cluvex.strata.ui.rememberTextClipboard
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
@@ -193,11 +194,19 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
         else -> ShellMode.AUTO
     }
     if (expanded && logFile != null) {
+        // Reads the log once, then keeps following it every few seconds for as long as the process runs.
+        // `reload` only changes after Stop, to pick up the final state straight away.
         LaunchedEffect(entry.id, reload) {
             fileLoading = true
             fileText = ShellRunner.readFile(logFile, readMode)
             running = ShellRunner.isDetachedRunning(entry.commandId, readMode)
             fileLoading = false
+            while (running == true) {
+                delay(LOG_FOLLOW_MS)
+                // A failed read keeps the text that is already shown.
+                ShellRunner.readFile(logFile, readMode)?.let { fileText = it }
+                running = ShellRunner.isDetachedRunning(entry.commandId, readMode)
+            }
         }
     }
 
@@ -255,9 +264,8 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Refresh and Stop only make sense while the background process is alive.
+                        // Stop only makes sense while the background process is alive.
                         if (running == true) {
-                            TextButton(onClick = { reload++ }, enabled = !fileLoading) { Text(stringResource(R.string.shell_log_refresh)) }
                             TextButton(
                                 onClick = {
                                     scope.launch {
@@ -285,3 +293,6 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
 
 private fun duration(ms: Long): String =
     if (ms < 1_000) "$ms ms" else String.format(java.util.Locale.US, "%.1f s", ms / 1000.0)
+
+/** How often the log of a background command is re-read while it runs. */
+private const val LOG_FOLLOW_MS = 2_500L

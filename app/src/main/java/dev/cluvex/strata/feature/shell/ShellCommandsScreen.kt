@@ -49,6 +49,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.DragIndicator
 import androidx.compose.material.icons.rounded.Edit
@@ -80,6 +82,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -134,6 +137,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     var menuOpen by remember { mutableStateOf(false) }
     var newGroupDialog by remember { mutableStateOf(false) }
     var groupMenu by remember { mutableStateOf<String?>(null) }
+    var liveId by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
@@ -387,11 +391,12 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                                 val lifted = dragId == c.id
                                 CommandCard(
                                     command = c,
-                                    running = ui.runningId == c.id,
-                                    blocked = ui.runningId != null && ui.runningId != c.id,
+                                    running = c.id in ui.runningIds,
+                                    blocked = false,
                                     lifted = lifted,
                                     dragOffset = { dragOffset },
-                                    onRun = { if (ui.runningId == null) { if (c.confirm) confirming = c else vm.run(c) } },
+                                    // While a command runs, its button opens the live output instead of starting it again.
+                                    onRun = { if (c.id in ui.runningIds) liveId = c.id else if (c.confirm) confirming = c else vm.run(c) },
                                     onEdit = { editing = EditTarget(c) },
                                     handle = Modifier.pointerInput(c.id) {
                                         detectDragGestures(
@@ -478,6 +483,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         )
     }
     groupMenu?.let { g ->
+        val position = ui.groups.indexOf(g)
         GroupNameDialog(
             title = stringResource(R.string.shell_group_edit),
             initial = g,
@@ -485,10 +491,27 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
             onDismiss = { groupMenu = null },
             onConfirm = { vm.renameGroup(g, it); groupMenu = null },
             onDelete = { vm.deleteGroup(g); groupMenu = null },
+            onMove = { by -> vm.moveGroup(g, by) },
+            canMoveUp = position > 0,
+            canMoveDown = position >= 0 && position < ui.groups.lastIndex,
         )
     }
 
-    ui.run?.let { run -> RunResultDialog(run, onDismiss = vm::dismissRun) }
+    // The live view closes by itself when its command finishes (the result dialog follows).
+    LaunchedEffect(ui.runningIds, liveId) {
+        if (liveId != null && liveId !in ui.runningIds) liveId = null
+    }
+    liveId?.let { id ->
+        LiveOutputDialog(
+            name = ui.commands.firstOrNull { it.id == id }?.name.orEmpty(),
+            id = id,
+            vm = vm,
+            onDismiss = { liveId = null },
+        )
+    }
+
+    // Results queue up when several commands finish; each is shown in turn.
+    ui.run?.let { run -> key(run) { RunResultDialog(run, onDismiss = vm::dismissRun) } }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -836,6 +859,10 @@ private fun GroupNameDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
     onDelete: (() -> Unit)? = null,
+    /** Moves the group one place up (-1) or down (1); null for a group that doesn't exist yet. */
+    onMove: ((Int) -> Unit)? = null,
+    canMoveUp: Boolean = false,
+    canMoveDown: Boolean = false,
 ) {
     var text by remember { mutableStateOf(initial) }
     ExpressiveDialog(
@@ -848,13 +875,67 @@ private fun GroupNameDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         },
     ) {
-        OutlinedTextField(
-            value = text,
-            onValueChange = { text = it },
-            label = { Text(stringResource(R.string.shell_group_name)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text(stringResource(R.string.shell_group_name)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (onMove != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { onMove(-1) }, enabled = canMoveUp, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Rounded.ArrowUpward, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.shell_group_move_up), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    OutlinedButton(onClick = { onMove(1) }, enabled = canMoveDown, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Rounded.ArrowDownward, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.shell_group_move_down), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Output of a command that is still running; closing it does not stop the command. */
+@Composable
+private fun LiveOutputDialog(name: String, id: String, vm: ShellCommandsViewModel, onDismiss: () -> Unit) {
+    val live by vm.liveOutput.collectAsState()
+    val text = live[id].orEmpty()
+    val clipboard = rememberTextClipboard()
+    val scroll = rememberScrollState()
+    // Follow the end of the output as it grows.
+    LaunchedEffect(text.length) { scroll.scrollTo(scroll.maxValue) }
+    ExpressiveDialog(
+        onDismissRequest = onDismiss,
+        title = name,
+        icon = Icons.Rounded.Terminal,
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) } },
+        dismissButton = if (text.isNotEmpty()) {
+            { TextButton(onClick = { clipboard.setText(text) }) { Text(stringResource(R.string.common_copy)) } }
+        } else null,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                Text(stringResource(R.string.shell_log_running), style = MaterialTheme.typography.labelLarge)
+            }
+            Box(Modifier.fillMaxWidth().heightIn(max = 320.dp).verticalScroll(scroll)) {
+                SelectionContainer {
+                    Text(
+                        text.ifEmpty { "…" },
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            textDirection = TextDirection.Ltr,
+                        ),
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -880,14 +961,25 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
     var stopping by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     if (detachedLog != null) {
+        // Reads the log once, then keeps following it every few seconds for as long as the command runs.
+        // `reload` only changes after Stop, to pick up the final state straight away.
         LaunchedEffect(reload) {
             loading = true
             if (reload == 0) delay(700)
             fileText = ShellRunner.readFile(detachedLog, readMode)
             stillRunning = ShellRunner.isDetachedRunning(run.command.id, readMode)
             loading = false
+            while (stillRunning) {
+                delay(LOG_FOLLOW_MS)
+                // A failed read keeps the text that is already shown.
+                ShellRunner.readFile(detachedLog, readMode)?.let { fileText = it }
+                stillRunning = ShellRunner.isDetachedRunning(run.command.id, readMode)
+            }
         }
     }
+    val scroll = rememberScrollState()
+    // While the command runs, stay at the end of the log.
+    LaunchedEffect(fileText?.length, stillRunning) { if (stillRunning) scroll.scrollTo(scroll.maxValue) }
     val body = if (detachedLog != null) {
         when {
             loading && fileText == null -> "…"
@@ -911,7 +1003,7 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(status, style = MaterialTheme.typography.labelLarge)
             if (body.isNotEmpty()) {
-                Box(Modifier.fillMaxWidth().heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                Box(Modifier.fillMaxWidth().heightIn(max = 320.dp).verticalScroll(scroll)) {
                     SelectionContainer {
                         Text(
                             body,
@@ -924,21 +1016,21 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
                 }
             }
             if (detachedLog != null && stillRunning) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { reload++ }, enabled = !loading) { Text(stringResource(R.string.shell_log_refresh)) }
-                    TextButton(
-                        onClick = {
-                            scope.launch {
-                                stopping = true
-                                ShellRunner.stopDetached(run.command.id, readMode)
-                                stopping = false
-                                reload++
-                            }
-                        },
-                        enabled = !stopping,
-                    ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
-                }
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            stopping = true
+                            ShellRunner.stopDetached(run.command.id, readMode)
+                            stopping = false
+                            reload++
+                        }
+                    },
+                    enabled = !stopping,
+                ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
             }
         }
     }
 }
+
+/** How often the log of a background command is re-read while it runs. */
+private const val LOG_FOLLOW_MS = 2_500L

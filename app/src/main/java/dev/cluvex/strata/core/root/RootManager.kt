@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ipc.RootService
 import com.topjohnwu.superuser.nio.FileSystemManager
@@ -18,6 +19,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 
 enum class RootState { UNKNOWN, GRANTED, DENIED }
@@ -82,6 +84,19 @@ object RootManager {
     }
 
     suspend fun exec(vararg commands: String): Shell.Result = withContext(Dispatchers.IO) { Shell.cmd(*commands).exec() }
+
+    /**
+     * Runs one command and hands each output line (stdout and stderr together) to [onLine] as it arrives.
+     * The lines are delivered on the shell's own thread, before this returns.
+     */
+    suspend fun execStreaming(command: String, onLine: (String) -> Unit): Shell.Result = withContext(Dispatchers.IO) {
+        val sink = object : CallbackList<String>(Executor { it.run() }) {
+            override fun onAddElement(e: String?) {
+                if (e != null) onLine(e)
+            }
+        }
+        Shell.cmd(command).to(sink).exec()
+    }
 
     suspend fun accessIf(needsRoot: Boolean, rootEnabled: Boolean): FileAccess? =
         if (needsRoot && rootEnabled) access() else null

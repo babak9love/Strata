@@ -57,12 +57,15 @@ object SettingsBackup {
     const val CONNECTIONS_KEY = "connections"
     const val FOLDER_BADGES_KEY = "folderBadges"
     const val SHELL_COMMANDS_KEY = "shellCommands"
+    const val SHELL_GROUPS_KEY = "shellGroups"
 
     class Extras(
         val bookmarks: List<Bookmark>?,
         val connections: List<RemoteConnection>?,
         val folderBadges: List<FolderBadgeEntry>? = null,
         val shellCommands: List<SavedCommand>? = null,
+        /** Shell group names in display order (includes groups without commands). */
+        val shellGroups: List<String>? = null,
     )
 
     fun attach(
@@ -71,6 +74,7 @@ object SettingsBackup {
         connections: List<RemoteConnection>,
         folderBadges: List<FolderBadgeEntry> = emptyList(),
         shellCommands: List<SavedCommand> = emptyList(),
+        shellGroups: List<String> = emptyList(),
     ): String {
         val root = Json.parseToJsonElement(text).jsonObject
         val extended = JsonObject(
@@ -79,6 +83,7 @@ object SettingsBackup {
                 CONNECTIONS_KEY to lenient.encodeToJsonElement(connections),
                 FOLDER_BADGES_KEY to lenient.encodeToJsonElement(folderBadges),
                 SHELL_COMMANDS_KEY to lenient.encodeToJsonElement(shellCommands),
+                SHELL_GROUPS_KEY to lenient.encodeToJsonElement(shellGroups),
             ),
         )
         return pretty.encodeToString(JsonObject.serializer(), extended)
@@ -91,8 +96,15 @@ object SettingsBackup {
             connections = root.list<RemoteConnection>(CONNECTIONS_KEY),
             folderBadges = root.tolerantList<FolderBadgeEntry>(FOLDER_BADGES_KEY),
             shellCommands = root.tolerantList<SavedCommand>(SHELL_COMMANDS_KEY),
+            shellGroups = root.names(SHELL_GROUPS_KEY),
         )
     }
+
+    /** A list of non-blank strings; anything else in the array is skipped. */
+    private fun JsonObject.names(key: String): List<String>? = (this[key] as? JsonArray)?.mapNotNull { el ->
+        val p = el as? JsonPrimitive
+        if (p != null && p.isString) p.content.trim().ifEmpty { null } else null
+    }?.distinct()
 
     /** Like [list], but one malformed entry is skipped instead of dropping the whole list. */
     private inline fun <reified T> JsonObject.tolerantList(key: String): List<T>? =

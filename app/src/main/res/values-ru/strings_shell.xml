@@ -42,7 +42,6 @@
     <string name="shell_pin_home">Добавить на главный экран</string>
     <string name="shell_pin_failed">Не удалось добавить на главный экран</string>
     <string name="shell_log_file">Файл журнала фоновой задачи</string>
-    <string name="shell_log_refresh">Обновить</string>
     <string name="shell_log_file_missing">Файл журнала не найден (возможно, он удалён)</string>
     <string name="shell_log_stop">Остановить</string>
     <string name="shell_log_running">Выполняется</string>
@@ -54,6 +53,8 @@
     <string name="shell_group_ungrouped">Вне групп</string>
     <string name="shell_group_edit">Изменить группу</string>
     <string name="shell_group_delete">Удалить группу</string>
+    <string name="shell_group_move_up">Выше</string>
+    <string name="shell_group_move_down">Ниже</string>
     <string name="shell_group_expand">Развернуть</string>
     <string name="shell_group_collapse">Свернуть</string>
     <string name="shell_confirm_title">Запустить «%1$s»?</string>

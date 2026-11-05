@@ -97,6 +97,7 @@ import dev.cluvex.strata.core.data.EditorPrefs
 import dev.cluvex.strata.core.data.SettingsBackup
 import dev.cluvex.strata.core.media.FolderBadgeStore
 import dev.cluvex.strata.core.shell.ShellCommandStore
+import dev.cluvex.strata.core.shell.ShellGroupStore
 import dev.cluvex.strata.core.shell.ShellShortcuts
 import dev.cluvex.strata.core.data.StrataSettings
 import dev.cluvex.strata.core.remote.RemoteConnectionRepository
@@ -585,6 +586,10 @@ fun BackupPage(act: SettingsActions, activeFolder: String, onBack: () -> Unit) {
                         }
                     }
                 }
+                // Group names are merged the same way: the groups already here keep their place, new ones are appended.
+                extras.shellGroups?.let { saved ->
+                    runCatching { withContext(Dispatchers.IO) { ShellGroupStore(context.applicationContext).addAll(saved) } }
+                }
                 applied
             }
                 .fold({ n -> trPlural(R.plurals.settings_restored, n, n) }, { e -> e.message ?: tr(R.string.settings_backup_read_failed) })
@@ -613,7 +618,8 @@ fun BackupPage(act: SettingsActions, activeFolder: String, onBack: () -> Unit) {
                 scope.launch {
                     val result = runCatching {
                         val shellCommands = withContext(Dispatchers.IO) { ShellCommandStore(context.applicationContext).load() }
-                        val text = SettingsBackup.attach(act.repo.exportBackup(), bookmarkRepo.bookmarks.first(), remoteRepo.connections.first(), FolderBadgeStore.exportEntries(), shellCommands)
+                        val shellGroups = withContext(Dispatchers.IO) { ShellGroupStore(context.applicationContext).merged(shellCommands) }
+                        val text = SettingsBackup.attach(act.repo.exportBackup(), bookmarkRepo.bookmarks.first(), remoteRepo.connections.first(), FolderBadgeStore.exportEntries(), shellCommands, shellGroups)
                         withContext(Dispatchers.IO) {
                             target.mkdirs()
                             val file = LocalFileAccess.file(File(target, SettingsBackup.fileName(System.currentTimeMillis())).path)

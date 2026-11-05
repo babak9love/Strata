@@ -102,16 +102,33 @@ object ShizukuManager {
 
     suspend fun access(): RootFileAccess? = fileSystem()?.let { RootFileAccess(it) }
 
+    private fun parseExec(raw: String): ShizukuExecResult {
+        val nl = raw.indexOf('\n')
+        return if (nl < 0) ShizukuExecResult(raw.trim().toIntOrNull() ?: -2, "")
+        else ShizukuExecResult(raw.substring(0, nl).trim().toIntOrNull() ?: -2, raw.substring(nl + 1))
+    }
+
     /** Runs a shell command through the Shizuku user service. Null when Shizuku is unavailable or the call failed. */
     suspend fun exec(command: String, timeoutMs: Long): ShizukuExecResult? {
         if (fileSystem() == null) return null
         val service = remoteService ?: return null
         return withContext(Dispatchers.IO) {
+            runCatching { parseExec(service.exec(command, timeoutMs)) }.getOrNull()
+        }
+    }
+
+    /** Like [exec], but [sink] also gets the output in chunks while the command is running. */
+    suspend fun execStreaming(command: String, timeoutMs: Long, sink: (String) -> Unit): ShizukuExecResult? {
+        if (fileSystem() == null) return null
+        val service = remoteService ?: return null
+        return withContext(Dispatchers.IO) {
             runCatching {
-                val raw = service.exec(command, timeoutMs)
-                val nl = raw.indexOf('\n')
-                if (nl < 0) ShizukuExecResult(raw.trim().toIntOrNull() ?: -2, "")
-                else ShizukuExecResult(raw.substring(0, nl).trim().toIntOrNull() ?: -2, raw.substring(nl + 1))
+                val callback = object : IShellOutput.Stub() {
+                    override fun onOutput(chunk: String?) {
+                        if (chunk != null) sink(chunk)
+                    }
+                }
+                parseExec(service.execStreaming(command, timeoutMs, callback))
             }.getOrNull()
         }
     }
@@ -128,7 +145,7 @@ object ShizukuManager {
             .daemon(false)
             .processNameSuffix("fs")
             .debuggable(false)
-            .version(2)
+            .version(3)
         return withTimeoutOrNull(20_000) {
             suspendCancellableCoroutine { cont ->
                 val connection = object : ServiceConnection {

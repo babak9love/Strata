@@ -18,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -27,19 +28,24 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 data class ShellRun(val command: SavedCommand, val result: ShellResult)
 
 data class ShellUiState(
     val commands: List<SavedCommand> = emptyList(),
     val loading: Boolean = true,
-    val runningId: String? = null,
-    val run: ShellRun? = null,
+    /** Commands that are running right now; several can run at the same time. */
+    val runningIds: Set<String> = emptySet(),
+    /** Finished runs whose result has not been dismissed yet; the first one is shown. */
+    val runs: List<ShellRun> = emptyList(),
     /** Group names in display order (includes groups that have no commands yet). */
     val groups: List<String> = emptyList(),
     /** Names of the groups that are currently folded. */
     val collapsed: Set<String> = emptySet(),
-)
+) {
+    val run: ShellRun? get() = runs.firstOrNull()
+}
 
 class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
     private val store = ShellCommandStore(app)
@@ -120,10 +126,11 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
     fun exportTo(uri: Uri, onDone: (Int) -> Unit) {
         viewModelScope.launch {
             val commands = _state.value.commands
+            val groups = _state.value.groups
             val ok = withContext(Dispatchers.IO) {
                 runCatching {
                     getApplication<Application>().contentResolver.openOutputStream(uri, "wt")?.use {
-                        it.write(store.encode(commands).toByteArray())
+                        it.write(store.encode(commands, groups).toByteArray())
                     } != null
                 }.getOrDefault(false)
             }
@@ -137,17 +144,20 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
             val incoming = withContext(Dispatchers.IO) {
                 runCatching {
                     getApplication<Application>().contentResolver.openInputStream(uri)?.use { String(it.readBytes()) }
-                }.getOrNull()?.let { store.decode(it) }
+                }.getOrNull()?.let { store.decodeBundle(it) }
             }
             if (incoming == null) {
                 onDone(-1)
                 return@launch
             }
+            // Groups from the file that this device doesn't have yet are added at the end, in the file's order;
+            // this also brings over groups that hold no commands.
+            _state.update { st -> st.copy(groups = st.groups + incoming.groups.filter { it !in st.groups }) }
             var added = 0
             change { list ->
                 added = 0
                 val result = list.toMutableList()
-                for (c in incoming) {
+                for (c in incoming.commands) {
                     if (c.command.isBlank()) continue
                     if (result.any { it.name == c.name && it.command == c.command }) continue
                     val id = if (result.any { it.id == c.id }) UUID.randomUUID().toString() else c.id
@@ -207,6 +217,17 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
     fun deleteGroup(name: String) {
         _state.update { st -> st.copy(groups = st.groups - name, collapsed = st.collapsed - name) }
         change { list -> list.map { if (it.group == name) it.copy(group = "") else it } }
+    }
+
+    /** Moves a group one place up ([by] = -1) or down ([by] = 1) in the list of groups. */
+    fun moveGroup(name: String, by: Int) {
+        _state.update { st ->
+            val from = st.groups.indexOf(name)
+            val to = from + by
+            if (from < 0 || to !in st.groups.indices) st
+            else st.copy(groups = st.groups.toMutableList().apply { add(to, removeAt(from)) })
+        }
+        persistGroups()
     }
 
     /** Unfolds a group, e.g. after a command was dropped into it while it was folded. */
@@ -272,14 +293,44 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private val _live = MutableStateFlow<Map<String, String>>(emptyMap())
+
+    /** Output so far of the commands that are running, by command id (only the end of long output is kept). */
+    val liveOutput: StateFlow<Map<String, String>> = _live.asStateFlow()
+
     fun run(command: SavedCommand) {
-        if (_state.value.runningId != null) return
-        _state.update { it.copy(runningId = command.id) }
+        val id = command.id
+        if (id in _state.value.runningIds) return
+        _state.update { it.copy(runningIds = it.runningIds + id) }
+        val buffer = StringBuilder()
+        val dirty = AtomicBoolean(false)
         viewModelScope.launch {
-            val result = ShellExecutor.runLogged(getApplication<Application>(), command, ShellLogSource.APP)
-            _state.update { it.copy(runningId = null, run = ShellRun(command, result)) }
+            // Output can arrive many times a second; the screen gets a snapshot a few times a second instead.
+            val ticker = launch {
+                while (true) {
+                    delay(200)
+                    if (dirty.getAndSet(false)) {
+                        val text = synchronized(buffer) { buffer.toString() }
+                        _live.update { it + (id to text) }
+                    }
+                }
+            }
+            val result = ShellExecutor.runLogged(getApplication<Application>(), command, ShellLogSource.APP) { chunk ->
+                synchronized(buffer) {
+                    buffer.append(chunk)
+                    if (buffer.length > LIVE_KEEP * 2) buffer.delete(0, buffer.length - LIVE_KEEP)
+                }
+                dirty.set(true)
+            }
+            ticker.cancel()
+            _live.update { it - id }
+            _state.update { it.copy(runningIds = it.runningIds - id, runs = it.runs + ShellRun(command, result)) }
         }
     }
 
-    fun dismissRun() = _state.update { it.copy(run = null) }
+    fun dismissRun() = _state.update { it.copy(runs = it.runs.drop(1)) }
+
+    private companion object {
+        const val LIVE_KEEP = 20_000
+    }
 }

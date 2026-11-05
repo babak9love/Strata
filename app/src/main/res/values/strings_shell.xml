@@ -42,7 +42,6 @@
     <string name="shell_pin_home">Add to Home screen</string>
     <string name="shell_pin_failed">Couldn\'t add to the Home screen</string>
     <string name="shell_log_file">Background log file</string>
-    <string name="shell_log_refresh">Refresh</string>
     <string name="shell_log_file_missing">Log file not found (it may have been deleted)</string>
     <string name="shell_log_stop">Stop</string>
     <string name="shell_log_running">Running</string>
@@ -54,6 +53,8 @@
     <string name="shell_group_ungrouped">Ungrouped</string>
     <string name="shell_group_edit">Edit group</string>
     <string name="shell_group_delete">Delete group</string>
+    <string name="shell_group_move_up">Move up</string>
+    <string name="shell_group_move_down">Move down</string>
     <string name="shell_group_expand">Expand</string>
     <string name="shell_group_collapse">Collapse</string>
     <string name="shell_confirm_title">Run %1$s?</string>
