@@ -1,7 +1,6 @@
 package dev.cluvex.strata.feature.shell
 
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.AssistChip
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -576,7 +575,6 @@ private fun CommandCard(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EditCommandDialog(
     existing: SavedCommand?,
@@ -648,12 +646,22 @@ private fun EditCommandDialog(
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(stringResource(R.string.shell_group_title), style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                FilterChip(selected = group.isEmpty(), onClick = { group = "" }, label = { Text(stringResource(R.string.shell_group_none)) })
-                groups.forEach { g ->
+            // One horizontally scrollable row: "No group" and "+ New group" stay first, then the groups.
+            val chipsState = rememberLazyListState()
+            LaunchedEffect(group, groups.size) {
+                val at = if (group.isEmpty()) 0 else groups.indexOf(group).let { if (it < 0) 0 else it + 2 }
+                chipsState.animateScrollToItem(at)
+            }
+            LazyRow(state = chipsState, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                item {
+                    FilterChip(selected = group.isEmpty(), onClick = { group = "" }, label = { Text(stringResource(R.string.shell_group_none)) })
+                }
+                item {
+                    AssistChip(onClick = { newGroupDialog = true }, label = { Text("+ " + stringResource(R.string.shell_group_new)) })
+                }
+                items(groups, key = { it }) { g ->
                     FilterChip(selected = group == g, onClick = { group = g }, label = { Text(g) })
                 }
-                AssistChip(onClick = { newGroupDialog = true }, label = { Text("+ " + stringResource(R.string.shell_group_new)) })
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.shell_shortcut), modifier = Modifier.weight(1f))
