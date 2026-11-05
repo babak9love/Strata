@@ -5,15 +5,18 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.cluvex.strata.core.shell.SavedCommand
+import dev.cluvex.strata.core.shell.ShellBackend
 import dev.cluvex.strata.core.shell.ShellCommandStore
 import dev.cluvex.strata.core.shell.ShellExecutor
 import dev.cluvex.strata.core.shell.ShellLogSource
+import dev.cluvex.strata.core.shell.ShellLogStore
 import dev.cluvex.strata.core.shell.ShellMode
 import dev.cluvex.strata.core.shell.ShellResult
 import dev.cluvex.strata.core.shell.ShellRunner
 import dev.cluvex.strata.core.shell.ShellShortcuts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +31,6 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicBoolean
 
 data class ShellRun(val command: SavedCommand, val result: ShellResult)
 
@@ -37,6 +39,8 @@ data class ShellUiState(
     val loading: Boolean = true,
     /** Commands that are running right now; several can run at the same time. */
     val runningIds: Set<String> = emptySet(),
+    /** Background commands whose process is still alive; they stay marked until the process ends. */
+    val backgroundIds: Set<String> = emptySet(),
     /** Finished runs whose result has not been dismissed yet; the first one is shown. */
     val runs: List<ShellRun> = emptyList(),
     /** Group names in display order (includes groups that have no commands yet). */
@@ -86,6 +90,7 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) { saveLock.withLock { store.load() } }
             _state.update { it.copy(commands = list, groups = mergeGroups(loadNames("groups"), list), loading = false) }
+            scanBackground(list)
         }
     }
 
@@ -293,44 +298,66 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private val _live = MutableStateFlow<Map<String, String>>(emptyMap())
-
-    /** Output so far of the commands that are running, by command id (only the end of long output is kept). */
-    val liveOutput: StateFlow<Map<String, String>> = _live.asStateFlow()
-
     fun run(command: SavedCommand) {
         val id = command.id
         if (id in _state.value.runningIds) return
         _state.update { it.copy(runningIds = it.runningIds + id) }
-        val buffer = StringBuilder()
-        val dirty = AtomicBoolean(false)
         viewModelScope.launch {
-            // Output can arrive many times a second; the screen gets a snapshot a few times a second instead.
-            val ticker = launch {
-                while (true) {
-                    delay(200)
-                    if (dirty.getAndSet(false)) {
-                        val text = synchronized(buffer) { buffer.toString() }
-                        _live.update { it + (id to text) }
-                    }
-                }
-            }
-            val result = ShellExecutor.runLogged(getApplication<Application>(), command, ShellLogSource.APP) { chunk ->
-                synchronized(buffer) {
-                    buffer.append(chunk)
-                    if (buffer.length > LIVE_KEEP * 2) buffer.delete(0, buffer.length - LIVE_KEEP)
-                }
-                dirty.set(true)
-            }
-            ticker.cancel()
-            _live.update { it - id }
+            // The output while it runs is published by ShellRunTracker, which the live views read.
+            val result = ShellExecutor.runLogged(getApplication<Application>(), command, ShellLogSource.APP)
             _state.update { it.copy(runningIds = it.runningIds - id, runs = it.runs + ShellRun(command, result)) }
+            val backend = result.backend
+            if (command.detached && backend != null && !result.timedOut && result.exitCode == 0) {
+                backgroundBackend[id] = backend
+                _state.update { it.copy(backgroundIds = it.backgroundIds + id) }
+                ensurePoller()
+            }
         }
+    }
+
+    /** Which backend started each running background process; needed to read its log again later. */
+    private val backgroundBackend = mutableMapOf<String, ShellBackend>()
+    private var poller: Job? = null
+
+    /** Re-checks the background processes every few seconds, for as long as any is marked as running. */
+    private fun ensurePoller() {
+        if (poller?.isActive == true) return
+        poller = viewModelScope.launch {
+            while (_state.value.backgroundIds.isNotEmpty()) {
+                delay(BACKGROUND_POLL_MS)
+                val st = _state.value
+                val alive = ShellRunner.runningDetached(st.commands.filter { it.id in st.backgroundIds }) ?: continue
+                _state.update { cur -> cur.copy(backgroundIds = cur.backgroundIds.filter { it in alive }.toSet()) }
+            }
+        }
+    }
+
+    /** Marks background commands that are still running from an earlier session (e.g. the app was closed meanwhile). */
+    private fun scanBackground(list: List<SavedCommand>) {
+        val detached = list.filter { it.detached }
+        if (detached.isEmpty()) return
+        viewModelScope.launch {
+            val alive = ShellRunner.runningDetached(detached)?.takeIf { it.isNotEmpty() } ?: return@launch
+            // The last logged run of a command says which backend started its process.
+            val log = withContext(Dispatchers.IO) { ShellLogStore(getApplication<Application>()).load() }
+            for (id in alive) {
+                val name = log.firstOrNull { it.commandId == id && it.logFile != null }?.backend ?: continue
+                runCatching { ShellBackend.valueOf(name) }.getOrNull()?.let { backgroundBackend[id] = it }
+            }
+            _state.update { it.copy(backgroundIds = it.backgroundIds + alive) }
+            ensurePoller()
+        }
+    }
+
+    /** The run to show when the log of a still-running background command is opened again. */
+    fun backgroundRun(command: SavedCommand): ShellRun {
+        val backend = backgroundBackend[command.id] ?: if (command.mode == ShellMode.ROOT) ShellBackend.ROOT else ShellBackend.SHIZUKU
+        return ShellRun(command, ShellResult(backend, 0, ""))
     }
 
     fun dismissRun() = _state.update { it.copy(runs = it.runs.drop(1)) }
 
     private companion object {
-        const val LIVE_KEEP = 20_000
+        const val BACKGROUND_POLL_MS = 3_000L
     }
 }

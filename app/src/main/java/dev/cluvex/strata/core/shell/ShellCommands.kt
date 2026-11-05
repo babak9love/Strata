@@ -10,6 +10,9 @@ import dev.cluvex.strata.feature.shell.ShellShortcutActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
@@ -132,6 +135,8 @@ object ShellRunner {
     const val MIN_TIMEOUT_SEC = 5
     const val MAX_TIMEOUT_SEC = 600
     private const val TIMEOUT_CODE = -1
+    /** Extra time the app waits for the watchdog to end a command (TERM, a 2 s pause, then KILL). */
+    private const val KILL_GRACE_MS = 8_000L
 
     /**
      * Wraps [command] so it runs as its own background process: the text is written to a script file and started
@@ -213,51 +218,171 @@ object ShellRunner {
     /**
      * Output has stderr merged in. With [ShellMode.AUTO] Shizuku (shell user) is tried first, then root.
      * [onOutput], when given, also receives the output in pieces while the command is still running.
+     *
+     * With a [runId] the command runs under a watchdog: it can be stopped with [stopRun], and when the time is up the
+     * command and everything it started are ended (a plain timeout would only stop waiting for it).
      */
     suspend fun run(
         command: String,
         mode: ShellMode = ShellMode.AUTO,
         timeoutSec: Int = DEFAULT_TIMEOUT_SEC,
         onOutput: ((String) -> Unit)? = null,
+        runId: String? = null,
     ): ShellResult {
         val timeoutMs = timeoutSec.coerceIn(MIN_TIMEOUT_SEC, MAX_TIMEOUT_SEC) * 1000L
+        val hard = runId != null
+        val script = if (runId != null) withWatchdog(command, timeoutMs / 1000, runPidPath(runId)) else command
         if (mode != ShellMode.ROOT) {
             ShizukuManager.refresh()
             if (ShizukuManager.state.value != ShizukuManager.Status.NOT_RUNNING) {
-                val r = if (onOutput != null) ShizukuManager.execStreaming(command, timeoutMs, onOutput) else ShizukuManager.exec(command, timeoutMs)
+                val started = System.nanoTime()
+                // With the watchdog the command ends by itself; the service's own timer is only the safety net.
+                val wait = if (hard) timeoutMs + KILL_GRACE_MS else timeoutMs
+                val r = if (onOutput != null) ShizukuManager.execStreaming(script, wait, onOutput) else ShizukuManager.exec(script, wait)
                 r?.let {
-                    return ShellResult(ShellBackend.SHIZUKU, it.exitCode, it.output.trimEnd(), timedOut = it.exitCode == TIMEOUT_CODE)
+                    val killed = hard && endedByWatchdog(it.exitCode, started, timeoutMs)
+                    val timedOut = killed || it.exitCode == TIMEOUT_CODE
+                    return ShellResult(ShellBackend.SHIZUKU, if (killed) TIMEOUT_CODE else it.exitCode, it.output.trimEnd(), timedOut)
                 }
             }
         }
         if (mode != ShellMode.SHIZUKU && (RootManager.isGranted || RootManager.request())) {
-            rootLock.withLock { runAsRoot(command, timeoutMs, onOutput) }?.let { return it }
+            rootLock.withLock { runAsRoot(script, timeoutMs, onOutput, hard) }?.let { return it }
         }
         return ShellResult(null, -1, "")
     }
 
-    /** Null when the root shell could not run the command at all. */
-    private suspend fun runAsRoot(command: String, timeoutMs: Long, onOutput: ((String) -> Unit)?): ShellResult? {
+    /** 143 and 137 are TERM and KILL; together with the elapsed time they tell the watchdog's kill from a normal exit. */
+    private fun endedByWatchdog(code: Int, startedNanos: Long, timeoutMs: Long): Boolean =
+        (code == 143 || code == 137) && (System.nanoTime() - startedNanos) / 1_000_000 >= timeoutMs - 500
+
+    /** Pid file of a command run with a [run] id; the watchdog writes it and [stopRun] reads it. */
+    private fun runPidPath(id: String): String = "/data/local/tmp/strata_${detachedKey(id)}.run.pid"
+
+    /**
+     * Wraps [command] so it runs in its own session, with a watchdog that ends the whole process group after
+     * [timeoutSec] seconds: TERM first, KILL two seconds later. The group's id is written to [pidFile], which is how
+     * [stopRun] finds it. The command's exit code is passed on, so a command that was ended this way finishes with
+     * 143 or 137. The wrapper runs in a subshell, so no variables leak into the shared root shell.
+     */
+    private fun withWatchdog(command: String, timeoutSec: Long, pidFile: String): String {
+        val quoted = "'" + command.replace("'", "'\\''") + "'"
+        return listOf(
+            "(",
+            "__c=$quoted",
+            "if command -v setsid >/dev/null 2>&1; then",
+            "setsid sh -c \"\$__c\" &",
+            "else",
+            "sh -c \"\$__c\" &",
+            "fi",
+            "__p=\$!",
+            "echo \$__p > '$pidFile' 2>/dev/null",
+            "(",
+            "trap 'kill \$__s 2>/dev/null; exit 0' TERM",
+            "sleep $timeoutSec &",
+            "__s=\$!",
+            "wait \$__s",
+            "kill -s TERM -- -\$__p 2>/dev/null || kill -s TERM \$__p 2>/dev/null",
+            "sleep 2",
+            "kill -s KILL -- -\$__p 2>/dev/null || kill -s KILL \$__p 2>/dev/null",
+            ") &",
+            "__w=\$!",
+            "wait \$__p",
+            "__r=\$?",
+            "kill \$__w 2>/dev/null",
+            "rm -f '$pidFile' 2>/dev/null",
+            "exit \$__r",
+            ")",
+        ).joinToString("\n")
+    }
+
+    /** Null when the root shell could not run the command at all. [script] is already wrapped when [hard] is set. */
+    private suspend fun runAsRoot(script: String, timeoutMs: Long, onOutput: ((String) -> Unit)?, hard: Boolean): ShellResult? {
         // With live output the text is collected here, because the shell hands the lines over instead of keeping them.
         val live = if (onOutput != null) StringBuilder() else null
-        // libsu's exec blocks and can't be interrupted, so on a timeout the command is left running and only reported.
+        val started = System.nanoTime()
+        // libsu's exec blocks and can't be interrupted. With the watchdog the command ends by itself; this wait is
+        // only the safety net (and the only timeout without the watchdog), after which the command is just reported.
         val job = CoroutineScope(Dispatchers.IO).async {
             runCatching {
                 if (onOutput == null) {
-                    RootManager.exec(command)
+                    RootManager.exec(script)
                 } else {
-                    RootManager.execStreaming(command) { line ->
+                    RootManager.execStreaming(script) { line ->
                         synchronized(live!!) { live.append(line).append('\n') }
                         onOutput(line + "\n")
                     }
                 }
             }.getOrNull()
         }
-        val finished = withTimeoutOrNull(timeoutMs) { job.await() to true } ?: (null to false)
-        if (!finished.second) return ShellResult(ShellBackend.ROOT, TIMEOUT_CODE, "", timedOut = true)
+        val wait = if (hard) timeoutMs + KILL_GRACE_MS else timeoutMs
+        val finished = withTimeoutOrNull(wait) { job.await() to true } ?: (null to false)
+        if (!finished.second) {
+            val partial = if (live != null) synchronized(live) { live.toString() } else ""
+            return ShellResult(ShellBackend.ROOT, TIMEOUT_CODE, partial.trimEnd(), timedOut = true)
+        }
         val r = finished.first ?: return null
-        val text = if (live != null) synchronized(live) { live.toString() } else (r.out + r.err).joinToString("\n")
-        return ShellResult(ShellBackend.ROOT, r.code, text.trimEnd())
+        val text = (if (live != null) synchronized(live) { live.toString() } else (r.out + r.err).joinToString("\n")).trimEnd()
+        val killed = hard && endedByWatchdog(r.code, started, timeoutMs)
+        return if (killed) ShellResult(ShellBackend.ROOT, TIMEOUT_CODE, text, timedOut = true) else ShellResult(ShellBackend.ROOT, r.code, text)
+    }
+
+    /**
+     * Stops a command that was started with a [run] id: TERM to its whole process group, then KILL if it is still
+     * there a second later. True when something was stopped.
+     */
+    suspend fun stopRun(id: String, mode: ShellMode): Boolean {
+        val pid = runPidPath(id)
+        val script = "p=\$(cat '$pid' 2>/dev/null); " +
+            "if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then " +
+            "kill -s TERM -- -\$p 2>/dev/null || kill -s TERM \$p 2>/dev/null; sleep 1; " +
+            "if kill -0 \$p 2>/dev/null; then kill -s KILL -- -\$p 2>/dev/null || kill -s KILL \$p 2>/dev/null; fi; " +
+            "echo stopped; else echo idle; fi"
+        // A shell-user process can't be signalled by root's counterpart and the other way round, so both are tried.
+        if (mode != ShellMode.ROOT) {
+            val r = run(script, ShellMode.SHIZUKU, 15)
+            if (r.backend != null && r.output.trim().endsWith("stopped")) return true
+        }
+        if (mode != ShellMode.SHIZUKU && RootManager.isGranted) {
+            // The shared root shell is busy running the command, so root gets its own short-lived `su` process.
+            return runRootSeparate(script, 15_000L)?.trim()?.endsWith("stopped") == true
+        }
+        return false
+    }
+
+    /** Runs a script in a separate `su` process, next to whatever the shared root shell is doing. Null on failure. */
+    private suspend fun runRootSeparate(script: String, timeoutMs: Long): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val process = ProcessBuilder("su", "-c", script).redirectErrorStream(true).start()
+            // Closing the process ends the blocking read below if it takes too long.
+            val killer = CoroutineScope(Dispatchers.IO).launch {
+                delay(timeoutMs)
+                process.destroy()
+            }
+            val text = process.inputStream.bufferedReader().readText()
+            killer.cancel()
+            text
+        }.getOrNull()
+    }
+
+    /**
+     * The ids of those [commands] (background ones) whose process is still alive, checked with one call per backend
+     * mode. Null when the check could not run, so a failed check is not mistaken for "nothing is running".
+     */
+    suspend fun runningDetached(commands: Collection<SavedCommand>): Set<String>? {
+        if (commands.isEmpty()) return emptySet()
+        val alive = mutableSetOf<String>()
+        for ((mode, group) in commands.groupBy { it.mode }) {
+            val byKey = group.associateBy { detachedKey(it.id) }
+            val script = "for k in ${byKey.keys.joinToString(" ")}; do " +
+                "p=\$(cat /data/local/tmp/strata_\$k.pid 2>/dev/null); " +
+                "if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then echo \$k; fi; done"
+            val r = run(script, mode, 15)
+            if (r.backend == null) return null
+            val keys = r.output.lines().map { it.trim() }.toSet()
+            byKey.forEach { (k, c) -> if (k in keys) alive += c.id }
+        }
+        return alive
     }
 }
 

@@ -78,21 +78,25 @@ object ShellExecutor {
      * Runs a saved command and records it in the log. The run and the log write are not cancellable, so a
      * command started from a shortcut is still logged if its screen is gone before it finishes.
      */
-    suspend fun runLogged(
-        context: Context,
-        command: SavedCommand,
-        source: String,
-        /** Gets the output while the command runs; not used for background commands, which only print a short message. */
-        onOutput: ((String) -> Unit)? = null,
-    ): ShellResult =
+    suspend fun runLogged(context: Context, command: SavedCommand, source: String): ShellResult =
         withContext(NonCancellable) {
             val started = SystemClock.elapsedRealtime()
-            val result = ShellRunner.run(
-                if (command.detached) ShellRunner.detach(command.id, command.command) else command.command,
-                command.mode,
-                command.timeoutSec,
-                if (command.detached) null else onOutput,
-            )
+            // A normal command is followed live (the tracker feeds the live view and the history) and can be stopped;
+            // a background command only prints a short "started" message and has its log file instead.
+            val live = !command.detached
+            if (live) ShellRunTracker.start(command, source)
+            val result = try {
+                ShellRunner.run(
+                    if (command.detached) ShellRunner.detach(command.id, command.command) else command.command,
+                    command.mode,
+                    command.timeoutSec,
+                    if (live) ({ chunk: String -> ShellRunTracker.append(command.id, chunk) }) else null,
+                    runId = if (live) command.id else null,
+                )
+            } catch (t: Throwable) {
+                if (live) ShellRunTracker.finish(command.id)
+                throw t
+            }
             val took = SystemClock.elapsedRealtime() - started
             val output = if (result.output.length > ShellLogStore.MAX_OUTPUT) {
                 result.output.take(ShellLogStore.MAX_OUTPUT) + "\n…"
@@ -117,6 +121,8 @@ object ShellExecutor {
                     ),
                 )
             }
+            // After the entry is saved, so a history that reloads when a run ends already finds it.
+            if (live) ShellRunTracker.finish(command.id)
             result
         }
 }

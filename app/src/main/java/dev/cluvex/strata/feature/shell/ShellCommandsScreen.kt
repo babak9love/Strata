@@ -138,6 +138,13 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     var newGroupDialog by remember { mutableStateOf(false) }
     var groupMenu by remember { mutableStateOf<String?>(null) }
     var liveId by remember { mutableStateOf<String?>(null) }
+    // A background command that is still running, whose log was opened again from its card.
+    var backgroundCmd by remember { mutableStateOf<SavedCommand?>(null) }
+    // A normal command opens its live output right away; a background one shows its log when it has started.
+    val startCommand: (SavedCommand) -> Unit = { c ->
+        vm.run(c)
+        if (!c.detached) liveId = c.id
+    }
     val context = androidx.compose.ui.platform.LocalContext.current
     val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json"),
@@ -391,12 +398,19 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                                 val lifted = dragId == c.id
                                 CommandCard(
                                     command = c,
-                                    running = c.id in ui.runningIds,
+                                    running = c.id in ui.runningIds || c.id in ui.backgroundIds,
                                     blocked = false,
                                     lifted = lifted,
                                     dragOffset = { dragOffset },
-                                    // While a command runs, its button opens the live output instead of starting it again.
-                                    onRun = { if (c.id in ui.runningIds) liveId = c.id else if (c.confirm) confirming = c else vm.run(c) },
+                                    // While a command runs, its button opens its output (or log) instead of starting it again.
+                                    onRun = {
+                                        when {
+                                            c.id in ui.runningIds -> if (!c.detached) liveId = c.id
+                                            c.id in ui.backgroundIds -> backgroundCmd = c
+                                            c.confirm -> confirming = c
+                                            else -> startCommand(c)
+                                        }
+                                    },
                                     onEdit = { editing = EditTarget(c) },
                                     handle = Modifier.pointerInput(c.id) {
                                         detectDragGestures(
@@ -458,7 +472,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
             onDismissRequest = { confirming = null },
             title = stringResource(R.string.shell_confirm_title, c.name),
             icon = Icons.Rounded.Terminal,
-            confirmButton = { TextButton(onClick = { confirming = null; vm.run(c) }) { Text(stringResource(R.string.shell_run)) } },
+            confirmButton = { TextButton(onClick = { confirming = null; startCommand(c) }) { Text(stringResource(R.string.shell_run)) } },
             dismissButton = { TextButton(onClick = { confirming = null }) { Text(stringResource(R.string.common_cancel)) } },
         ) {
             Text(
@@ -497,17 +511,21 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         )
     }
 
-    // The live view closes by itself when its command finishes (the result dialog follows).
-    LaunchedEffect(ui.runningIds, liveId) {
-        if (liveId != null && liveId !in ui.runningIds) liveId = null
+    // The live view closes by itself when its command finishes (the result dialog follows). It only counts as
+    // "was open" once the command shows as running, so the moment before the state catches up does not close it.
+    val liveActive = liveId?.let { it in ui.runningIds } == true
+    var liveWasActive by remember { mutableStateOf(false) }
+    LaunchedEffect(liveActive) {
+        if (liveActive) liveWasActive = true
+        else if (liveWasActive) {
+            liveId = null
+            liveWasActive = false
+        }
     }
-    liveId?.let { id ->
-        LiveOutputDialog(
-            name = ui.commands.firstOrNull { it.id == id }?.name.orEmpty(),
-            id = id,
-            vm = vm,
-            onDismiss = { liveId = null },
-        )
+    if (liveActive) liveId?.let { id -> LiveOutputDialog(id, onDismiss = { liveId = null }) }
+
+    backgroundCmd?.let { c ->
+        RunResultDialog(vm.backgroundRun(c), onDismiss = { backgroundCmd = null })
     }
 
     // Results queue up when several commands finish; each is shown in turn.
@@ -901,44 +919,6 @@ private fun GroupNameDialog(
     }
 }
 
-/** Output of a command that is still running; closing it does not stop the command. */
-@Composable
-private fun LiveOutputDialog(name: String, id: String, vm: ShellCommandsViewModel, onDismiss: () -> Unit) {
-    val live by vm.liveOutput.collectAsState()
-    val text = live[id].orEmpty()
-    val clipboard = rememberTextClipboard()
-    val scroll = rememberScrollState()
-    // Follow the end of the output as it grows.
-    LaunchedEffect(text.length) { scroll.scrollTo(scroll.maxValue) }
-    ExpressiveDialog(
-        onDismissRequest = onDismiss,
-        title = name,
-        icon = Icons.Rounded.Terminal,
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) } },
-        dismissButton = if (text.isNotEmpty()) {
-            { TextButton(onClick = { clipboard.setText(text) }) { Text(stringResource(R.string.common_copy)) } }
-        } else null,
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                Text(stringResource(R.string.shell_log_running), style = MaterialTheme.typography.labelLarge)
-            }
-            Box(Modifier.fillMaxWidth().heightIn(max = 320.dp).verticalScroll(scroll)) {
-                SelectionContainer {
-                    Text(
-                        text.ifEmpty { "…" },
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = FontFamily.Monospace,
-                            textDirection = TextDirection.Ltr,
-                        ),
-                    )
-                }
-            }
-        }
-    }
-}
-
 @Composable
 private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
     val clipboard = rememberTextClipboard()
@@ -977,9 +957,8 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
             }
         }
     }
-    val scroll = rememberScrollState()
-    // While the command runs, stay at the end of the log.
-    LaunchedEffect(fileText?.length, stillRunning) { if (stillRunning) scroll.scrollTo(scroll.maxValue) }
+    // A background log opens at its last line and follows it while the command runs.
+    val scroll = rememberTailScrollState(enabled = detachedLog != null)
     val body = if (detachedLog != null) {
         when {
             loading && fileText == null -> "…"
