@@ -13,6 +13,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -82,7 +83,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -164,6 +167,10 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
             loose.forEach { add(ShellRow.Cmd(it, nested = false)) }
         }
     }
+    // The drag handlers live inside pointerInput blocks that are keyed only by the command id, so they keep the
+    // lambdas (and the `rows` list) from the composition in which they were created. Without this, after a group is
+    // folded/unfolded or a command moves, list indexes map to the wrong rows and the wrong (or no) group is targeted.
+    val rowsNow by rememberUpdatedState(rows)
     var dragId by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     // The group the dragged card is currently over ("" = ungrouped); the card only joins it when it is dropped.
@@ -191,7 +198,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         val bottom = top + cur.size
         val byOverlap = items.mapNotNull { info ->
             if (info.key == dragged.id) return@mapNotNull null
-            val row = rows.getOrNull(info.index) ?: return@mapNotNull null
+            val row = rowsNow.getOrNull(info.index) ?: return@mapNotNull null
             val targetable = (row is ShellRow.Group && row.name != dragged.group) || (row is ShellRow.Label && dragged.group.isNotEmpty())
             if (!targetable) return@mapNotNull null
             val overlap = minOf(bottom, (info.offset + info.size).toFloat()) - maxOf(top, info.offset.toFloat())
@@ -200,7 +207,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         if (byOverlap != null) return byOverlap.first to byOverlap.second
         val center = top + cur.size / 2f
         val hit = items.firstOrNull { it.key != dragged.id && center >= it.offset && center <= it.offset + it.size } ?: return null
-        return rows.getOrNull(hit.index)?.let { hit to it }
+        return rowsNow.getOrNull(hit.index)?.let { hit to it }
     }
 
     // Called when the finger is released: if the card sits over another group, it moves there now.
@@ -247,25 +254,10 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
             if (cur.index != waiting) return
             pendingIndex = null
         }
-        val edge = with(density) { 56.dp.toPx() }
-        val top = cur.offset + dragOffset
-        val bottom = top + cur.size
-        val scroll = when {
-            top < info.viewportStartOffset + edge -> -16f
-            bottom > info.viewportEndOffset - edge -> 16f
-            else -> 0f
-        }
-        if (scroll != 0f) {
-            val consumed = listState.dispatchRawDelta(scroll)
-            if (consumed != 0f) {
-                dragOffset += consumed
-                return
-            }
-        }
         val center = cur.offset + dragOffset + cur.size / 2f
         val dragged = ui.commands.firstOrNull { it.id == id } ?: return
         // Live reordering only happens inside the card's own group; joining another group is decided on release.
-        fun sameGroupCmd(index: Int) = (rows.getOrNull(index) as? ShellRow.Cmd)?.command?.group == dragged.group
+        fun sameGroupCmd(index: Int) = (rowsNow.getOrNull(index) as? ShellRow.Cmd)?.command?.group == dragged.group
         hoverGroup = when (val r = findTarget(cur, dragged)?.second) {
             is ShellRow.Group -> r.name
             is ShellRow.Cmd -> r.command.group
@@ -280,10 +272,38 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
             else -> null
         } ?: return
         val down = target.index > cur.index
-        vm.swapCommands(id, (rows[target.index] as ShellRow.Cmd).command.id)
+        vm.swapCommands(id, (rowsNow[target.index] as ShellRow.Cmd).command.id)
         val newOffset = if (down) target.offset + target.size - cur.size else target.offset
         dragOffset += cur.offset - newOffset
         pendingIndex = target.index
+    }
+
+    // Auto-scroll while a card is held near the top or bottom edge. It runs every frame, so the list keeps moving
+    // even when the finger is still; after each step dragBy(0f) refreshes the highlighted group and live swaps.
+    LaunchedEffect(dragId) {
+        val id = dragId ?: return@LaunchedEffect
+        val edge = with(density) { 56.dp.toPx() }
+        val speed = with(density) { 6.dp.toPx() }
+        while (true) {
+            withFrameNanos { }
+            if (dragId != id) break
+            val info = listState.layoutInfo
+            val cur = info.visibleItemsInfo.firstOrNull { it.key == id } ?: continue
+            val top = cur.offset + dragOffset
+            val bottom = top + cur.size
+            val delta = when {
+                top < info.viewportStartOffset + edge -> -speed
+                bottom > info.viewportEndOffset - edge -> speed
+                else -> 0f
+            }
+            if (delta != 0f) {
+                val consumed = listState.dispatchRawDelta(delta)
+                if (consumed != 0f) {
+                    dragOffset += consumed
+                    dragBy(0f)
+                }
+            }
+        }
     }
 
     Scaffold(
@@ -524,7 +544,11 @@ private fun CommandCard(
                 rotationZ = -1.2f * lift
             },
     ) {
-        Column(Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 12.dp)) {
+        Column(
+            Modifier
+                .animateContentSize(if (reduced) snap() else spring(stiffness = 600f))
+                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = if (lifted) 8.dp else 12.dp),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
@@ -546,10 +570,10 @@ private fun CommandCard(
                     Text(
                         command.name,
                         style = MaterialTheme.typography.titleMedium,
-                        maxLines = 2,
+                        maxLines = if (lifted) 1 else 2,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (command.shortcut) {
+                    if (command.shortcut && !lifted) {
                         Text(
                             stringResource(R.string.shell_in_menu),
                             style = MaterialTheme.typography.titleSmall,
@@ -558,7 +582,7 @@ private fun CommandCard(
                         )
                     }
                 }
-                IconButton(onClick = onRun, enabled = !blocked, modifier = Modifier.size(48.dp)) {
+                if (!lifted) IconButton(onClick = onRun, enabled = !blocked, modifier = Modifier.size(48.dp)) {
                     if (running) {
                         CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 3.dp)
                     } else {
@@ -569,7 +593,7 @@ private fun CommandCard(
                         )
                     }
                 }
-                IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
+                if (!lifted) IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
                     Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.common_edit))
                 }
                 Box(handle.size(36.dp), contentAlignment = Alignment.Center) {
@@ -580,7 +604,7 @@ private fun CommandCard(
                     )
                 }
             }
-            Text(
+            if (!lifted) Text(
                 command.command,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
