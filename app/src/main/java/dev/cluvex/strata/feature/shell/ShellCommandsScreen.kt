@@ -351,7 +351,6 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                                     running = ui.runningId == c.id,
                                     blocked = ui.runningId != null && ui.runningId != c.id,
                                     lifted = lifted,
-                                    grouped = row.nested,
                                     dragOffset = { dragOffset },
                                     onRun = { if (ui.runningId == null) { if (c.confirm) confirming = c else vm.run(c) } },
                                     onEdit = { editing = EditTarget(c) },
@@ -465,8 +464,6 @@ private fun CommandCard(
     onEdit: () -> Unit,
     handle: Modifier,
     modifier: Modifier = Modifier,
-    /** Commands inside a group get a slightly purple card so they stand apart from ungrouped ones. */
-    grouped: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     val reduced = LocalAppearance.current.motion == MotionStyle.REDUCED
@@ -494,7 +491,7 @@ private fun CommandCard(
     }
     Surface(
         shape = RoundedCornerShape((14 + 18 * lift).dp),
-        color = lerp(if (grouped) lerp(colors.surfaceBright, colors.primaryContainer, 0.3f) else colors.surfaceBright, colors.primaryContainer, lift * 0.85f),
+        color = lerp(lerp(colors.surfaceBright, colors.primaryContainer, 0.3f), colors.primaryContainer, lift * 0.85f),
         contentColor = colors.onSurface,
         shadowElevation = (10 * lift).dp,
         modifier = modifier
