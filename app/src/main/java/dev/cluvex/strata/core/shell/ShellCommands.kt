@@ -366,21 +366,26 @@ object ShellRunner {
     }
 
     /**
-     * The ids of those [commands] (background ones) whose process is still alive, checked with one call per backend
-     * mode. Null when the check could not run, so a failed check is not mistaken for "nothing is running".
+     * The ids (out of [ids], all of background commands) whose process is still alive, checked with one call through
+     * [mode]. Null when the check could not run, so a failed check is not mistaken for "nothing is running".
      */
+    suspend fun runningDetachedIds(ids: Collection<String>, mode: ShellMode): Set<String>? {
+        if (ids.isEmpty()) return emptySet()
+        val byKey = ids.associateBy { detachedKey(it) }
+        val script = "for k in ${byKey.keys.joinToString(" ")}; do " +
+            "p=\$(cat /data/local/tmp/strata_\$k.pid 2>/dev/null); " +
+            "if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then echo \$k; fi; done"
+        val r = run(script, mode, 15)
+        if (r.backend == null) return null
+        val keys = r.output.lines().map { it.trim() }.toSet()
+        return byKey.filterKeys { it in keys }.values.toSet()
+    }
+
+    /** Like [runningDetachedIds] for saved [commands], each checked through its own backend mode. */
     suspend fun runningDetached(commands: Collection<SavedCommand>): Set<String>? {
-        if (commands.isEmpty()) return emptySet()
         val alive = mutableSetOf<String>()
         for ((mode, group) in commands.groupBy { it.mode }) {
-            val byKey = group.associateBy { detachedKey(it.id) }
-            val script = "for k in ${byKey.keys.joinToString(" ")}; do " +
-                "p=\$(cat /data/local/tmp/strata_\$k.pid 2>/dev/null); " +
-                "if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then echo \$k; fi; done"
-            val r = run(script, mode, 15)
-            if (r.backend == null) return null
-            val keys = r.output.lines().map { it.trim() }.toSet()
-            byKey.forEach { (k, c) -> if (k in keys) alive += c.id }
+            alive += runningDetachedIds(group.map { it.id }, mode) ?: return null
         }
         return alive
     }

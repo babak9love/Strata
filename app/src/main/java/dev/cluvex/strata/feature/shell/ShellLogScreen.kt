@@ -135,6 +135,8 @@ fun ShellLogScreen(onBack: () -> Unit, vm: ShellLogViewModel = viewModel()) {
                         val open = e.id in expanded
                         LogItem(
                             entry = e,
+                            // A background command whose process is alive shows a spinner instead of its start result.
+                            backgroundRunning = e.id in ui.runningEntryIds,
                             expanded = open,
                             dateText = dateFormat.format(Date(e.time)),
                             onToggle = { expanded = if (open) expanded - e.id else expanded + e.id },
@@ -166,9 +168,15 @@ fun ShellLogScreen(onBack: () -> Unit, vm: ShellLogViewModel = viewModel()) {
 private fun logText(e: LogEntry): String = e.output
 
 @Composable
-private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onToggle: () -> Unit, onCopy: () -> Unit) {
+private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boolean, dateText: String, onToggle: () -> Unit, onCopy: () -> Unit) {
     val sep = stringResource(R.string.common_separator)
-    val status = stringResource(if (entry.ok) R.string.shell_log_success else R.string.shell_log_failed)
+    val status = stringResource(
+        when {
+            backgroundRunning -> R.string.shell_log_running
+            entry.ok -> R.string.shell_log_success
+            else -> R.string.shell_log_failed
+        },
+    )
     val who = when (entry.backend) {
         "SHIZUKU" -> stringResource(R.string.shell_via_shizuku)
         "ROOT" -> stringResource(R.string.shell_via_root)
@@ -181,7 +189,9 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
     }
     val source = stringResource(if (entry.source == ShellLogSource.SHORTCUT) R.string.shell_log_source_shortcut else R.string.shell_log_source_app)
     val fromShortcut = entry.source == ShellLogSource.SHORTCUT
-    val metaBase = listOfNotNull(status, who, code, duration(entry.durationMs)).joinToString(sep)
+    // While the process runs, the exit code and time are only those of the start, so they are left out.
+    val metaBase = (if (backgroundRunning) listOf(status, who) else listOfNotNull(status, who, code, duration(entry.durationMs)))
+        .joinToString(sep)
     // The run source is shown as a small icon plus a short word: play = started in the app, arrow = started from a shortcut.
     val meta = buildAnnotatedString {
         append(metaBase)
@@ -232,11 +242,15 @@ private fun LogItem(entry: LogEntry, expanded: Boolean, dateText: String, onTogg
         ListItem(
             modifier = Modifier.clickable(onClick = onToggle),
             leadingContent = {
-                Icon(
-                    if (entry.ok) Icons.Rounded.CheckCircle else Icons.Rounded.Error,
-                    contentDescription = status,
-                    tint = if (entry.ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                )
+                if (backgroundRunning) {
+                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(
+                        if (entry.ok) Icons.Rounded.CheckCircle else Icons.Rounded.Error,
+                        contentDescription = status,
+                        tint = if (entry.ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    )
+                }
             },
             overlineContent = { Text(dateText) },
             headlineContent = { Text(entry.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
