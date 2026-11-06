@@ -87,9 +87,10 @@ object ShellExecutor {
             if (live) ShellRunTracker.start(command, source)
             val result = try {
                 ShellRunner.run(
-                    if (command.detached) ShellRunner.detach(command.id, command.command) else command.command,
+                    if (command.detached) ShellRunner.detach(command.id, command.command, command.timeoutSec) else command.command,
                     command.mode,
-                    command.timeoutSec,
+                    // The launcher of a background command only needs the default; its real limit lives in the script.
+                    if (command.detached && command.timeoutSec <= ShellRunner.NO_TIMEOUT) ShellRunner.DEFAULT_TIMEOUT_SEC else command.timeoutSec,
                     if (live) ({ chunk: String -> ShellRunTracker.append(command.id, chunk) }) else null,
                     runId = if (live) command.id else null,
                 )

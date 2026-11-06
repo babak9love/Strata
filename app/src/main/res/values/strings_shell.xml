@@ -33,6 +33,7 @@
     <string name="shell_mode_auto">Auto</string>
     <string name="shell_timeout">Timeout</string>
     <string name="shell_timeout_seconds">%1$d s</string>
+    <string name="shell_timeout_none">No limit</string>
     <string name="shell_timeout_minutes">%1$d min</string>
     <string name="shell_drag">Reorder %1$s</string>
     <string name="shell_detached">Run in background</string>

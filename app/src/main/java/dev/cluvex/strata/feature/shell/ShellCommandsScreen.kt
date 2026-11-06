@@ -123,7 +123,8 @@ private val TIMEOUT_CHOICES = listOf(10, 30, 60, 300, 600)
 
 @Composable
 private fun timeoutLabel(sec: Int): String =
-    if (sec < 60) stringResource(R.string.shell_timeout_seconds, sec) else stringResource(R.string.shell_timeout_minutes, sec / 60)
+    if (sec <= ShellRunner.NO_TIMEOUT) stringResource(R.string.shell_timeout_none)
+    else if (sec < 60) stringResource(R.string.shell_timeout_seconds, sec) else stringResource(R.string.shell_timeout_minutes, sec / 60)
 
 /** [command] null means "new command". */
 private class EditTarget(val command: SavedCommand?)
@@ -859,7 +860,7 @@ private fun EditCommandDialog(
                     Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    TIMEOUT_CHOICES.forEach { sec ->
+                    (listOf(ShellRunner.NO_TIMEOUT) + TIMEOUT_CHOICES).forEach { sec ->
                         DropdownMenuItem(
                             text = { Text(timeoutLabel(sec)) },
                             onClick = { timeoutSec = sec; menuOpen = false },

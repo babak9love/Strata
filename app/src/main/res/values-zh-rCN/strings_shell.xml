@@ -33,6 +33,7 @@
     <string name="shell_mode_auto">自动</string>
     <string name="shell_timeout">超时</string>
     <string name="shell_timeout_seconds">%1$d 秒</string>
+    <string name="shell_timeout_none">不限制</string>
     <string name="shell_timeout_minutes">%1$d 分钟</string>
     <string name="shell_drag">移动 %1$s</string>
     <string name="shell_detached">在后台运行</string>

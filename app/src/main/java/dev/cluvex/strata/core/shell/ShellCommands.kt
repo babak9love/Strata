@@ -132,6 +132,8 @@ class ShellCommandStore(context: Context) {
 
 object ShellRunner {
     const val DEFAULT_TIMEOUT_SEC = 60
+    /** Timeout value meaning "no limit"; only background commands can use it. */
+    const val NO_TIMEOUT = 0
     const val MIN_TIMEOUT_SEC = 5
     const val MAX_TIMEOUT_SEC = 600
     private const val TIMEOUT_CODE = -1
@@ -194,7 +196,8 @@ object ShellRunner {
         runCatching { run(cmd, mode, 15) }
     }
 
-    fun detach(id: String, command: String): String {
+    fun detach(id: String, command: String, timeoutSec: Int = DEFAULT_TIMEOUT_SEC): String {
+        val limit = if (timeoutSec <= NO_TIMEOUT) NO_TIMEOUT else timeoutSec.coerceIn(MIN_TIMEOUT_SEC, MAX_TIMEOUT_SEC)
         val key = detachedKey(id)
         val script = "/data/local/tmp/strata_$key.sh"
         val log = "/data/local/tmp/strata_$key.log"
@@ -205,6 +208,22 @@ object ShellRunner {
             append("cat > ").append(script).append(" <<'").append(delim).append("'\n")
             // The script records its own PID (it leads its own session), so the app can stop it later.
             append("echo \$\$ > ").append(pid).append('\n')
+            if (limit != NO_TIMEOUT) {
+                // Watchdog: the launcher only waits for the start, so the time limit has to live inside the script.
+                // After the limit it sends TERM to the script's whole process group, then KILL two seconds later.
+                // The watchdog ignores TERM itself so it survives long enough to send the KILL.
+                append("__g=\$\$\n")
+                append("(\n")
+                append("trap '' TERM\n")
+                append("sleep ").append(limit).append("\n")
+                append("echo \"[Timed out after ").append(limit).append(" s - stopped]\" >> ").append(log).append('\n')
+                append("kill -s TERM -- -\$__g 2>/dev/null || kill -s TERM \$__g 2>/dev/null\n")
+                append("sleep 2\n")
+                append("kill -s KILL -- -\$__g 2>/dev/null || kill -s KILL \$__g 2>/dev/null\n")
+                append(") >/dev/null 2>&1 &\n")
+                append("__w=\$!\n")
+                append("trap 'kill -s KILL \$__w 2>/dev/null' EXIT\n")
+            }
             append(command.trimEnd('\n', '\r')).append('\n')
             append(delim).append('\n')
             append("setsid nohup sh ").append(script).append(" > ").append(log).append(" 2>&1 &\n")
@@ -229,7 +248,9 @@ object ShellRunner {
         onOutput: ((String) -> Unit)? = null,
         runId: String? = null,
     ): ShellResult {
-        val timeoutMs = timeoutSec.coerceIn(MIN_TIMEOUT_SEC, MAX_TIMEOUT_SEC) * 1000L
+        // NO_TIMEOUT (0) means no limit at all: no watchdog timer and no waiting limit anywhere below.
+        val unlimited = timeoutSec <= NO_TIMEOUT
+        val timeoutMs = if (unlimited) 0L else timeoutSec.coerceIn(MIN_TIMEOUT_SEC, MAX_TIMEOUT_SEC) * 1000L
         val hard = runId != null
         val script = if (runId != null) withWatchdog(command, timeoutMs / 1000, runPidPath(runId)) else command
         if (mode != ShellMode.ROOT) {
@@ -237,10 +258,10 @@ object ShellRunner {
             if (ShizukuManager.state.value != ShizukuManager.Status.NOT_RUNNING) {
                 val started = System.nanoTime()
                 // With the watchdog the command ends by itself; the service's own timer is only the safety net.
-                val wait = if (hard) timeoutMs + KILL_GRACE_MS else timeoutMs
+                val wait = if (unlimited) 0L else if (hard) timeoutMs + KILL_GRACE_MS else timeoutMs
                 val r = if (onOutput != null) ShizukuManager.execStreaming(script, wait, onOutput) else ShizukuManager.exec(script, wait)
                 r?.let {
-                    val killed = hard && endedByWatchdog(it.exitCode, started, timeoutMs)
+                    val killed = hard && !unlimited && endedByWatchdog(it.exitCode, started, timeoutMs)
                     val timedOut = killed || it.exitCode == TIMEOUT_CODE
                     return ShellResult(ShellBackend.SHIZUKU, if (killed) TIMEOUT_CODE else it.exitCode, it.output.trimEnd(), timedOut)
                 }
@@ -267,6 +288,25 @@ object ShellRunner {
      */
     private fun withWatchdog(command: String, timeoutSec: Long, pidFile: String): String {
         val quoted = "'" + command.replace("'", "'\\''") + "'"
+        if (timeoutSec <= 0) {
+            // No limit: same own-session wrapper and pid file (so Stop still works), but no timer.
+            return listOf(
+                "(",
+                "__c=$quoted",
+                "if command -v setsid >/dev/null 2>&1; then",
+                "setsid sh -c \"\$__c\" &",
+                "else",
+                "sh -c \"\$__c\" &",
+                "fi",
+                "__p=\$!",
+                "echo \$__p > '$pidFile' 2>/dev/null",
+                "wait \$__p",
+                "__r=\$?",
+                "rm -f '$pidFile' 2>/dev/null",
+                "exit \$__r",
+                ")",
+            ).joinToString("\n")
+        }
         return listOf(
             "(",
             "__c=$quoted",
@@ -315,15 +355,19 @@ object ShellRunner {
                 }
             }.getOrNull()
         }
-        val wait = if (hard) timeoutMs + KILL_GRACE_MS else timeoutMs
-        val finished = withTimeoutOrNull(wait) { job.await() to true } ?: (null to false)
+        val finished = if (timeoutMs <= 0L) {
+            job.await() to true
+        } else {
+            val wait = if (hard) timeoutMs + KILL_GRACE_MS else timeoutMs
+            withTimeoutOrNull(wait) { job.await() to true } ?: (null to false)
+        }
         if (!finished.second) {
             val partial = if (live != null) synchronized(live) { live.toString() } else ""
             return ShellResult(ShellBackend.ROOT, TIMEOUT_CODE, partial.trimEnd(), timedOut = true)
         }
         val r = finished.first ?: return null
         val text = (if (live != null) synchronized(live) { live.toString() } else (r.out + r.err).joinToString("\n")).trimEnd()
-        val killed = hard && endedByWatchdog(r.code, started, timeoutMs)
+        val killed = hard && timeoutMs > 0L && endedByWatchdog(r.code, started, timeoutMs)
         return if (killed) ShellResult(ShellBackend.ROOT, TIMEOUT_CODE, text, timedOut = true) else ShellResult(ShellBackend.ROOT, r.code, text)
     }
 

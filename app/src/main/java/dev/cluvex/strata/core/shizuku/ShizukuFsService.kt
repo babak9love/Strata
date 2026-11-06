@@ -51,7 +51,9 @@ class ShizukuFsService : IShizukuFileService.Stub() {
             start()
         }
 
-        val deadline = System.currentTimeMillis() + timeoutMs.coerceIn(1_000L, 600_000L)
+        // timeoutMs <= 0 means no limit.
+        val unlimited = timeoutMs <= 0L
+        val deadline = if (unlimited) Long.MAX_VALUE else System.currentTimeMillis() + timeoutMs.coerceIn(1_000L, 600_000L)
         var code = -1
         var finished = false
         while (!finished) {
@@ -59,7 +61,7 @@ class ShizukuFsService : IShizukuFileService.Stub() {
                 code = process.exitValue()
                 finished = true
             } catch (_: IllegalThreadStateException) {
-                if (System.currentTimeMillis() >= deadline) break
+                if (!unlimited && System.currentTimeMillis() >= deadline) break
                 try {
                     Thread.sleep(50)
                 } catch (_: InterruptedException) {

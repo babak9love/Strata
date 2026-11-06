@@ -145,7 +145,7 @@ object ShizukuManager {
             .daemon(false)
             .processNameSuffix("fs")
             .debuggable(false)
-            .version(3)
+            .version(4)
         return withTimeoutOrNull(20_000) {
             suspendCancellableCoroutine { cont ->
                 val connection = object : ServiceConnection {

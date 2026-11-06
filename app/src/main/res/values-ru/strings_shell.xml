@@ -33,6 +33,7 @@
     <string name="shell_mode_auto">Авто</string>
     <string name="shell_timeout">Тайм-аут</string>
     <string name="shell_timeout_seconds">%1$d с</string>
+    <string name="shell_timeout_none">Без ограничения</string>
     <string name="shell_timeout_minutes">%1$d мин</string>
     <string name="shell_drag">Переместить %1$s</string>
     <string name="shell_detached">Запуск в фоне</string>
