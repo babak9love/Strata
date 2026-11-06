@@ -109,13 +109,14 @@ object ShellExecutor {
      * Saves the result on the entry and returns the updated entry; null when nothing is known (yet).
      */
     suspend fun finalizeDetached(store: ShellLogStore, e: LogEntry, mode: ShellMode): LogEntry? {
-        val file = e.logFile ?: return null
-        val sec = ShellRunner.detachedTimeoutSec(file, mode)
-        if (sec != null) {
-            withContext(Dispatchers.IO) { store.markTimedOut(e.id, sec * 1000L) }
-            return e.copy(timedOut = true, durationMs = sec * 1000L)
-        }
+        if (e.logFile == null) return null
         val end = ShellRunner.detachedEnd(e.commandId, mode) ?: return null
+        if (end.timeoutSec != null) {
+            // The watchdog stopped it: shown as "Timed out", with the limit as its time.
+            val ms = end.timeoutSec * 1000L
+            withContext(Dispatchers.IO) { store.markTimedOut(e.id, ms) }
+            return e.copy(timedOut = true, durationMs = ms)
+        }
         if (end.stoppedAtSec != null) {
             // Stop was pressed while it ran: shown as "Stopped", with the time it had run.
             val ms = (end.stoppedAtSec * 1000L - e.time).coerceAtLeast(0L)

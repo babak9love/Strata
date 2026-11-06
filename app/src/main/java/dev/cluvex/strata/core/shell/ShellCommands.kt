@@ -158,31 +158,37 @@ object ShellRunner {
     /** File the background script writes when it ends: "<exit code> <seconds it ran>". */
     fun detachedExitPath(id: String): String = "/data/local/tmp/strata_${detachedKey(id)}.exit"
 
+    /** Written by the watchdog of a background script that ran out of time: the limit in seconds. */
+    fun detachedTimeoutPath(id: String): String = "/data/local/tmp/strata_${detachedKey(id)}.timeout"
+
     /** Written by [stopDetached] with the time (epoch seconds) of a manual stop. */
     fun detachedStoppedPath(id: String): String = "/data/local/tmp/strata_${detachedKey(id)}.stopped"
 
     /** How a finished background command ended: exit code and seconds (when the script saved them) and the stop time. */
-    data class DetachedEnd(val code: Int?, val secs: Long, val stoppedAtSec: Long?)
+    data class DetachedEnd(val code: Int?, val secs: Long, val stoppedAtSec: Long?, val timeoutSec: Int?)
 
     suspend fun detachedEnd(id: String, mode: ShellMode): DetachedEnd? {
         val r = run(
             "cat '${detachedExitPath(id)}' 2>/dev/null; " +
-                "if [ -f '${detachedStoppedPath(id)}' ]; then echo \"STOPPED \$(cat '${detachedStoppedPath(id)}')\"; fi",
+                "if [ -f '${detachedStoppedPath(id)}' ]; then echo \"STOPPED \$(cat '${detachedStoppedPath(id)}')\"; fi; " +
+                "if [ -f '${detachedTimeoutPath(id)}' ]; then echo \"TIMEOUT \$(cat '${detachedTimeoutPath(id)}')\"; fi",
             mode, 10,
         )
         if (r.backend == null || r.timedOut) return null
         var code: Int? = null
         var secs = 0L
         var stoppedAt: Long? = null
+        var timeoutSec: Int? = null
         for (line in r.output.lines()) {
             val parts = line.trim().split(Regex("\\s+"))
             if (parts.firstOrNull() == "STOPPED") stoppedAt = parts.getOrNull(1)?.toLongOrNull()
+            else if (parts.firstOrNull() == "TIMEOUT") timeoutSec = parts.getOrNull(1)?.toIntOrNull()
             else if (code == null) {
                 code = parts.getOrNull(0)?.toIntOrNull()
                 if (code != null) secs = parts.getOrNull(1)?.toLongOrNull()?.coerceAtLeast(0L) ?: 0L
             }
         }
-        return if (code == null && stoppedAt == null) null else DetachedEnd(code, secs, stoppedAt)
+        return if (code == null && stoppedAt == null && timeoutSec == null) null else DetachedEnd(code, secs, stoppedAt, timeoutSec)
     }
 
 
@@ -213,18 +219,10 @@ object ShellRunner {
         return if (r.backend != null && !r.timedOut && r.exitCode == 0) r.output else null
     }
 
-    private val TIMEOUT_MARKER = Regex("""\[Timed out after (\d+) s""")
-
-    /** Seconds after which the watchdog stopped the background command that writes [path]; null if it did not time out. */
-    suspend fun detachedTimeoutSec(path: String, mode: ShellMode): Int? {
-        val text = readFile(path, mode) ?: return null
-        return TIMEOUT_MARKER.findAll(text).lastOrNull()?.groupValues?.get(1)?.toIntOrNull()
-    }
-
     /** Removes the script and log that [detach] left in /data/local/tmp for this command. */
     fun detachedCleanup(id: String): String {
         val key = detachedKey(id)
-        return "rm -f /data/local/tmp/strata_$key.sh /data/local/tmp/strata_$key.log /data/local/tmp/strata_$key.pid /data/local/tmp/strata_$key.exit /data/local/tmp/strata_$key.stopped"
+        return "rm -f /data/local/tmp/strata_$key.sh /data/local/tmp/strata_$key.log /data/local/tmp/strata_$key.pid /data/local/tmp/strata_$key.exit /data/local/tmp/strata_$key.stopped /data/local/tmp/strata_$key.timeout"
     }
 
     /**
@@ -237,7 +235,7 @@ object ShellRunner {
         val cmd = "for k in ${keys.joinToString(" ")}; do " +
             "f=/data/local/tmp/strata_\$k; p=\$(cat \$f.pid 2>/dev/null); " +
             "if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then continue; fi; " +
-            "rm -f \$f.sh \$f.log \$f.pid \$f.exit \$f.stopped; done"
+            "rm -f \$f.sh \$f.log \$f.pid \$f.exit \$f.stopped \$f.timeout; done"
         runCatching { run(cmd, mode, 15) }
     }
 
@@ -248,6 +246,7 @@ object ShellRunner {
         val log = "/data/local/tmp/strata_$key.log"
         val pid = "/data/local/tmp/strata_$key.pid"
         val exit = "/data/local/tmp/strata_$key.exit"
+        val timeoutFile = "/data/local/tmp/strata_$key.timeout"
         var delim = "STRATA_EOF"
         while (command.contains(delim)) delim += "_"
         return buildString {
@@ -263,7 +262,7 @@ object ShellRunner {
                 append("(\n")
                 append("trap '' TERM\n")
                 append("sleep ").append(limit).append("\n")
-                append("echo \"[Timed out after ").append(limit).append(" s - stopped]\" >> ").append(log).append('\n')
+                append("echo ").append(limit).append(" > ").append(timeoutFile).append('\n')
                 append("kill -s TERM -- -\$__g 2>/dev/null || kill -s TERM \$__g 2>/dev/null\n")
                 append("sleep 2\n")
                 append("kill -s KILL -- -\$__g 2>/dev/null || kill -s KILL \$__g 2>/dev/null\n")
@@ -277,10 +276,11 @@ object ShellRunner {
             append("' EXIT\n")
             append(command.trimEnd('\n', '\r')).append('\n')
             append(delim).append('\n')
-            // The log is emptied once and then opened in append mode, so the watchdog's timeout line can't be overwritten.
-            append("rm -f ").append(exit).append(' ').append("/data/local/tmp/strata_$key.stopped").append('\n')
-            append(": > ").append(log).append('\n')
-            append("setsid nohup sh ").append(script).append(" >> ").append(log).append(" 2>&1 &\n")
+            // Old files of the previous run are removed first, so they can't be mistaken for this run's result.
+            append("rm -f ").append(exit).append(' ').append("/data/local/tmp/strata_$key.stopped ").append(timeoutFile).append('\n')
+            // Plain ">" (not ">>"): system services such as `svc` get this file descriptor through binder, and a file
+            // opened in append mode makes their call fail ("Failed transaction").
+            append("setsid nohup sh ").append(script).append(" > ").append(log).append(" 2>&1 &\n")
             append("echo \"Running in the background. Log: ").append(log).append("\"")
         }
     }

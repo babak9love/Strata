@@ -146,8 +146,13 @@ class ShellShortcutActivity : ComponentActivity() {
     private fun done(name: String, result: ShellResult): Banner.Done = when {
         result.stopped -> Banner.Done(name, ok = true, detail = getString(R.string.shell_log_stopped))
         result.backend == null -> Banner.Done(name, ok = false, detail = getString(R.string.shell_banner_no_backend))
-        result.timedOut -> Banner.Done(name, ok = false, detail = getString(R.string.shell_timed_out))
-        result.exitCode != 0 -> Banner.Done(name, ok = false, detail = getString(R.string.shell_exit_code, result.exitCode))
+        result.timedOut -> Banner.Done(name, ok = false, detail = getString(R.string.shell_log_timed_out))
+        result.exitCode != 0 -> Banner.Done(
+            name,
+            ok = false,
+            // Same words as the history: "Failed · exit code 1".
+            detail = getString(R.string.shell_log_failed) + getString(R.string.common_separator) + getString(R.string.shell_exit_code, result.exitCode),
+        )
         else -> Banner.Done(name, ok = true, detail = null)
     }
 }
