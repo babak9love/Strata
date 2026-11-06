@@ -208,6 +208,8 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
     val logFile = entry.logFile
     // A background log opens at its last line and follows it while the process runs.
     val fileScroll = rememberTailScrollState(enabled = expanded && logFile != null)
+    // A normal command's saved output also opens at its last line (a stopped live run keeps showing its end).
+    val outputScroll = rememberTailScrollState(enabled = expanded && logFile == null)
     val scope = rememberCoroutineScope()
     var running by remember { mutableStateOf<Boolean?>(null) }
     var stopping by remember { mutableStateOf(false) }
@@ -251,7 +253,7 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
             ) {
                 if (logFile == null) {
                     Text(stringResource(R.string.shell_log_output), style = MaterialTheme.typography.labelMedium)
-                    Box(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+                    Box(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(outputScroll)) {
                         SelectionContainer {
                             Text(entry.output.ifEmpty { stringResource(R.string.shell_no_output) }, style = mono)
                         }
