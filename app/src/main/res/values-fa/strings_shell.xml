@@ -53,6 +53,8 @@
     <string name="shell_group_ungrouped">دسته‌بندی‌نشده</string>
     <string name="shell_group_edit">ویرایش گروه</string>
     <string name="shell_group_delete">حذف گروه</string>
+    <string name="shell_delete_confirm_title">%1$s حذف شود؟</string>
+    <string name="shell_group_delete_confirm_text">دستورهای این گروه نگه داشته می‌شوند و به «دسته‌بندی‌نشده» می‌روند.</string>
     <string name="shell_group_move_up">بالاتر</string>
     <string name="shell_group_move_down">پایین‌تر</string>
     <string name="shell_group_expand">باز کردن</string>

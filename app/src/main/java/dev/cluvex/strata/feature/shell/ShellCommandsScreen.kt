@@ -53,6 +53,7 @@ import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.DragIndicator
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.MoreVert
@@ -138,6 +139,9 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     var newGroupDialog by remember { mutableStateOf(false) }
     var groupMenu by remember { mutableStateOf<String?>(null) }
     var liveId by remember { mutableStateOf<String?>(null) }
+    // Swiping a row to the right asks before deleting it; swiping to the left opens its editor.
+    var deleteCmd by remember { mutableStateOf<SavedCommand?>(null) }
+    var deleteGroup by remember { mutableStateOf<String?>(null) }
     // A background command that is still running, whose log was opened again from its card.
     var backgroundCmd by remember { mutableStateOf<SavedCommand?>(null) }
     // A normal command opens its live output right away; a background one shows its log when it has started.
@@ -378,15 +382,22 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                 ) {
                     items(rows, key = { it.key }) { row ->
                         when (row) {
-                            is ShellRow.Group -> GroupHeader(
-                                name = row.name,
-                                count = row.count,
-                                collapsed = row.collapsed,
-                                highlight = hoverGroup == row.name,
-                                onToggle = { vm.toggleCollapsed(row.name) },
-                                onMenu = { groupMenu = row.name },
+                            is ShellRow.Group -> SwipeActionRow(
+                                enabled = dragId == null,
+                                shape = RoundedCornerShape(16.dp),
+                                onSwipeRight = { deleteGroup = row.name },
+                                onSwipeLeft = { groupMenu = row.name },
                                 modifier = Modifier.animateItem(),
-                            )
+                            ) {
+                                GroupHeader(
+                                    name = row.name,
+                                    count = row.count,
+                                    collapsed = row.collapsed,
+                                    highlight = hoverGroup == row.name,
+                                    onToggle = { vm.toggleCollapsed(row.name) },
+                                    onMenu = { groupMenu = row.name },
+                                )
+                            }
                             is ShellRow.Label -> Text(
                                 stringResource(R.string.shell_group_ungrouped),
                                 style = MaterialTheme.typography.labelLarge,
@@ -396,36 +407,32 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                             is ShellRow.Cmd -> {
                                 val c = row.command
                                 val lifted = dragId == c.id
-                                CommandCard(
-                                    command = c,
-                                    running = c.id in ui.runningIds || c.id in ui.backgroundIds,
-                                    blocked = false,
-                                    lifted = lifted,
-                                    dragOffset = { dragOffset },
-                                    // While a command runs, its button opens its output (or log) instead of starting it again.
-                                    onRun = {
-                                        when {
-                                            c.id in ui.runningIds -> if (!c.detached) liveId = c.id
-                                            c.id in ui.backgroundIds -> backgroundCmd = c
-                                            c.confirm -> confirming = c
-                                            else -> startCommand(c)
-                                        }
-                                    },
-                                    onEdit = { editing = EditTarget(c) },
-                                    handle = Modifier.pointerInput(c.id) {
-                                        detectDragGestures(
-                                            onDragStart = { startDrag(c.id) },
-                                            onDrag = { change, amount ->
-                                                change.consume()
-                                                dragBy(amount.y)
-                                            },
-                                            onDragEnd = { endDrag() },
-                                            onDragCancel = { endDrag() },
-                                        )
-                                    },
-                                    modifier = (if (lifted) Modifier else Modifier.animateItem())
-                                        .pointerInput(c.id) {
-                                            detectDragGesturesAfterLongPress(
+                                SwipeActionRow(
+                                    enabled = dragId == null,
+                                    shape = RoundedCornerShape(14.dp),
+                                    onSwipeRight = { deleteCmd = c },
+                                    onSwipeLeft = { editing = EditTarget(c) },
+                                    // The lifted card has to draw above the rows after it, so the row carries the z-index.
+                                    modifier = (if (lifted) Modifier else Modifier.animateItem()).zIndex(if (lifted) 1f else 0f),
+                                ) {
+                                    CommandCard(
+                                        command = c,
+                                        running = c.id in ui.runningIds || c.id in ui.backgroundIds,
+                                        blocked = false,
+                                        lifted = lifted,
+                                        dragOffset = { dragOffset },
+                                        // While a command runs, its button opens its output (or log) instead of starting it again.
+                                        onRun = {
+                                            when {
+                                                c.id in ui.runningIds -> if (!c.detached) liveId = c.id
+                                                c.id in ui.backgroundIds -> backgroundCmd = c
+                                                c.confirm -> confirming = c
+                                                else -> startCommand(c)
+                                            }
+                                        },
+                                        onEdit = { editing = EditTarget(c) },
+                                        handle = Modifier.pointerInput(c.id) {
+                                            detectDragGestures(
                                                 onDragStart = { startDrag(c.id) },
                                                 onDrag = { change, amount ->
                                                     change.consume()
@@ -435,7 +442,20 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                                                 onDragCancel = { endDrag() },
                                             )
                                         },
-                                )
+                                        modifier = Modifier
+                                            .pointerInput(c.id) {
+                                                detectDragGesturesAfterLongPress(
+                                                    onDragStart = { startDrag(c.id) },
+                                                    onDrag = { change, amount ->
+                                                        change.consume()
+                                                        dragBy(amount.y)
+                                                    },
+                                                    onDragEnd = { endDrag() },
+                                                    onDragCancel = { endDrag() },
+                                                )
+                                            },
+                                    )
+                                }
                             }
                         }
                     }
@@ -465,6 +485,46 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
             },
             onDismiss = { editing = null },
         )
+    }
+
+    deleteCmd?.let { c ->
+        ExpressiveDialog(
+            onDismissRequest = { deleteCmd = null },
+            title = stringResource(R.string.shell_delete_confirm_title, c.name),
+            icon = Icons.Rounded.Delete,
+            confirmButton = {
+                TextButton(onClick = { deleteCmd = null; vm.delete(c.id) }) {
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { deleteCmd = null }) { Text(stringResource(R.string.common_cancel)) } },
+        ) {
+            Text(
+                c.command,
+                maxLines = 6,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontFamily = FontFamily.Monospace,
+                    textDirection = TextDirection.Ltr,
+                ),
+            )
+        }
+    }
+
+    deleteGroup?.let { g ->
+        ExpressiveDialog(
+            onDismissRequest = { deleteGroup = null },
+            title = stringResource(R.string.shell_delete_confirm_title, g),
+            icon = Icons.Rounded.Delete,
+            confirmButton = {
+                TextButton(onClick = { deleteGroup = null; vm.deleteGroup(g) }) {
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { deleteGroup = null }) { Text(stringResource(R.string.common_cancel)) } },
+        ) {
+            Text(stringResource(R.string.shell_group_delete_confirm_text))
+        }
     }
 
     confirming?.let { c ->
@@ -975,8 +1035,28 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
         title = run.command.name,
         icon = Icons.Rounded.Terminal,
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) } },
-        dismissButton = if (copyText.isNotEmpty()) {
-            { TextButton(onClick = { clipboard.setText(copyText) }) { Text(stringResource(R.string.common_copy)) } }
+        // Stop sits with Copy and Close, in the same row of the dialog.
+        dismissButton = if (copyText.isNotEmpty() || (detachedLog != null && stillRunning)) {
+            {
+                Row {
+                    if (detachedLog != null && stillRunning) {
+                        TextButton(
+                            onClick = {
+                                scope.launch {
+                                    stopping = true
+                                    ShellRunner.stopDetached(run.command.id, readMode)
+                                    stopping = false
+                                    reload++
+                                }
+                            },
+                            enabled = !stopping,
+                        ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
+                    }
+                    if (copyText.isNotEmpty()) {
+                        TextButton(onClick = { clipboard.setText(copyText) }) { Text(stringResource(R.string.common_copy)) }
+                    }
+                }
+            }
         } else null,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -993,19 +1073,6 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
                         )
                     }
                 }
-            }
-            if (detachedLog != null && stillRunning) {
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            stopping = true
-                            ShellRunner.stopDetached(run.command.id, readMode)
-                            stopping = false
-                            reload++
-                        }
-                    },
-                    enabled = !stopping,
-                ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
             }
         }
     }

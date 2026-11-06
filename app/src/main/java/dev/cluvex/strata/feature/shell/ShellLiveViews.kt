@@ -107,19 +107,9 @@ internal fun LiveOutputDialog(commandId: String, onDismiss: () -> Unit) {
         title = run?.name.orEmpty(),
         icon = Icons.Rounded.Terminal,
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) } },
-        dismissButton = if (text.isNotEmpty()) {
-            { TextButton(onClick = { clipboard.setText(text) }) { Text(stringResource(R.string.common_copy)) } }
-        } else null,
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.shell_log_running),
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.weight(1f),
-                )
+        // Stop sits with Copy and Close, in the same row of the dialog.
+        dismissButton = {
+            Row {
                 TextButton(
                     onClick = {
                         stopping = true
@@ -127,6 +117,17 @@ internal fun LiveOutputDialog(commandId: String, onDismiss: () -> Unit) {
                     },
                     enabled = run != null && !stopping,
                 ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
+                if (text.isNotEmpty()) {
+                    TextButton(onClick = { clipboard.setText(text) }) { Text(stringResource(R.string.common_copy)) }
+                }
+            }
+        },
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.shell_log_running), style = MaterialTheme.typography.labelLarge)
             }
             LiveOutputText(text.ifEmpty { "…" })
         }

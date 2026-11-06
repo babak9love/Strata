@@ -53,6 +53,8 @@
     <string name="shell_group_ungrouped">Ungrouped</string>
     <string name="shell_group_edit">Edit group</string>
     <string name="shell_group_delete">Delete group</string>
+    <string name="shell_delete_confirm_title">Delete %1$s?</string>
+    <string name="shell_group_delete_confirm_text">The commands in this group are kept and move to Ungrouped.</string>
     <string name="shell_group_move_up">Move up</string>
     <string name="shell_group_move_down">Move down</string>
     <string name="shell_group_expand">Expand</string>

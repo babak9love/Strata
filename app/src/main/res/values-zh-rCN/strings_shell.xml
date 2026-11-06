@@ -53,6 +53,8 @@
     <string name="shell_group_ungrouped">未分组</string>
     <string name="shell_group_edit">编辑分组</string>
     <string name="shell_group_delete">删除分组</string>
+    <string name="shell_delete_confirm_title">删除 %1$s？</string>
+    <string name="shell_group_delete_confirm_text">该分组中的命令会保留，并移到“未分组”。</string>
     <string name="shell_group_move_up">上移</string>
     <string name="shell_group_move_down">下移</string>
     <string name="shell_group_expand">展开</string>
