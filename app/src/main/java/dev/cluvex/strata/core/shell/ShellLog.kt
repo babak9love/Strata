@@ -32,6 +32,8 @@ data class LogEntry(
     val source: String = ShellLogSource.APP,
     /** Background log file the command writes to (only for commands run in the background). */
     val logFile: String? = null,
+    /** The person stopped the command with Stop. */
+    val stopped: Boolean = false,
 ) {
     val ok: Boolean get() = backend != null && !timedOut && exitCode == 0
 }
@@ -49,6 +51,16 @@ class ShellLogStore(context: Context) {
     }
 
     fun clear() = synchronized(LOCK) { file.delete(); Unit }
+
+    /** Records that a background command was stopped by hand, and how long it had run. */
+    fun markStopped(id: String, durationMs: Long) = synchronized(LOCK) {
+        write(read().map { if (it.id == id) it.copy(stopped = true, durationMs = durationMs) else it })
+    }
+
+    /** Records how a background command really ended: its exit code and how long it ran. */
+    fun markFinished(id: String, exitCode: Int, durationMs: Long) = synchronized(LOCK) {
+        write(read().map { if (it.id == id) it.copy(exitCode = exitCode, durationMs = durationMs) else it })
+    }
 
     /** A background command's entry is saved when it starts; this records that its watchdog later stopped it. */
     fun markTimedOut(id: String, durationMs: Long) = synchronized(LOCK) {
@@ -120,6 +132,7 @@ object ShellExecutor {
                         backend = result.backend?.name,
                         exitCode = result.exitCode,
                         timedOut = result.timedOut,
+                        stopped = result.stopped,
                         durationMs = took,
                         output = output,
                         source = source,

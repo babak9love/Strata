@@ -94,9 +94,25 @@ class ShellLogViewModel(app: Application) : AndroidViewModel(app) {
                 else -> continue
             }
             checkedForTimeout += e.id
-            val sec = ShellRunner.detachedTimeoutSec(file, mode) ?: continue
-            withContext(Dispatchers.IO) { store.markTimedOut(e.id, sec * 1000L) }
-            _state.update { st -> st.copy(entries = st.entries.map { if (it.id == e.id) it.copy(timedOut = true, durationMs = sec * 1000L) else it }) }
+            val sec = ShellRunner.detachedTimeoutSec(file, mode)
+            if (sec != null) {
+                withContext(Dispatchers.IO) { store.markTimedOut(e.id, sec * 1000L) }
+                _state.update { st -> st.copy(entries = st.entries.map { if (it.id == e.id) it.copy(timedOut = true, durationMs = sec * 1000L) else it }) }
+                continue
+            }
+            // Not timed out: the script saved its real exit code and run time when it ended.
+            val end = ShellRunner.detachedEnd(e.commandId, mode) ?: continue
+            if (end.stoppedAtSec != null) {
+                // Stop was pressed while it ran: shown as "Stopped", with the time it had run.
+                val ms = (end.stoppedAtSec * 1000L - e.time).coerceAtLeast(0L)
+                withContext(Dispatchers.IO) { store.markStopped(e.id, ms) }
+                _state.update { st -> st.copy(entries = st.entries.map { if (it.id == e.id) it.copy(stopped = true, durationMs = ms) else it }) }
+                continue
+            }
+            val code = end.code ?: continue
+            val ms = end.secs * 1000L
+            withContext(Dispatchers.IO) { store.markFinished(e.id, code, ms) }
+            _state.update { st -> st.copy(entries = st.entries.map { if (it.id == e.id) it.copy(exitCode = code, durationMs = ms) else it }) }
         }
     }
 

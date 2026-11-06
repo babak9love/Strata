@@ -56,6 +56,8 @@ data class ShellResult(
     val exitCode: Int,
     val output: String,
     val timedOut: Boolean = false,
+    /** True when the person stopped the command with Stop (so it ended with TERM or KILL). */
+    val stopped: Boolean = false,
 )
 
 /** Commands plus the group names in display order (including groups that hold no commands). */
@@ -151,6 +153,37 @@ object ShellRunner {
 
     fun detachedPidPath(id: String): String = "/data/local/tmp/strata_${detachedKey(id)}.pid"
 
+    /** File the background script writes when it ends: "<exit code> <seconds it ran>". */
+    fun detachedExitPath(id: String): String = "/data/local/tmp/strata_${detachedKey(id)}.exit"
+
+    /** Written by [stopDetached] with the time (epoch seconds) of a manual stop. */
+    fun detachedStoppedPath(id: String): String = "/data/local/tmp/strata_${detachedKey(id)}.stopped"
+
+    /** How a finished background command ended: exit code and seconds (when the script saved them) and the stop time. */
+    data class DetachedEnd(val code: Int?, val secs: Long, val stoppedAtSec: Long?)
+
+    suspend fun detachedEnd(id: String, mode: ShellMode): DetachedEnd? {
+        val r = run(
+            "cat '${detachedExitPath(id)}' 2>/dev/null; " +
+                "if [ -f '${detachedStoppedPath(id)}' ]; then echo \"STOPPED \$(cat '${detachedStoppedPath(id)}')\"; fi",
+            mode, 10,
+        )
+        if (r.backend == null || r.timedOut) return null
+        var code: Int? = null
+        var secs = 0L
+        var stoppedAt: Long? = null
+        for (line in r.output.lines()) {
+            val parts = line.trim().split(Regex("\\s+"))
+            if (parts.firstOrNull() == "STOPPED") stoppedAt = parts.getOrNull(1)?.toLongOrNull()
+            else if (code == null) {
+                code = parts.getOrNull(0)?.toIntOrNull()
+                if (code != null) secs = parts.getOrNull(1)?.toLongOrNull()?.coerceAtLeast(0L) ?: 0L
+            }
+        }
+        return if (code == null && stoppedAt == null) null else DetachedEnd(code, secs, stoppedAt)
+    }
+
+
     /** True while the background process started by [detach] for this command is still alive. */
     suspend fun isDetachedRunning(id: String, mode: ShellMode): Boolean {
         val pid = detachedPidPath(id)
@@ -161,8 +194,10 @@ object ShellRunner {
     /** Stops the background process (and its children): TERM first, then KILL if it is still alive. */
     suspend fun stopDetached(id: String, mode: ShellMode): Boolean {
         val pid = detachedPidPath(id)
+        // The time of the stop is saved first, so the log can tell "stopped by hand" from any other end.
         val cmd = "p=\$(cat '$pid' 2>/dev/null); " +
             "if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then " +
+            "date +%s > '${detachedStoppedPath(id)}'; " +
             "kill -s TERM -- -\$p 2>/dev/null || kill -s TERM \$p; sleep 1; " +
             "if kill -0 \$p 2>/dev/null; then kill -s KILL -- -\$p 2>/dev/null || kill -s KILL \$p; fi; " +
             "echo stopped; else echo idle; fi"
@@ -187,7 +222,7 @@ object ShellRunner {
     /** Removes the script and log that [detach] left in /data/local/tmp for this command. */
     fun detachedCleanup(id: String): String {
         val key = detachedKey(id)
-        return "rm -f /data/local/tmp/strata_$key.sh /data/local/tmp/strata_$key.log /data/local/tmp/strata_$key.pid"
+        return "rm -f /data/local/tmp/strata_$key.sh /data/local/tmp/strata_$key.log /data/local/tmp/strata_$key.pid /data/local/tmp/strata_$key.exit /data/local/tmp/strata_$key.stopped"
     }
 
     /**
@@ -200,7 +235,7 @@ object ShellRunner {
         val cmd = "for k in ${keys.joinToString(" ")}; do " +
             "f=/data/local/tmp/strata_\$k; p=\$(cat \$f.pid 2>/dev/null); " +
             "if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then continue; fi; " +
-            "rm -f \$f.sh \$f.log \$f.pid; done"
+            "rm -f \$f.sh \$f.log \$f.pid \$f.exit \$f.stopped; done"
         runCatching { run(cmd, mode, 15) }
     }
 
@@ -210,12 +245,14 @@ object ShellRunner {
         val script = "/data/local/tmp/strata_$key.sh"
         val log = "/data/local/tmp/strata_$key.log"
         val pid = "/data/local/tmp/strata_$key.pid"
+        val exit = "/data/local/tmp/strata_$key.exit"
         var delim = "STRATA_EOF"
         while (command.contains(delim)) delim += "_"
         return buildString {
             append("cat > ").append(script).append(" <<'").append(delim).append("'\n")
             // The script records its own PID (it leads its own session), so the app can stop it later.
             append("echo \$\$ > ").append(pid).append('\n')
+            append("__s=\$(date +%s)\n")
             if (limit != NO_TIMEOUT) {
                 // Watchdog: the launcher only waits for the start, so the time limit has to live inside the script.
                 // After the limit it sends TERM to the script's whole process group, then KILL two seconds later.
@@ -230,11 +267,16 @@ object ShellRunner {
                 append("kill -s KILL -- -\$__g 2>/dev/null || kill -s KILL \$__g 2>/dev/null\n")
                 append(") >/dev/null 2>&1 &\n")
                 append("__w=\$!\n")
-                append("trap 'kill -s KILL \$__w 2>/dev/null' EXIT\n")
             }
+            // On exit (also after an `exit N` in the command) the exit code and run time are saved for the app,
+            // and the watchdog, if any, is ended.
+            append("trap '__e=\$?; echo \"\$__e \$((\$(date +%s) - __s))\" > ").append(exit).append("; ")
+            if (limit != NO_TIMEOUT) append("kill -s KILL \$__w 2>/dev/null")
+            append("' EXIT\n")
             append(command.trimEnd('\n', '\r')).append('\n')
             append(delim).append('\n')
             // The log is emptied once and then opened in append mode, so the watchdog's timeout line can't be overwritten.
+            append("rm -f ").append(exit).append(' ').append("/data/local/tmp/strata_$key.stopped").append('\n')
             append(": > ").append(log).append('\n')
             append("setsid nohup sh ").append(script).append(" >> ").append(log).append(" 2>&1 &\n")
             append("echo \"Running in the background. Log: ").append(log).append("\"")
@@ -257,6 +299,23 @@ object ShellRunner {
         timeoutSec: Int = DEFAULT_TIMEOUT_SEC,
         onOutput: ((String) -> Unit)? = null,
         runId: String? = null,
+    ): ShellResult {
+        if (runId != null) stopRequested.remove(runId)
+        val r = runCore(command, mode, timeoutSec, onOutput, runId)
+        // Stop ends the command with TERM or KILL; that is reported as "stopped", not as a failure.
+        val byStop = runId != null && stopRequested.remove(runId) && !r.timedOut && (r.exitCode == 143 || r.exitCode == 137)
+        return if (byStop) r.copy(stopped = true) else r
+    }
+
+    /** Ids of commands (run with a [run] id) that Stop was pressed for; read when the command ends. */
+    private val stopRequested = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+    private suspend fun runCore(
+        command: String,
+        mode: ShellMode,
+        timeoutSec: Int,
+        onOutput: ((String) -> Unit)?,
+        runId: String?,
     ): ShellResult {
         // NO_TIMEOUT (0) means no limit at all: no watchdog timer and no waiting limit anywhere below.
         val unlimited = timeoutSec <= NO_TIMEOUT
@@ -386,6 +445,7 @@ object ShellRunner {
      * there a second later. True when something was stopped.
      */
     suspend fun stopRun(id: String, mode: ShellMode): Boolean {
+        stopRequested.add(id)
         val pid = runPidPath(id)
         val script = "p=\$(cat '$pid' 2>/dev/null); " +
             "if [ -n \"\$p\" ] && kill -0 \$p 2>/dev/null; then " +

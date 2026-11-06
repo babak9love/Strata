@@ -10,6 +10,10 @@ import androidx.compose.ui.text.Placeholder
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,7 +36,8 @@ import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -175,6 +180,7 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
         when {
             backgroundRunning -> R.string.shell_log_running
             entry.timedOut -> R.string.shell_log_timed_out
+            entry.stopped -> R.string.shell_log_stopped
             entry.ok -> R.string.shell_log_success
             else -> R.string.shell_log_failed
         },
@@ -187,7 +193,7 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
     val code = when {
         entry.backend == null -> null
         // The timeout is already the status, so no exit code or "timed out" is repeated.
-        entry.timedOut -> null
+        entry.timedOut || entry.stopped -> null
         else -> stringResource(R.string.shell_exit_code, entry.exitCode)
     }
     val source = stringResource(if (entry.source == ShellLogSource.SHORTCUT) R.string.shell_log_source_shortcut else R.string.shell_log_source_app)
@@ -248,20 +254,40 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
                 if (backgroundRunning) {
                     CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                 } else {
-                    // A timeout is not an error: it gets a neutral timer icon instead of the red one.
-                    Icon(
-                        when {
-                            entry.timedOut -> Icons.Rounded.Timer
-                            entry.ok -> Icons.Rounded.CheckCircle
-                            else -> Icons.Rounded.Error
-                        },
-                        contentDescription = status,
-                        tint = when {
-                            entry.timedOut -> MaterialTheme.colorScheme.tertiary
-                            entry.ok -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.error
-                        },
-                    )
+                    if (entry.timedOut) {
+                        // A timeout is not an error: a clock on a soft amber disc instead of the red error icon.
+                        val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+                        Box(
+                            Modifier.size(32.dp).background(if (dark) Color(0xFF4A3A12) else Color(0xFFFCEFC7), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Schedule,
+                                contentDescription = status,
+                                tint = if (dark) Color(0xFFF2C94C) else Color(0xFF8A6100),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    } else if (entry.stopped) {
+                        // Stopped by hand: neutral, like the timeout, because it is not a failure.
+                        Box(
+                            Modifier.size(32.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Stop,
+                                contentDescription = status,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    } else {
+                        Icon(
+                            if (entry.ok) Icons.Rounded.CheckCircle else Icons.Rounded.Error,
+                            contentDescription = status,
+                            tint = if (entry.ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             },
             overlineContent = { Text(dateText) },
