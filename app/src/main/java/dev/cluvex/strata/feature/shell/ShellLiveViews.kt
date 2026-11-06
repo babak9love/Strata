@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.cluvex.strata.R
+import dev.cluvex.strata.core.shell.ActiveRun
 import dev.cluvex.strata.core.shell.ShellMode
 import dev.cluvex.strata.core.shell.ShellRunTracker
 import dev.cluvex.strata.core.shell.ShellRunner
@@ -86,12 +87,25 @@ internal fun LiveOutputText(text: String, modifier: Modifier = Modifier, maxHeig
     }
 }
 
-/** The output of a command that is running right now. Closing it does not stop the command; Stop does. */
+/**
+ * The output of a command that is running right now. Closing it does not stop the command; Stop does.
+ * When the command ends (finished, timed out or stopped) the same dialog stays open and shows the final status
+ * and output ([finished]), like a background command's log does, instead of closing and opening a result dialog.
+ */
 @Composable
-internal fun LiveOutputDialog(commandId: String, onDismiss: () -> Unit) {
+internal fun LiveOutputDialog(commandId: String, finished: ShellRun?, onDismiss: () -> Unit) {
     val runs by ShellRunTracker.runs.collectAsState()
-    val run = runs[commandId]
-    val text = run?.output.orEmpty()
+    val live = runs[commandId]
+    // The tracker drops the run a moment before the finished result arrives; keep the last text so nothing flashes empty.
+    var last by remember { mutableStateOf<ActiveRun?>(null) }
+    if (live != null) last = live
+    val shown = live ?: last
+    val result = finished?.result
+    val text = if (result != null) {
+        result.output.ifEmpty { if (result.backend == null) "" else stringResource(R.string.shell_no_output) }
+    } else {
+        shown?.output.orEmpty()
+    }
     val clipboard = rememberTextClipboard()
     val scope = rememberCoroutineScope()
     var stopping by remember { mutableStateOf(false) }
@@ -104,19 +118,21 @@ internal fun LiveOutputDialog(commandId: String, onDismiss: () -> Unit) {
     }
     ExpressiveDialog(
         onDismissRequest = onDismiss,
-        title = run?.name.orEmpty(),
+        title = finished?.command?.name ?: shown?.name.orEmpty(),
         icon = Icons.Rounded.Terminal,
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_close)) } },
         // Stop sits with Copy and Close, in the same row of the dialog.
         dismissButton = {
             Row {
-                TextButton(
-                    onClick = {
-                        stopping = true
-                        scope.launch { ShellRunner.stopRun(commandId, run?.mode ?: ShellMode.AUTO) }
-                    },
-                    enabled = run != null && !stopping,
-                ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
+                if (finished == null) {
+                    TextButton(
+                        onClick = {
+                            stopping = true
+                            scope.launch { ShellRunner.stopRun(commandId, shown?.mode ?: ShellMode.AUTO) }
+                        },
+                        enabled = shown != null && !stopping,
+                    ) { Text(stringResource(R.string.shell_log_stop), color = MaterialTheme.colorScheme.error) }
+                }
                 if (text.isNotEmpty()) {
                     TextButton(onClick = { clipboard.setText(text) }) { Text(stringResource(R.string.common_copy)) }
                 }
@@ -124,12 +140,23 @@ internal fun LiveOutputDialog(commandId: String, onDismiss: () -> Unit) {
         },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.shell_log_running), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            if (result != null) {
+                // The same words and colors as the history: Success / Failed / Timed out / Stopped.
+                val outcome = shellOutcome(false, result.timedOut, result.stopped, result.exitCode)
+                val status = shellStatusLine(outcome, result.backend?.name, result.exitCode, result.durationMs)
+                Text(
+                    shellStatusAnnotated(outcome, status),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.shell_log_running), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                }
             }
-            LiveOutputText(text.ifEmpty { "…" })
+            if (result == null || text.isNotEmpty()) LiveOutputText(text.ifEmpty { "…" })
         }
     }
 }

@@ -578,25 +578,30 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         )
     }
 
-    // The live view closes by itself when its command finishes (the result dialog follows). It only counts as
-    // "was open" once the command shows as running, so the moment before the state catches up does not close it.
-    val liveActive = liveId?.let { it in ui.runningIds } == true
-    var liveWasActive by remember { mutableStateOf(false) }
-    LaunchedEffect(liveActive) {
-        if (liveActive) liveWasActive = true
-        else if (liveWasActive) {
-            liveId = null
-            liveWasActive = false
-        }
+    // The live view stays open when its command ends (finished, timed out or stopped by hand) and turns into the
+    // result in the same dialog, so Stop does not close it and open a second one. Closing it clears that result.
+    val followed = liveId
+    val followedResult = followed?.let { id -> ui.runs.lastOrNull { it.command.id == id && !it.command.detached } }
+    val liveActive = followed?.let { it in ui.runningIds } == true
+    if (followed != null && (liveActive || followedResult != null)) {
+        LiveOutputDialog(
+            commandId = followed,
+            finished = followedResult.takeIf { !liveActive },
+            onDismiss = {
+                liveId = null
+                followedResult?.let { vm.dismissRun(it) }
+            },
+        )
     }
-    if (liveActive) liveId?.let { id -> LiveOutputDialog(id, onDismiss = { liveId = null }) }
 
     backgroundCmd?.let { c ->
         RunResultDialog(vm.backgroundRun(c), onDismiss = { backgroundCmd = null })
     }
 
     // Results queue up when several commands finish; each is shown in turn.
-    ui.run?.let { run -> key(run) { RunResultDialog(run, onDismiss = vm::dismissRun) } }
+    // (a result that the live dialog above is showing is left out here)
+    val queued = ui.runs.firstOrNull { it !== followedResult || liveActive }
+    queued?.let { run -> key(run) { RunResultDialog(run, onDismiss = { vm.dismissRun(run) }) } }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

@@ -131,8 +131,10 @@ fun ShellLogScreen(onBack: () -> Unit, vm: ShellLogViewModel = viewModel()) {
                     modifier = Modifier.fillMaxSize().padding(24.dp),
                 )
                 else -> LazyColumn(Modifier.fillMaxSize()) {
-                    items(active.values.toList(), key = { "run:" + it.commandId }) { r ->
-                        val key = "run:" + r.commandId
+                    // A running item and its saved entry share one key (the entry id), so when Stop ends the run the
+                    // item stays open and just turns into the finished entry instead of collapsing.
+                    items(active.values.toList(), key = { it.entryId.ifEmpty { "run:" + it.commandId } }) { r ->
+                        val key = r.entryId.ifEmpty { "run:" + r.commandId }
                         val open = key in expanded
                         ActiveRunItem(
                             run = r,
@@ -141,7 +143,8 @@ fun ShellLogScreen(onBack: () -> Unit, vm: ShellLogViewModel = viewModel()) {
                             onToggle = { expanded = if (open) expanded - key else expanded + key },
                         )
                     }
-                    items(ui.entries, key = { it.id }) { e ->
+                    val runningIds = active.values.map { it.entryId }.toSet()
+                    items(ui.entries.filter { it.id !in runningIds }, key = { it.id }) { e ->
                         val open = e.id in expanded
                         LogItem(
                             entry = e,

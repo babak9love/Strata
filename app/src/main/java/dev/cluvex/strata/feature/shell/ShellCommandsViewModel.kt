@@ -355,7 +355,11 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         return ShellRun(command, ShellResult(backend, 0, ""))
     }
 
-    fun dismissRun() = _state.update { it.copy(runs = it.runs.drop(1)) }
+    /** Removes one finished result from the queue (that exact run), or the first when none is given. */
+    fun dismissRun(run: ShellRun? = null) = _state.update { st ->
+        val i = if (run == null) 0 else st.runs.indexOfFirst { it === run }
+        if (i < 0 || i >= st.runs.size) st else st.copy(runs = st.runs.filterIndexed { idx, _ -> idx != i })
+    }
 
     private companion object {
         const val BACKGROUND_POLL_MS = 3_000L

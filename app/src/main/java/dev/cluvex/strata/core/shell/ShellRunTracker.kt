@@ -21,6 +21,8 @@ data class ActiveRun(
     val source: String,
     val startedAt: Long,
     val output: String = "",
+    /** Id the history entry of this run will get, so the live item and the saved entry are the same list item. */
+    val entryId: String = "",
 )
 
 /**
@@ -45,9 +47,9 @@ object ShellRunTracker {
     /** The running commands by command id. */
     val runs: StateFlow<Map<String, ActiveRun>> = _runs.asStateFlow()
 
-    fun start(command: SavedCommand, source: String) {
+    fun start(command: SavedCommand, source: String, entryId: String = "") {
         buffers[command.id] = Buffer()
-        _runs.update { it + (command.id to ActiveRun(command.id, command.name, command.mode, source, System.currentTimeMillis())) }
+        _runs.update { it + (command.id to ActiveRun(command.id, command.name, command.mode, source, System.currentTimeMillis(), entryId = entryId)) }
         ensureTicker()
     }
 

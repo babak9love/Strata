@@ -153,7 +153,8 @@ object ShellExecutor {
             // A normal command is followed live (the tracker feeds the live view and the history) and can be stopped;
             // a background command only prints a short "started" message and has its log file instead.
             val live = !command.detached
-            if (live) ShellRunTracker.start(command, source)
+            val entryId = UUID.randomUUID().toString()
+            if (live) ShellRunTracker.start(command, source, entryId)
             val result = try {
                 ShellRunner.run(
                     if (command.detached) ShellRunner.detach(command.id, command.command, command.timeoutSec) else command.command,
@@ -176,7 +177,7 @@ object ShellExecutor {
             withContext(Dispatchers.IO) {
                 ShellLogStore(context).append(
                     LogEntry(
-                        id = UUID.randomUUID().toString(),
+                        id = entryId,
                         time = System.currentTimeMillis(),
                         commandId = command.id,
                         name = command.name,
