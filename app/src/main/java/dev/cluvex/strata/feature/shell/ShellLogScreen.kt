@@ -32,6 +32,7 @@ import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -173,6 +174,7 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
     val status = stringResource(
         when {
             backgroundRunning -> R.string.shell_log_running
+            entry.timedOut -> R.string.shell_log_timed_out
             entry.ok -> R.string.shell_log_success
             else -> R.string.shell_log_failed
         },
@@ -184,7 +186,8 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
     }
     val code = when {
         entry.backend == null -> null
-        entry.timedOut -> stringResource(R.string.shell_timed_out)
+        // The timeout is already the status, so no exit code or "timed out" is repeated.
+        entry.timedOut -> null
         else -> stringResource(R.string.shell_exit_code, entry.exitCode)
     }
     val source = stringResource(if (entry.source == ShellLogSource.SHORTCUT) R.string.shell_log_source_shortcut else R.string.shell_log_source_app)
@@ -245,10 +248,19 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
                 if (backgroundRunning) {
                     CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                 } else {
+                    // A timeout is not an error: it gets a neutral timer icon instead of the red one.
                     Icon(
-                        if (entry.ok) Icons.Rounded.CheckCircle else Icons.Rounded.Error,
+                        when {
+                            entry.timedOut -> Icons.Rounded.Timer
+                            entry.ok -> Icons.Rounded.CheckCircle
+                            else -> Icons.Rounded.Error
+                        },
                         contentDescription = status,
-                        tint = if (entry.ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        tint = when {
+                            entry.timedOut -> MaterialTheme.colorScheme.tertiary
+                            entry.ok -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.error
+                        },
                     )
                 }
             },

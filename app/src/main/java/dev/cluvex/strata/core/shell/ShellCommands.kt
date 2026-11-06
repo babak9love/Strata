@@ -176,6 +176,14 @@ object ShellRunner {
         return if (r.backend != null && !r.timedOut && r.exitCode == 0) r.output else null
     }
 
+    private val TIMEOUT_MARKER = Regex("""\[Timed out after (\d+) s""")
+
+    /** Seconds after which the watchdog stopped the background command that writes [path]; null if it did not time out. */
+    suspend fun detachedTimeoutSec(path: String, mode: ShellMode): Int? {
+        val text = readFile(path, mode) ?: return null
+        return TIMEOUT_MARKER.findAll(text).lastOrNull()?.groupValues?.get(1)?.toIntOrNull()
+    }
+
     /** Removes the script and log that [detach] left in /data/local/tmp for this command. */
     fun detachedCleanup(id: String): String {
         val key = detachedKey(id)
@@ -226,7 +234,9 @@ object ShellRunner {
             }
             append(command.trimEnd('\n', '\r')).append('\n')
             append(delim).append('\n')
-            append("setsid nohup sh ").append(script).append(" > ").append(log).append(" 2>&1 &\n")
+            // The log is emptied once and then opened in append mode, so the watchdog's timeout line can't be overwritten.
+            append(": > ").append(log).append('\n')
+            append("setsid nohup sh ").append(script).append(" >> ").append(log).append(" 2>&1 &\n")
             append("echo \"Running in the background. Log: ").append(log).append("\"")
         }
     }

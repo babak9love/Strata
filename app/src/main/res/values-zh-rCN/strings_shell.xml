@@ -25,6 +25,7 @@
     <string name="shell_log_command">命令</string>
     <string name="shell_log_output">输出</string>
     <string name="shell_log_success">成功</string>
+    <string name="shell_log_timed_out">已超时</string>
     <string name="shell_log_failed">失败</string>
     <string name="shell_log_source_app">应用</string>
     <string name="shell_log_source_shortcut">快捷方式</string>

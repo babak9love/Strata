@@ -25,6 +25,7 @@
     <string name="shell_log_command">Команда</string>
     <string name="shell_log_output">Вывод</string>
     <string name="shell_log_success">Успешно</string>
+    <string name="shell_log_timed_out">Время вышло</string>
     <string name="shell_log_failed">Ошибка</string>
     <string name="shell_log_source_app">Приложение</string>
     <string name="shell_log_source_shortcut">Ярлык</string>

@@ -50,6 +50,11 @@ class ShellLogStore(context: Context) {
 
     fun clear() = synchronized(LOCK) { file.delete(); Unit }
 
+    /** A background command's entry is saved when it starts; this records that its watchdog later stopped it. */
+    fun markTimedOut(id: String, durationMs: Long) = synchronized(LOCK) {
+        write(read().map { if (it.id == id) it.copy(timedOut = true, durationMs = durationMs) else it })
+    }
+
     private fun read(): List<LogEntry> = runCatching {
         if (!file.exists()) emptyList() else json.decodeFromString(serializer, file.readText())
     }.getOrDefault(emptyList())

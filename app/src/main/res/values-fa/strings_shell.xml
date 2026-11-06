@@ -25,6 +25,7 @@
     <string name="shell_log_command">دستور</string>
     <string name="shell_log_output">خروجی</string>
     <string name="shell_log_success">موفق</string>
+    <string name="shell_log_timed_out">پایان مهلت</string>
     <string name="shell_log_failed">ناموفق</string>
     <string name="shell_log_source_app">برنامه</string>
     <string name="shell_log_source_shortcut">میان‌بر</string>

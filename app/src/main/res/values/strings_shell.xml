@@ -25,6 +25,7 @@
     <string name="shell_log_command">Command</string>
     <string name="shell_log_output">Output</string>
     <string name="shell_log_success">Success</string>
+    <string name="shell_log_timed_out">Timed out</string>
     <string name="shell_log_failed">Failed</string>
     <string name="shell_log_source_app">App</string>
     <string name="shell_log_source_shortcut">Shortcut</string>

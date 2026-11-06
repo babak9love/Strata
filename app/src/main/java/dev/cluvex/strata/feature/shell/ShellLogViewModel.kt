@@ -64,6 +64,7 @@ class ShellLogViewModel(app: Application) : AndroidViewModel(app) {
             group.filter { it.commandId in ids }.forEach { alive += it.id }
         }
         _state.update { it.copy(runningEntryIds = alive) }
+        checkTimeouts(newest, alive)
         if (alive.isNotEmpty() && poller?.isActive != true) {
             poller = viewModelScope.launch {
                 while (_state.value.runningEntryIds.isNotEmpty()) {
@@ -71,6 +72,31 @@ class ShellLogViewModel(app: Application) : AndroidViewModel(app) {
                     refreshRunning()
                 }
             }
+        }
+    }
+
+    /** Entries whose log was already checked for a timeout line, so the shell is not asked again. */
+    private val checkedForTimeout = mutableSetOf<String>()
+
+    /**
+     * A background command's entry is written when it starts, so a timeout that comes later is only visible in its
+     * log file. Looks there for the watchdog's line once the process has ended, and records it on the entry.
+     */
+    private suspend fun checkTimeouts(newest: List<LogEntry>, alive: Set<String>) {
+        val now = System.currentTimeMillis()
+        for (e in newest) {
+            val file = e.logFile ?: continue
+            // Too fresh to judge (the pid file may not exist yet); older entries' files belong to newer runs.
+            if (e.timedOut || e.id in alive || e.id in checkedForTimeout || now - e.time < 5_000) continue
+            val mode = when (e.backend) {
+                "ROOT" -> ShellMode.ROOT
+                "SHIZUKU" -> ShellMode.SHIZUKU
+                else -> continue
+            }
+            checkedForTimeout += e.id
+            val sec = ShellRunner.detachedTimeoutSec(file, mode) ?: continue
+            withContext(Dispatchers.IO) { store.markTimedOut(e.id, sec * 1000L) }
+            _state.update { st -> st.copy(entries = st.entries.map { if (it.id == e.id) it.copy(timedOut = true, durationMs = sec * 1000L) else it }) }
         }
     }
 
