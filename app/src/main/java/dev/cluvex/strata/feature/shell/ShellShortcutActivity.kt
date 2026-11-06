@@ -119,18 +119,32 @@ class ShellShortcutActivity : ComponentActivity() {
                 window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
             }
             if (command.showStatus) banner.value = Banner.Running(command.name)
-            val result = ShellExecutor.runLogged(applicationContext, command, ShellLogSource.SHORTCUT)
+            var result = ShellExecutor.runLogged(applicationContext, command, ShellLogSource.SHORTCUT)
             if (!command.showStatus) {
                 finish()
                 return@launch
             }
-            banner.value = done(command.name, result)
+            var stillRunning = false
+            if (command.detached && result.backend != null && !result.timedOut && result.exitCode == 0) {
+                // For a background command "started" is all runLogged knows. A command that fails at once is the usual
+                // case, so give it a few seconds: if it ends, the banner shows how it really ended; if not, it is running.
+                val end = ShellExecutor.awaitDetachedEnd(applicationContext, command, DETACHED_BANNER_WAIT_MS)
+                if (end == null) stillRunning = true
+                else result = result.copy(exitCode = end.exitCode, timedOut = end.timedOut, stopped = end.stopped)
+            }
+            banner.value = if (stillRunning) Banner.Done(command.name, ok = true, detail = getString(R.string.shell_log_running)) else done(command.name, result)
             delay(if (result.backend != null && !result.timedOut && result.exitCode == 0) 1_800 else 3_000)
             finish()
         }
     }
 
+    private companion object {
+        /** How long the banner of a background command waits to see whether it ends right away. */
+        const val DETACHED_BANNER_WAIT_MS = 5_000L
+    }
+
     private fun done(name: String, result: ShellResult): Banner.Done = when {
+        result.stopped -> Banner.Done(name, ok = true, detail = getString(R.string.shell_log_stopped))
         result.backend == null -> Banner.Done(name, ok = false, detail = getString(R.string.shell_banner_no_backend))
         result.timedOut -> Banner.Done(name, ok = false, detail = getString(R.string.shell_timed_out))
         result.exitCode != 0 -> Banner.Done(name, ok = false, detail = getString(R.string.shell_exit_code, result.exitCode))

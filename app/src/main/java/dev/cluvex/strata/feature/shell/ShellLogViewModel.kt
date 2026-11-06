@@ -7,6 +7,7 @@ import dev.cluvex.strata.core.shell.LogEntry
 import dev.cluvex.strata.core.shell.ShellCommandStore
 import dev.cluvex.strata.core.shell.ShellMode
 import dev.cluvex.strata.core.shell.ShellRunner
+import dev.cluvex.strata.core.shell.ShellExecutor
 import dev.cluvex.strata.core.shell.ShellLogStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -85,34 +86,13 @@ class ShellLogViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun checkTimeouts(newest: List<LogEntry>, alive: Set<String>) {
         val now = System.currentTimeMillis()
         for (e in newest) {
-            val file = e.logFile ?: continue
+            if (e.logFile == null) continue
             // Too fresh to judge (the pid file may not exist yet); older entries' files belong to newer runs.
             if (e.timedOut || e.id in alive || e.id in checkedForTimeout || now - e.time < 5_000) continue
-            val mode = when (e.backend) {
-                "ROOT" -> ShellMode.ROOT
-                "SHIZUKU" -> ShellMode.SHIZUKU
-                else -> continue
-            }
+            val mode = ShellExecutor.modeOf(e.backend) ?: continue
             checkedForTimeout += e.id
-            val sec = ShellRunner.detachedTimeoutSec(file, mode)
-            if (sec != null) {
-                withContext(Dispatchers.IO) { store.markTimedOut(e.id, sec * 1000L) }
-                _state.update { st -> st.copy(entries = st.entries.map { if (it.id == e.id) it.copy(timedOut = true, durationMs = sec * 1000L) else it }) }
-                continue
-            }
-            // Not timed out: the script saved its real exit code and run time when it ended.
-            val end = ShellRunner.detachedEnd(e.commandId, mode) ?: continue
-            if (end.stoppedAtSec != null) {
-                // Stop was pressed while it ran: shown as "Stopped", with the time it had run.
-                val ms = (end.stoppedAtSec * 1000L - e.time).coerceAtLeast(0L)
-                withContext(Dispatchers.IO) { store.markStopped(e.id, ms) }
-                _state.update { st -> st.copy(entries = st.entries.map { if (it.id == e.id) it.copy(stopped = true, durationMs = ms) else it }) }
-                continue
-            }
-            val code = end.code ?: continue
-            val ms = end.secs * 1000L
-            withContext(Dispatchers.IO) { store.markFinished(e.id, code, ms) }
-            _state.update { st -> st.copy(entries = st.entries.map { if (it.id == e.id) it.copy(exitCode = code, durationMs = ms) else it }) }
+            val updated = ShellExecutor.finalizeDetached(store, e, mode) ?: continue
+            _state.update { st -> st.copy(entries = st.entries.map { if (it.id == e.id) updated else it }) }
         }
     }
 

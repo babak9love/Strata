@@ -58,6 +58,8 @@ data class ShellResult(
     val timedOut: Boolean = false,
     /** True when the person stopped the command with Stop (so it ended with TERM or KILL). */
     val stopped: Boolean = false,
+    /** How long the run took, in milliseconds; filled in by the logged runner (0 when not measured). */
+    val durationMs: Long = 0L,
 )
 
 /** Commands plus the group names in display order (including groups that hold no commands). */

@@ -3,6 +3,7 @@ package dev.cluvex.strata.core.shell
 import android.content.Context
 import android.os.SystemClock
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -95,6 +96,56 @@ object ShellExecutor {
      * Runs a saved command and records it in the log. The run and the log write are not cancellable, so a
      * command started from a shortcut is still logged if its screen is gone before it finishes.
      */
+    /** The backend an entry was run with, as a mode to talk to it again; null when nothing ran it. */
+    fun modeOf(backend: String?): ShellMode? = when (backend) {
+        "ROOT" -> ShellMode.ROOT
+        "SHIZUKU" -> ShellMode.SHIZUKU
+        else -> null
+    }
+
+    /**
+     * A background command's entry is written when it starts, so how it really ended (timed out, stopped by hand,
+     * its exit code and run time) is read from the files its script left, once it has stopped running.
+     * Saves the result on the entry and returns the updated entry; null when nothing is known (yet).
+     */
+    suspend fun finalizeDetached(store: ShellLogStore, e: LogEntry, mode: ShellMode): LogEntry? {
+        val file = e.logFile ?: return null
+        val sec = ShellRunner.detachedTimeoutSec(file, mode)
+        if (sec != null) {
+            withContext(Dispatchers.IO) { store.markTimedOut(e.id, sec * 1000L) }
+            return e.copy(timedOut = true, durationMs = sec * 1000L)
+        }
+        val end = ShellRunner.detachedEnd(e.commandId, mode) ?: return null
+        if (end.stoppedAtSec != null) {
+            // Stop was pressed while it ran: shown as "Stopped", with the time it had run.
+            val ms = (end.stoppedAtSec * 1000L - e.time).coerceAtLeast(0L)
+            withContext(Dispatchers.IO) { store.markStopped(e.id, ms) }
+            return e.copy(stopped = true, durationMs = ms)
+        }
+        val code = end.code ?: return null
+        val ms = end.secs * 1000L
+        withContext(Dispatchers.IO) { store.markFinished(e.id, code, ms) }
+        return e.copy(exitCode = code, durationMs = ms)
+    }
+
+    /**
+     * Waits up to [windowMs] for the background command just started to end (a command that fails at once is
+     * the common case) and returns its finalized entry; null when it is still running or nothing is known.
+     */
+    suspend fun awaitDetachedEnd(context: Context, command: SavedCommand, windowMs: Long): LogEntry? {
+        val store = ShellLogStore(context)
+        val entry = withContext(Dispatchers.IO) {
+            store.load().filter { it.commandId == command.id && it.logFile != null }.maxByOrNull { it.time }
+        } ?: return null
+        val mode = modeOf(entry.backend) ?: return null
+        val until = SystemClock.elapsedRealtime() + windowMs
+        while (true) {
+            delay(400)
+            if (!ShellRunner.isDetachedRunning(command.id, mode)) return finalizeDetached(store, entry, mode) ?: entry
+            if (SystemClock.elapsedRealtime() >= until) return null
+        }
+    }
+
     suspend fun runLogged(context: Context, command: SavedCommand, source: String): ShellResult =
         withContext(NonCancellable) {
             val started = SystemClock.elapsedRealtime()
@@ -142,6 +193,6 @@ object ShellExecutor {
             }
             // After the entry is saved, so a history that reloads when a run ends already finds it.
             if (live) ShellRunTracker.finish(command.id)
-            result
+            result.copy(durationMs = took)
         }
 }

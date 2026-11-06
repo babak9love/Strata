@@ -30,7 +30,8 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -176,31 +177,10 @@ private fun logText(e: LogEntry): String = e.output
 @Composable
 private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boolean, dateText: String, onToggle: () -> Unit, onCopy: () -> Unit) {
     val sep = stringResource(R.string.common_separator)
-    val status = stringResource(
-        when {
-            backgroundRunning -> R.string.shell_log_running
-            entry.timedOut -> R.string.shell_log_timed_out
-            entry.stopped -> R.string.shell_log_stopped
-            entry.ok -> R.string.shell_log_success
-            else -> R.string.shell_log_failed
-        },
-    )
-    val who = when (entry.backend) {
-        "SHIZUKU" -> stringResource(R.string.shell_via_shizuku)
-        "ROOT" -> stringResource(R.string.shell_via_root)
-        else -> stringResource(R.string.shell_banner_no_backend)
-    }
-    val code = when {
-        entry.backend == null -> null
-        // The timeout is already the status, so no exit code or "timed out" is repeated.
-        entry.timedOut || entry.stopped -> null
-        else -> stringResource(R.string.shell_exit_code, entry.exitCode)
-    }
+    val outcome = shellOutcome(backgroundRunning, entry.timedOut, entry.stopped, entry.exitCode)
     val source = stringResource(if (entry.source == ShellLogSource.SHORTCUT) R.string.shell_log_source_shortcut else R.string.shell_log_source_app)
     val fromShortcut = entry.source == ShellLogSource.SHORTCUT
-    // While the process runs, the exit code and time are only those of the start, so they are left out.
-    val metaBase = (if (backgroundRunning) listOf(status, who) else listOfNotNull(status, who, code, duration(entry.durationMs)))
-        .joinToString(sep)
+    val metaBase = shellStatusLine(outcome, entry.backend, entry.exitCode, entry.durationMs)
     // The run source is shown as a small icon plus a short word: play = started in the app, arrow = started from a shortcut.
     val meta = buildAnnotatedString {
         append(metaBase)
@@ -250,46 +230,7 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
     Column(Modifier.fillMaxWidth()) {
         ListItem(
             modifier = Modifier.clickable(onClick = onToggle),
-            leadingContent = {
-                if (backgroundRunning) {
-                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                } else {
-                    if (entry.timedOut) {
-                        // A timeout is not an error: a clock on a soft amber disc instead of the red error icon.
-                        val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-                        Box(
-                            Modifier.size(32.dp).background(if (dark) Color(0xFF4A3A12) else Color(0xFFFCEFC7), CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Rounded.Schedule,
-                                contentDescription = status,
-                                tint = if (dark) Color(0xFFF2C94C) else Color(0xFF8A6100),
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                    } else if (entry.stopped) {
-                        // Stopped by hand: neutral, like the timeout, because it is not a failure.
-                        Box(
-                            Modifier.size(32.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.Rounded.Stop,
-                                contentDescription = status,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                    } else {
-                        Icon(
-                            if (entry.ok) Icons.Rounded.CheckCircle else Icons.Rounded.Error,
-                            contentDescription = status,
-                            tint = if (entry.ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                        )
-                    }
-                }
-            },
+            leadingContent = { ShellStatusIcon(outcome) },
             overlineContent = { Text(dateText) },
             headlineContent = { Text(entry.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             supportingContent = { Text(meta, inlineContent = sourceInline) },
@@ -380,7 +321,7 @@ private fun ActiveRunItem(run: ActiveRun, expanded: Boolean, dateText: String, o
     Column(Modifier.fillMaxWidth()) {
         ListItem(
             modifier = Modifier.clickable(onClick = onToggle),
-            leadingContent = { CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp) },
+            leadingContent = { ShellStatusIcon(ShellOutcome.RUNNING) },
             overlineContent = { Text(dateText) },
             headlineContent = { Text(run.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             supportingContent = { Text(meta) },
@@ -411,8 +352,78 @@ private fun ActiveRunItem(run: ActiveRun, expanded: Boolean, dateText: String, o
     }
 }
 
-private fun duration(ms: Long): String =
+internal fun duration(ms: Long): String =
     if (ms < 1_000) "$ms ms" else String.format(java.util.Locale.US, "%.1f s", ms / 1000.0)
+
+
+/** How a run ended, in the words the person sees; the same everywhere a run is shown. */
+internal enum class ShellOutcome { RUNNING, SUCCESS, FAILED, TIMED_OUT, STOPPED }
+
+internal fun shellOutcome(running: Boolean, timedOut: Boolean, stopped: Boolean, exitCode: Int): ShellOutcome = when {
+    running -> ShellOutcome.RUNNING
+    timedOut -> ShellOutcome.TIMED_OUT
+    stopped -> ShellOutcome.STOPPED
+    exitCode == 0 -> ShellOutcome.SUCCESS
+    else -> ShellOutcome.FAILED
+}
+
+@Composable
+internal fun shellOutcomeText(outcome: ShellOutcome): String = stringResource(
+    when (outcome) {
+        ShellOutcome.RUNNING -> R.string.shell_log_running
+        ShellOutcome.SUCCESS -> R.string.shell_log_success
+        ShellOutcome.FAILED -> R.string.shell_log_failed
+        ShellOutcome.TIMED_OUT -> R.string.shell_log_timed_out
+        ShellOutcome.STOPPED -> R.string.shell_log_stopped
+    },
+)
+
+/**
+ * The status line of a run: "Failed · Shizuku · exit code 1 · 158 ms". Used by the history and by the result dialog,
+ * so both always say the same. The exit code is only shown for a failure, where it helps; a success, a timeout and a
+ * stop already say it all. While a run is going, its time and code are not final, so they are left out.
+ */
+@Composable
+internal fun shellStatusLine(outcome: ShellOutcome, backend: String?, exitCode: Int, durationMs: Long?): String {
+    val sep = stringResource(R.string.common_separator)
+    val who = when (backend) {
+        "SHIZUKU" -> stringResource(R.string.shell_via_shizuku)
+        "ROOT" -> stringResource(R.string.shell_via_root)
+        else -> stringResource(R.string.shell_banner_no_backend)
+    }
+    val status = shellOutcomeText(outcome)
+    if (outcome == ShellOutcome.RUNNING) return listOf(status, who).joinToString(sep)
+    val code = if (backend != null && outcome == ShellOutcome.FAILED) stringResource(R.string.shell_exit_code, exitCode) else null
+    return listOfNotNull(status, who, code, durationMs?.takeIf { it > 0 }?.let { duration(it) }).joinToString(sep)
+}
+
+/** The round status icon of a run; all outcomes share one size and shape. */
+@Composable
+internal fun ShellStatusIcon(outcome: ShellOutcome) {
+    val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val scheme = MaterialTheme.colorScheme
+    val text = shellOutcomeText(outcome)
+    if (outcome == ShellOutcome.RUNNING) {
+        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+        }
+        return
+    }
+    val (icon, bg, fg) = when (outcome) {
+        ShellOutcome.SUCCESS -> Triple(Icons.Rounded.Check, scheme.primaryContainer, scheme.onPrimaryContainer)
+        ShellOutcome.FAILED -> Triple(Icons.Rounded.Close, scheme.errorContainer, scheme.onErrorContainer)
+        // A timeout and a stop are not errors, so they are not red: amber and neutral.
+        ShellOutcome.TIMED_OUT -> Triple(
+            Icons.Rounded.Schedule,
+            if (dark) Color(0xFF4A3A12) else Color(0xFFFCEFC7),
+            if (dark) Color(0xFFF2C94C) else Color(0xFF8A6100),
+        )
+        else -> Triple(Icons.Rounded.Stop, scheme.surfaceVariant, scheme.onSurfaceVariant)
+    }
+    Box(Modifier.size(32.dp).background(bg, CircleShape), contentAlignment = Alignment.Center) {
+        Icon(icon, contentDescription = text, tint = fg, modifier = Modifier.size(20.dp))
+    }
+}
 
 /** How often the log of a background command is re-read while it runs. */
 private const val LOG_FOLLOW_MS = 2_500L

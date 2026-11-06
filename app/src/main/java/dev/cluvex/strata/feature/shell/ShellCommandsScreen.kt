@@ -109,6 +109,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.cluvex.strata.R
 import dev.cluvex.strata.core.model.MotionStyle
 import dev.cluvex.strata.core.shell.SavedCommand
+import androidx.compose.ui.platform.LocalContext
+import dev.cluvex.strata.core.shell.ShellExecutor
+import dev.cluvex.strata.core.shell.ShellLogStore
+import dev.cluvex.strata.core.shell.LogEntry
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import dev.cluvex.strata.core.shell.ShellBackend
 import dev.cluvex.strata.core.shell.ShellMode
 import dev.cluvex.strata.core.shell.ShellRunner
@@ -984,14 +990,6 @@ private fun GroupNameDialog(
 private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
     val clipboard = rememberTextClipboard()
     val result = run.result
-    val status = when {
-        result.backend == null -> stringResource(R.string.shell_no_backend)
-        else -> {
-            val who = stringResource(if (result.backend == ShellBackend.SHIZUKU) R.string.shell_via_shizuku else R.string.shell_via_root)
-            val code = if (result.timedOut) stringResource(R.string.shell_timed_out) else stringResource(R.string.shell_exit_code, result.exitCode)
-            "$who · $code"
-        }
-    }
     // A command run in the background only prints a "started" message; show its log file instead.
     val detachedLog = if (run.command.detached && result.backend != null) ShellRunner.detachedLogPath(run.command.id) else null
     val readMode = if (result.backend == ShellBackend.ROOT) ShellMode.ROOT else ShellMode.SHIZUKU
@@ -1000,7 +998,10 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
     var loading by remember { mutableStateOf(false) }
     var stillRunning by remember { mutableStateOf(false) }
     var stopping by remember { mutableStateOf(false) }
+    // How a background command really ended (timed out, stopped, its exit code): read once it has stopped running.
+    var endedEntry by remember { mutableStateOf<LogEntry?>(null) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     if (detachedLog != null) {
         // Reads the log once, then keeps following it every few seconds for as long as the command runs.
         // `reload` only changes after Stop, to pick up the final state straight away.
@@ -1016,8 +1017,28 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
                 ShellRunner.readFile(detachedLog, readMode)?.let { fileText = it }
                 stillRunning = ShellRunner.isDetachedRunning(run.command.id, readMode)
             }
+            if (!stillRunning) {
+                val store = ShellLogStore(context)
+                val entry = withContext(Dispatchers.IO) {
+                    store.load().filter { it.commandId == run.command.id && it.logFile != null }.maxByOrNull { it.time }
+                }
+                if (entry != null) endedEntry = ShellExecutor.finalizeDetached(store, entry, readMode) ?: entry
+            }
         }
     }
+    // The same words as the history: Running / Success / Failed / Timed out / Stopped, with the same line under them.
+    val outcome = when {
+        detachedLog == null -> shellOutcome(false, result.timedOut, result.stopped, result.exitCode)
+        endedEntry != null -> shellOutcome(false, endedEntry!!.timedOut, endedEntry!!.stopped, endedEntry!!.exitCode)
+        !stillRunning && !loading -> shellOutcome(false, false, false, 0)
+        else -> ShellOutcome.RUNNING
+    }
+    val status = shellStatusLine(
+        outcome,
+        result.backend?.name,
+        endedEntry?.exitCode ?: result.exitCode,
+        if (detachedLog != null) endedEntry?.durationMs else result.durationMs,
+    )
     // A background log opens at its last line and follows it while the command runs.
     val scroll = rememberTailScrollState(enabled = detachedLog != null)
     val body = if (detachedLog != null) {
