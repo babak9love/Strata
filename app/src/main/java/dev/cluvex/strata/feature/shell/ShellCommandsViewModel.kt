@@ -298,6 +298,15 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Commands whose live view was closed while they ran: their result dialog is not opened when they end. */
+    private val silenced = mutableSetOf<String>()
+
+    /** The live view of a running command was opened (again): its result is shown when it ends. */
+    fun followRun(id: String) { silenced.remove(id) }
+
+    /** The live view of a running command was closed: it keeps running, and its end is not announced with a dialog. */
+    fun silenceRun(id: String) { silenced += id }
+
     fun run(command: SavedCommand) {
         val id = command.id
         if (id in _state.value.runningIds) return
@@ -305,7 +314,9 @@ class ShellCommandsViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             // The output while it runs is published by ShellRunTracker, which the live views read.
             val result = ShellExecutor.runLogged(getApplication<Application>(), command, ShellLogSource.APP)
-            _state.update { it.copy(runningIds = it.runningIds - id, runs = it.runs + ShellRun(command, result)) }
+            // A run whose live view the person closed while it was going is not announced when it ends; it is in the history.
+            val silent = !command.detached && silenced.remove(id)
+            _state.update { it.copy(runningIds = it.runningIds - id, runs = if (silent) it.runs else it.runs + ShellRun(command, result)) }
             val backend = result.backend
             if (command.detached && backend != null && !result.timedOut && result.exitCode == 0) {
                 backgroundBackend[id] = backend

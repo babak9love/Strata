@@ -154,7 +154,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     // A normal command opens its live output right away; a background one shows its log when it has started.
     val startCommand: (SavedCommand) -> Unit = { c ->
         vm.run(c)
-        if (!c.detached) liveId = c.id
+        if (!c.detached) { vm.followRun(c.id); liveId = c.id }
     }
     val context = androidx.compose.ui.platform.LocalContext.current
     val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -431,7 +431,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                                         // While a command runs, its button opens its output (or log) instead of starting it again.
                                         onRun = {
                                             when {
-                                                c.id in ui.runningIds -> if (!c.detached) liveId = c.id
+                                                c.id in ui.runningIds -> if (!c.detached) { vm.followRun(c.id); liveId = c.id }
                                                 c.id in ui.backgroundIds -> backgroundCmd = c
                                                 c.confirm -> confirming = c
                                                 else -> startCommand(c)
@@ -589,6 +589,8 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
             finished = followedResult.takeIf { !liveActive },
             onDismiss = {
                 liveId = null
+                // Closed while still running: it goes on, but its end does not pop a dialog up later.
+                if (liveActive) vm.silenceRun(followed)
                 followedResult?.let { vm.dismissRun(it) }
             },
         )
@@ -1089,6 +1091,15 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Same color and size as the status line in the history (a list item's supporting text).
             Text(shellStatusAnnotated(outcome, status), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (detachedLog != null) {
+                // Same label and path as the history, so it is clear this is a background command's log file.
+                Text(stringResource(R.string.shell_log_file), style = MaterialTheme.typography.labelMedium)
+                Text(
+                    detachedLog,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, textDirection = TextDirection.Ltr),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (body.isNotEmpty()) {
                 Box(Modifier.fillMaxWidth().heightIn(max = 320.dp).verticalScroll(scroll)) {
                     SelectionContainer {
