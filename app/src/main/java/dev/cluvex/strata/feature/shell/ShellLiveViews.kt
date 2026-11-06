@@ -127,7 +127,7 @@ internal fun LiveOutputDialog(commandId: String, onDismiss: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.shell_log_running), style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.shell_log_running), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
             LiveOutputText(text.ifEmpty { "…" })
         }

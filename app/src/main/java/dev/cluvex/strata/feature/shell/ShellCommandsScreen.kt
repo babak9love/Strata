@@ -1083,7 +1083,7 @@ private fun RunResultDialog(run: ShellRun, onDismiss: () -> Unit) {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Same color and size as the status line in the history (a list item's supporting text).
-            Text(status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(shellStatusAnnotated(outcome, status), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (body.isNotEmpty()) {
                 Box(Modifier.fillMaxWidth().heightIn(max = 320.dp).verticalScroll(scroll)) {
                     SelectionContainer {

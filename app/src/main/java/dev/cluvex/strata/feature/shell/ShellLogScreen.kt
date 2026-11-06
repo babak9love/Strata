@@ -4,7 +4,10 @@ import androidx.compose.material.icons.rounded.Shortcut
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.foundation.text.appendInlineContent
@@ -183,7 +186,7 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
     val metaBase = shellStatusLine(outcome, entry.backend, entry.exitCode, entry.durationMs)
     // The run source is shown as a small icon plus a short word: play = started in the app, arrow = started from a shortcut.
     val meta = buildAnnotatedString {
-        append(metaBase)
+        append(shellStatusAnnotated(outcome, metaBase))
         append(sep)
         appendInlineContent("source", "*")
         append(" ")
@@ -307,7 +310,13 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
 private fun ActiveRunItem(run: ActiveRun, expanded: Boolean, dateText: String, onToggle: () -> Unit) {
     val sep = stringResource(R.string.common_separator)
     val source = stringResource(if (run.source == ShellLogSource.SHORTCUT) R.string.shell_log_source_shortcut else R.string.shell_log_source_app)
-    val meta = listOf(stringResource(R.string.shell_log_running), source).joinToString(sep)
+    val primary = MaterialTheme.colorScheme.primary
+    val runningWord = stringResource(R.string.shell_log_running)
+    val meta = buildAnnotatedString {
+        withStyle(SpanStyle(color = primary)) { append(runningWord) }
+        append(sep)
+        append(source)
+    }
     val clipboard = rememberTextClipboard()
     val scope = rememberCoroutineScope()
     var stopping by remember { mutableStateOf(false) }
@@ -395,6 +404,30 @@ internal fun shellStatusLine(outcome: ShellOutcome, backend: String?, exitCode: 
     if (outcome == ShellOutcome.RUNNING) return listOf(status, who).joinToString(sep)
     val code = if (backend != null && outcome == ShellOutcome.FAILED) stringResource(R.string.shell_exit_code, exitCode) else null
     return listOfNotNull(status, who, code, durationMs?.takeIf { it > 0 }?.let { duration(it) }).joinToString(sep)
+}
+
+/**
+ * The status line with the first word colored: "Running" in the theme color (primary), "Failed" in red (error),
+ * "Stopped" in tertiary, "Timed out" in the same amber as its icon, "Success" in green.
+ */
+@Composable
+internal fun shellStatusAnnotated(outcome: ShellOutcome, line: String): AnnotatedString {
+    val scheme = MaterialTheme.colorScheme
+    val dark = scheme.surface.luminance() < 0.5f
+    val word = shellOutcomeText(outcome)
+    val color = when (outcome) {
+        ShellOutcome.RUNNING -> scheme.primary
+        ShellOutcome.FAILED -> scheme.error
+        ShellOutcome.STOPPED -> scheme.tertiary
+        ShellOutcome.TIMED_OUT -> if (dark) Color(0xFFF2C94C) else Color(0xFF8A6100)
+        ShellOutcome.SUCCESS -> if (dark) Color(0xFF7BE08B) else Color(0xFF1B7F3A)
+    }
+    return buildAnnotatedString {
+        append(line)
+        if (color != null && line.startsWith(word)) {
+            addStyle(SpanStyle(color = color), 0, word.length)
+        }
+    }
 }
 
 /** The round status icon of a run; all outcomes share one size and shape. */
