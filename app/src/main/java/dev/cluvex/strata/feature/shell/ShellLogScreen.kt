@@ -257,13 +257,6 @@ private fun LogItem(entry: LogEntry, backgroundRunning: Boolean, expanded: Boole
                 if (logFile != null) {
                     Text(stringResource(R.string.shell_log_file), style = MaterialTheme.typography.labelMedium)
                     Text(logFile, style = mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    running?.let {
-                        Text(
-                            stringResource(if (it) R.string.shell_log_running else R.string.shell_log_not_running),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (it) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                     Box(Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(fileScroll)) {
                         SelectionContainer {
                             Text(

@@ -48,7 +48,6 @@
     <string name="shell_log_file_missing">未找到日志文件（可能已被删除）</string>
     <string name="shell_log_stop">停止</string>
     <string name="shell_log_running">运行中</string>
-    <string name="shell_log_not_running">未在运行</string>
     <string name="shell_group_title">分组</string>
     <string name="shell_group_none">无分组</string>
     <string name="shell_group_new">新建分组</string>

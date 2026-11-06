@@ -48,7 +48,6 @@
     <string name="shell_log_file_missing">Log file not found (it may have been deleted)</string>
     <string name="shell_log_stop">Stop</string>
     <string name="shell_log_running">Running</string>
-    <string name="shell_log_not_running">Not running</string>
     <string name="shell_group_title">Group</string>
     <string name="shell_group_none">No group</string>
     <string name="shell_group_new">New group</string>

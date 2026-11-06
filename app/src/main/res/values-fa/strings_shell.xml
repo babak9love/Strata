@@ -48,7 +48,6 @@
     <string name="shell_log_file_missing">فایل لاگ پیدا نشد (ممکن است حذف شده باشد)</string>
     <string name="shell_log_stop">توقف</string>
     <string name="shell_log_running">در حال اجرا</string>
-    <string name="shell_log_not_running">در حال اجرا نیست</string>
     <string name="shell_group_title">گروه</string>
     <string name="shell_group_none">بدون گروه</string>
     <string name="shell_group_new">گروه جدید</string>

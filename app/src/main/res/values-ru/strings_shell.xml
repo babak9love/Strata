@@ -48,7 +48,6 @@
     <string name="shell_log_file_missing">Файл журнала не найден (возможно, он удалён)</string>
     <string name="shell_log_stop">Остановить</string>
     <string name="shell_log_running">Выполняется</string>
-    <string name="shell_log_not_running">Не выполняется</string>
     <string name="shell_group_title">Группа</string>
     <string name="shell_group_none">Без группы</string>
     <string name="shell_group_new">Новая группа</string>
