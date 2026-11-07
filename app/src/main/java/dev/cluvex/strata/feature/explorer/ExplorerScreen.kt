@@ -368,6 +368,7 @@ fun ExplorerScreen(
                     },
                     title = { ExplorerTitle(ui.activePane, visibleItems(ui.activePane, ui.settings, ui.query)) },
                     actions = {
+                        IconButton(onClick = onOpenShell) { Icon(Icons.Rounded.Terminal, contentDescription = stringResource(R.string.shell_title)) }
                         // One search button: the full search (it has a "Filter current folder" chip inside). Network
                         // folders cannot be searched that way, so there it opens the folder filter directly.
                         IconButton(onClick = {
@@ -379,7 +380,6 @@ fun ExplorerScreen(
                         }) {
                             Icon(Icons.AutoMirrored.Rounded.ManageSearch, contentDescription = stringResource(R.string.common_search))
                         }
-                        IconButton(onClick = onOpenShell) { Icon(Icons.Rounded.Terminal, contentDescription = stringResource(R.string.shell_title)) }
                         IconButton(onClick = { dialog = Dialog.Sort }) { Icon(Icons.Rounded.SortByAlpha, contentDescription = stringResource(R.string.common_sort)) }
                         Box {
                             IconButton(onClick = { overflow = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.explorer_options)) }

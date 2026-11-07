@@ -57,7 +57,6 @@ import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Extension
-import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Key
@@ -306,7 +305,7 @@ fun StrataDrawerContent(
                 DrawerLink("tool_apps", stringResource(R.string.apps_title), Icons.Rounded.Apps, actions.onApps),
                 DrawerLink("tool_colors", stringResource(R.string.color_picker_title), Icons.Rounded.Palette, actions.onColorPicker),
                 DrawerLink("tool_keys", stringResource(R.string.keys_title), Icons.Rounded.Key, actions.onSigningKeys),
-                DrawerLink("tool_shell", stringResource(R.string.shell_title), Icons.Rounded.Code, actions.onShellCommands),
+                DrawerLink("tool_shell", stringResource(R.string.shell_title), Icons.Rounded.Terminal, actions.onShellCommands),
                 DrawerLink("tool_plugins", stringResource(R.string.plugin_title), Icons.Rounded.Extension, actions.onPlugins),
             ),
             MaterialShapes.Cookie9Sided, editing, hidden, ::toggle, Modifier.stagger(), Modifier.stagger(),
