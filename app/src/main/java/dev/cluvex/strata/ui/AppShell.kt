@@ -436,6 +436,7 @@ fun AppShell(
                     onOpenDrawer = { scope.launch { drawerState.open() } },
                     onCustomize = { tab -> stack.push(Route.Customize(tab)) },
                     onOpenSettings = { stack.push(Route.Settings) },
+                    onOpenShell = { stack.push(Route.ShellCommands) },
                     drawerOpen = drawerState.isOpen || route != Route.Files,
                     appSnackbar = snackbar.takeIf { route != Route.Files },
                 )
@@ -758,6 +759,11 @@ private fun Screen(
             onOpenWith = actions.openWith,
             onCompare = { a, b -> actions.push(Route.Compare(a.path, b.path)) },
             onCustomize = { tab -> actions.push(Route.Customize(tab)) },
+            onFilterFolder = { text ->
+                actions.pop()
+                vm.setSearchActive(true)
+                vm.setQuery(text)
+            },
         )
     }
 }

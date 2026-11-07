@@ -51,6 +51,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Stop
@@ -104,6 +105,8 @@ fun SearchScreen(
     onOpenWith: (FileItem) -> Unit = {},
     onCompare: (FileItem, FileItem) -> Unit = { _, _ -> },
     onCustomize: (ToolbarTab) -> Unit = {},
+    /** Switches to filtering the folder's own list by name, with the text typed here as the filter. */
+    onFilterFolder: (String) -> Unit = {},
     vm: SearchViewModel = viewModel(),
 ) {
     LaunchedEffect(root) { vm.initRoot(root) }
@@ -177,7 +180,7 @@ fun SearchScreen(
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            QueryForm(ui, vm)
+            QueryForm(ui, vm, onFilterFolder)
             StatusBar(ui)
             HorizontalDivider()
             if (ui.finished && ui.results.isEmpty()) {
@@ -277,7 +280,7 @@ private val SearchHiddenActions = setOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun QueryForm(ui: SearchUiState, vm: SearchViewModel) {
+private fun QueryForm(ui: SearchUiState, vm: SearchViewModel, onFilterFolder: (String) -> Unit) {
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -336,6 +339,13 @@ private fun QueryForm(ui: SearchUiState, vm: SearchViewModel) {
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                // Not a setting of this search: it leaves for the quick filter of the folder's list.
+                FilterChip(
+                    selected = false,
+                    onClick = { vm.stop(); onFilterFolder(ui.namePattern) },
+                    label = { Text(stringResource(R.string.explorer_filter_placeholder)) },
+                    leadingIcon = { Icon(Icons.Rounded.FilterList, contentDescription = null) },
+                )
                 FilterChip(ui.contentRegex, { vm.setContentRegex(!ui.contentRegex) }, label = { Text(stringResource(R.string.search_mode_regex)) })
                 FilterChip(ui.caseSensitive, { vm.setCaseSensitive(!ui.caseSensitive) }, label = { Text(stringResource(R.string.search_case)) })
                 FilterChip(ui.includeSubdirs, { vm.setIncludeSubdirs(!ui.includeSubdirs) }, label = { Text(stringResource(R.string.search_subdirs)) })

@@ -26,8 +26,8 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.automirrored.rounded.ManageSearch
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SortByAlpha
+import androidx.compose.material.icons.rounded.Terminal
 import dev.cluvex.strata.ui.expressive.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -186,6 +186,7 @@ fun ExplorerScreen(
     onOpenDrawer: () -> Unit,
     onCustomize: (ToolbarTab) -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onOpenShell: () -> Unit = {},
     drawerOpen: Boolean = false,
     appSnackbar: SnackbarHostState? = null,
 ) {
@@ -367,16 +368,18 @@ fun ExplorerScreen(
                     },
                     title = { ExplorerTitle(ui.activePane, visibleItems(ui.activePane, ui.settings, ui.query)) },
                     actions = {
-                        IconButton(onClick = { vm.setSearchActive(true) }) { Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.explorer_filter)) }
+                        // One search button: the full search (it has a "Filter current folder" chip inside). Network
+                        // folders cannot be searched that way, so there it opens the folder filter directly.
                         IconButton(onClick = {
                             if (RemoteUri.isRemote(ui.activePane.path)) {
-                                scope.launch { snackbar.showSnackbar(tr(R.string.explorer_search_local_only)) }
+                                vm.setSearchActive(true)
                             } else {
                                 onOpenSearch(ui.activePane.path)
                             }
                         }) {
-                            Icon(Icons.AutoMirrored.Rounded.ManageSearch, contentDescription = stringResource(R.string.explorer_advanced_search))
+                            Icon(Icons.AutoMirrored.Rounded.ManageSearch, contentDescription = stringResource(R.string.common_search))
                         }
+                        IconButton(onClick = onOpenShell) { Icon(Icons.Rounded.Terminal, contentDescription = stringResource(R.string.shell_title)) }
                         IconButton(onClick = { dialog = Dialog.Sort }) { Icon(Icons.Rounded.SortByAlpha, contentDescription = stringResource(R.string.common_sort)) }
                         Box {
                             IconButton(onClick = { overflow = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.explorer_options)) }
@@ -493,10 +496,9 @@ fun ExplorerScreen(
                         onRunProject = { project?.let { dialog = Dialog.RunProject(it) } },
                         onSmaliToDex = { single?.let { vm.smaliToDex(ui.active, it) } },
                         onJarToDex = { single?.let { vm.jarToDex(ui.active, it) } },
-                        onFilter = { vm.setSearchActive(true) },
                         onSearch = {
                             if (RemoteUri.isRemote(ui.activePane.path)) {
-                                scope.launch { snackbar.showSnackbar(tr(R.string.explorer_search_local_only)) }
+                                vm.setSearchActive(true)
                             } else {
                                 onOpenSearch(ui.activePane.path)
                             }

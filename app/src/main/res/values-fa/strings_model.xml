@@ -13,8 +13,7 @@
     <string name="model_browse_select_all">انتخاب همه</string>
     <string name="model_browse_run_project">اجرای پروژه</string>
     <string name="model_browse_terminal">باز کردن ترمینال در اینجا</string>
-    <string name="model_browse_filter">فیلتر</string>
-    <string name="model_browse_search">جستجوی پیشرفته</string>
+    <string name="model_browse_search">جستجو</string>
     <string name="model_browse_sort">مرتب‌سازی</string>
     <string name="model_browse_jump">رفتن به مسیر</string>
     <string name="model_browse_hidden_files">نمایش فایل‌های پنهان</string>

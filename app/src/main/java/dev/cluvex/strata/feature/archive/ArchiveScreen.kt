@@ -33,7 +33,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DriveFileRenameOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.SelectAll
-import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.automirrored.rounded.ManageSearch
 import androidx.compose.material.icons.rounded.Unarchive
 import dev.cluvex.strata.ui.expressive.AlertDialog
@@ -43,6 +43,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -241,6 +242,9 @@ fun ArchiveScreen(
                     query = query,
                     onQuery = { query = it },
                     placeholder = stringResource(if (searchMode == ArchiveSearch.DEEP) R.string.archive_search_placeholder else R.string.explorer_filter_placeholder),
+                    filterOnly = searchMode == ArchiveSearch.FILTER,
+                    // The same text stays; only what it is matched against changes (this folder / the whole archive).
+                    onToggleFilter = { searchMode = if (searchMode == ArchiveSearch.FILTER) ArchiveSearch.DEEP else ArchiveSearch.FILTER },
                     onClose = ::closeSearch,
                 )
             } else {
@@ -265,13 +269,9 @@ fun ArchiveScreen(
                         Box {
                             IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.archive_options)) }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                // One search entry; "Filter current folder" is a switch inside its box.
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.explorer_filter)) },
-                                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                                    onClick = { menu = false; query = ""; searchMode = ArchiveSearch.FILTER },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.explorer_advanced_search)) },
+                                    text = { Text(stringResource(R.string.common_search)) },
                                     leadingIcon = { Icon(Icons.AutoMirrored.Rounded.ManageSearch, contentDescription = null) },
                                     onClick = { menu = false; query = ""; searchMode = ArchiveSearch.DEEP },
                                 )
@@ -444,7 +444,14 @@ private fun InnerPath(name: String, dir: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ArchiveSearchBar(query: String, onQuery: (String) -> Unit, placeholder: String, onClose: () -> Unit) {
+private fun ArchiveSearchBar(
+    query: String,
+    onQuery: (String) -> Unit,
+    placeholder: String,
+    filterOnly: Boolean,
+    onToggleFilter: () -> Unit,
+    onClose: () -> Unit,
+) {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(Unit) {
@@ -463,6 +470,12 @@ private fun ArchiveSearchBar(query: String, onQuery: (String) -> Unit, placehold
                 singleLine = true,
                 textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
                 placeholder = { Text(placeholder) },
+                trailingIcon = {
+                    // On: only this folder's list is filtered by name. Off: the whole archive is searched.
+                    IconToggleButton(checked = filterOnly, onCheckedChange = { onToggleFilter() }) {
+                        Icon(Icons.Rounded.FilterList, contentDescription = stringResource(R.string.explorer_filter_placeholder))
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
             )
         },

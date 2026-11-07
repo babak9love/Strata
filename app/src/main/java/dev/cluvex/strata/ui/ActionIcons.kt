@@ -46,7 +46,6 @@ import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.SortByAlpha
@@ -76,7 +75,6 @@ val BrowseAction.icon: ImageVector
         BrowseAction.SELECT_ALL -> Icons.Rounded.SelectAll
         BrowseAction.RUN_PROJECT -> Icons.Rounded.PlayArrow
         BrowseAction.TERMINAL -> Icons.Rounded.Terminal
-        BrowseAction.FILTER -> Icons.Rounded.Search
         BrowseAction.SEARCH -> Icons.AutoMirrored.Rounded.ManageSearch
         BrowseAction.SORT -> Icons.Rounded.SortByAlpha
         BrowseAction.JUMP -> Icons.Rounded.Explore

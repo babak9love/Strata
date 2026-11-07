@@ -19,7 +19,6 @@ enum class BrowseAction(@StringRes val label: Int) {
     SELECT_ALL(R.string.model_browse_select_all),
     RUN_PROJECT(R.string.model_browse_run_project),
     TERMINAL(R.string.model_browse_terminal),
-    FILTER(R.string.model_browse_filter),
     SEARCH(R.string.model_browse_search),
     SORT(R.string.model_browse_sort),
     JUMP(R.string.model_browse_jump),
@@ -311,7 +310,7 @@ data class ActionLayout(
             listOf(
                 listOf(BrowseAction.BACK, BrowseAction.FORWARD, BrowseAction.PASTE, BrowseAction.NEW, BrowseAction.REFRESH, BrowseAction.SELECT_ALL),
                 listOf(BrowseAction.HOME, BrowseAction.UNDO, BrowseAction.BOOKMARKS, BrowseAction.BOOKMARK_FOLDER, BrowseAction.PROTECTED_FOLDERS, BrowseAction.TERMINAL, BrowseAction.SWAP),
-                listOf(BrowseAction.SEARCH, BrowseAction.FILTER, BrowseAction.SORT, BrowseAction.JUMP, BrowseAction.HIDDEN_FILES, BrowseAction.UP, BrowseAction.RUN_PROJECT),
+                listOf(BrowseAction.SEARCH, BrowseAction.SORT, BrowseAction.JUMP, BrowseAction.HIDDEN_FILES, BrowseAction.UP, BrowseAction.RUN_PROJECT),
             ),
         )
 
@@ -350,6 +349,18 @@ data class ActionLayout(
             // Undo is new: a saved layout gets it right after Home.
             if (parts["b"]?.contains("UNDO") != true) {
                 browse = browse.placedAfter(BrowseAction.UNDO, BrowseAction.HOME, BROWSE_CAPS)
+            }
+            // Filter was merged into Search (which has a "Filter current folder" chip). A saved layout that had Filter
+            // in a more visible place than Search gives that place to Search, so the bar does not lose its search button.
+            parts["b"]?.takeIf { "FILTER" in it }?.let { saved ->
+                val zones = saved.split(';').map { z -> z.split(',').map { it.trim() } }
+                val fz = zones.indexOfFirst { "FILTER" in it }
+                val sz = zones.indexOfFirst { "SEARCH" in it }
+                val fi = if (fz >= 0) zones[fz].indexOf("FILTER") else -1
+                val si = if (sz >= 0) zones[sz].indexOf("SEARCH") else -1
+                if (fz >= 0 && (sz < 0 || fz < sz || (fz == sz && fi < si))) {
+                    browse = browse.moveTo(BrowseAction.SEARCH, fz, fi, BROWSE_CAPS)
+                }
             }
             var selection = Zoned.decode(parts["s"], SelectionAction.entries, DEFAULT_SELECTION, SELECTION_CAPS)
             if (parts["s"]?.contains("PROTECTED_FOLDERS") != true) {

@@ -119,7 +119,6 @@ class BottomBarActions(
     val onRunProject: () -> Unit = {},
     val onSmaliToDex: () -> Unit = {},
     val onJarToDex: () -> Unit = {},
-    val onFilter: () -> Unit = {},
     val onSearch: () -> Unit = {},
     val onSort: () -> Unit = {},
     val onJump: () -> Unit = {},
@@ -230,7 +229,6 @@ private fun BrowseAction.run(a: BottomBarActions) = when (this) {
     BrowseAction.SELECT_ALL -> a.onSelectAll()
     BrowseAction.RUN_PROJECT -> a.onRunProject()
     BrowseAction.TERMINAL -> a.onOpenTerminal()
-    BrowseAction.FILTER -> a.onFilter()
     BrowseAction.SEARCH -> a.onSearch()
     BrowseAction.SORT -> a.onSort()
     BrowseAction.JUMP -> a.onJump()

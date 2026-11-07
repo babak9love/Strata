@@ -13,8 +13,7 @@
     <string name="model_browse_select_all">Select all</string>
     <string name="model_browse_run_project">Run project</string>
     <string name="model_browse_terminal">Open terminal here</string>
-    <string name="model_browse_filter">Filter</string>
-    <string name="model_browse_search">Advanced search</string>
+    <string name="model_browse_search">Search</string>
     <string name="model_browse_sort">Sort</string>
     <string name="model_browse_jump">Jump to path</string>
     <string name="model_browse_hidden_files">Show hidden files</string>

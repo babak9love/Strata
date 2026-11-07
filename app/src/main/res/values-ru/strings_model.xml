@@ -13,8 +13,7 @@
     <string name="model_browse_select_all">Выбрать всё</string>
     <string name="model_browse_run_project">Запустить проект</string>
     <string name="model_browse_terminal">Открыть терминал здесь</string>
-    <string name="model_browse_filter">Фильтр</string>
-    <string name="model_browse_search">Расширенный поиск</string>
+    <string name="model_browse_search">Поиск</string>
     <string name="model_browse_sort">Сортировка</string>
     <string name="model_browse_jump">Перейти по пути</string>
     <string name="model_browse_hidden_files">Показать скрытые файлы</string>
