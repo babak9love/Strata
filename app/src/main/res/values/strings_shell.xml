@@ -69,4 +69,11 @@
     <string name="shell_exported">Exported %1$d commands</string>
     <string name="shell_imported">Imported %1$d commands</string>
     <string name="shell_import_failed">Couldn\'t read or write that file</string>
+    <string name="shell_param_pick_title">Choose an app for %1$s</string>
+    <string name="shell_param_search">Search apps or type a package name</string>
+    <string name="shell_param_system">System apps</string>
+    <string name="shell_param_last">Last used</string>
+    <string name="shell_param_use">Use %1$s</string>
+    <string name="shell_param_hint">Write {package} where an app\'s package name goes. You pick the app when you run the command.</string>
+    <string name="shell_param_empty">No apps found</string>
 </resources>

@@ -69,4 +69,11 @@
     <string name="shell_exported">Экспортировано команд: %1$d</string>
     <string name="shell_imported">Импортировано команд: %1$d</string>
     <string name="shell_import_failed">Не удалось прочитать или записать файл</string>
+    <string name="shell_param_pick_title">Выберите приложение для %1$s</string>
+    <string name="shell_param_search">Поиск приложений или имя пакета</string>
+    <string name="shell_param_system">Системные приложения</string>
+    <string name="shell_param_last">Последнее</string>
+    <string name="shell_param_use">Использовать %1$s</string>
+    <string name="shell_param_hint">Напишите {package} там, где нужно имя пакета приложения. Приложение выбирается при запуске команды.</string>
+    <string name="shell_param_empty">Приложения не найдены</string>
 </resources>

@@ -117,6 +117,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import dev.cluvex.strata.core.shell.ShellBackend
 import dev.cluvex.strata.core.shell.ShellMode
+import dev.cluvex.strata.core.shell.ShellParams
 import dev.cluvex.strata.core.shell.ShellRunner
 import dev.cluvex.strata.ui.expressive.ExpressiveDialog
 import dev.cluvex.strata.ui.expressive.ExpressiveEmptyState
@@ -142,6 +143,8 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
     var editing by remember { mutableStateOf<EditTarget?>(null) }
     var showLog by remember { mutableStateOf(false) }
     var confirming by remember { mutableStateOf<SavedCommand?>(null) }
+    // A command with {package} waits here until an app is picked for it.
+    var pickFor by remember { mutableStateOf<SavedCommand?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
     var newGroupDialog by remember { mutableStateOf(false) }
     var groupMenu by remember { mutableStateOf<String?>(null) }
@@ -433,6 +436,7 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
                                             when {
                                                 c.id in ui.runningIds -> if (!c.detached) { vm.followRun(c.id); liveId = c.id }
                                                 c.id in ui.backgroundIds -> backgroundCmd = c
+                                                ShellParams.needsPackage(c.command) -> pickFor = c
                                                 c.confirm -> confirming = c
                                                 else -> startCommand(c)
                                             }
@@ -532,6 +536,21 @@ fun ShellCommandsScreen(onBack: () -> Unit, vm: ShellCommandsViewModel = viewMod
         ) {
             Text(stringResource(R.string.shell_group_delete_confirm_text))
         }
+    }
+
+    pickFor?.let { c ->
+        ShellAppPickerDialog(
+            title = stringResource(R.string.shell_param_pick_title, c.name),
+            lastPackage = remember(c.id) { ShellParams.lastPackage(context, c.id) },
+            onPick = { pkg ->
+                pickFor = null
+                ShellParams.rememberPackage(context, c.id, pkg)
+                // The command that is confirmed, run and logged is the one with the app's name written in.
+                val resolved = ShellParams.resolve(c, pkg)
+                if (c.confirm) confirming = resolved else startCommand(resolved)
+            },
+            onDismiss = { pickFor = null },
+        )
     }
 
     confirming?.let { c ->
@@ -795,6 +814,7 @@ private fun EditCommandDialog(
                 value = command,
                 onValueChange = { command = it },
                 label = { Text(stringResource(R.string.shell_command)) },
+                supportingText = { Text(stringResource(R.string.shell_param_hint)) },
                 minLines = 3,
                 maxLines = 8,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(

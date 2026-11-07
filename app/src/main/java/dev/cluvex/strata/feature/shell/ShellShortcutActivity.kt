@@ -41,6 +41,7 @@ import dev.cluvex.strata.R
 import dev.cluvex.strata.core.shell.ShellCommandStore
 import dev.cluvex.strata.core.shell.ShellExecutor
 import dev.cluvex.strata.core.shell.ShellLogSource
+import dev.cluvex.strata.core.shell.ShellParams
 import dev.cluvex.strata.core.shell.ShellResult
 import dev.cluvex.strata.core.shell.ShellShortcuts
 import dev.cluvex.strata.core.shell.SavedCommand
@@ -64,6 +65,8 @@ internal sealed interface Banner {
 class ShellShortcutActivity : ComponentActivity() {
     private val banner = MutableStateFlow<Banner?>(null)
     private val confirmFor = MutableStateFlow<SavedCommand?>(null)
+    private val pickFor = MutableStateFlow<SavedCommand?>(null)
+    private val pickAnswer = CompletableDeferred<String?>()
     private val answer = CompletableDeferred<Boolean>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,6 +76,17 @@ class ShellShortcutActivity : ComponentActivity() {
         setContent {
             val current by banner.collectAsState()
             val asking by confirmFor.collectAsState()
+            val picking by pickFor.collectAsState()
+            picking?.let { c ->
+                MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
+                    ShellAppPickerPlainDialog(
+                        title = stringResource(R.string.shell_param_pick_title, c.name),
+                        lastPackage = ShellParams.lastPackage(applicationContext, c.id),
+                        onPick = { pickAnswer.complete(it) },
+                        onDismiss = { pickAnswer.complete(null) },
+                    )
+                }
+            }
             asking?.let { c ->
                 MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
                     AlertDialog(
@@ -98,14 +112,29 @@ class ShellShortcutActivity : ComponentActivity() {
             return
         }
         lifecycleScope.launch {
-            val command = withContext(Dispatchers.IO) {
+            val stored = withContext(Dispatchers.IO) {
                 ShellCommandStore(applicationContext).load().firstOrNull { it.id == id }
             }
-            if (command == null) {
+            if (stored == null) {
                 banner.value = Banner.Done(getString(R.string.shell_not_found), ok = false, detail = null)
                 delay(2_500)
                 finish()
                 return@launch
+            }
+            var command: SavedCommand = stored
+            if (ShellParams.needsPackage(command.command)) {
+                // A command with {package} asks which app first; the shortcut cannot carry that choice itself.
+                window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+                pickFor.value = command
+                val pkg = pickAnswer.await()
+                pickFor.value = null
+                if (pkg == null) {
+                    finish()
+                    return@launch
+                }
+                ShellParams.rememberPackage(applicationContext, command.id, pkg)
+                command = ShellParams.resolve(command, pkg)
+                window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
             }
             if (command.confirm) {
                 window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)

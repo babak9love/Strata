@@ -69,4 +69,11 @@
     <string name="shell_exported">已导出 %1$d 条命令</string>
     <string name="shell_imported">已导入 %1$d 条命令</string>
     <string name="shell_import_failed">无法读取或写入该文件</string>
+    <string name="shell_param_pick_title">为 %1$s 选择应用</string>
+    <string name="shell_param_search">搜索应用或输入包名</string>
+    <string name="shell_param_system">系统应用</string>
+    <string name="shell_param_last">上次使用</string>
+    <string name="shell_param_use">使用 %1$s</string>
+    <string name="shell_param_hint">在需要应用包名的位置写 {package}。运行命令时选择应用。</string>
+    <string name="shell_param_empty">未找到应用</string>
 </resources>
